@@ -1,0 +1,57 @@
+import adsk.core, adsk.fusion
+
+
+def point2d(point_data):
+    return adsk.core.Point2D.create(
+        point_data["x"],
+        point_data["y"]
+    )
+
+def point3d(point_data):
+    return adsk.core.Point3D.create(
+        point_data["x"],
+        point_data["y"],
+        point_data["z"]
+    )
+    
+def vector3d(vector_data):
+    return adsk.core.Vector3D.create(
+        vector_data["x"],
+        vector_data["y"],
+        vector_data["z"]
+    )
+
+def line2d(start_point_data, end_point_data):
+    start_point = point2d(start_point_data)
+    end_point = point2d(end_point_data)
+    return adsk.core.Line2D.create(start_point, end_point)
+
+def plane(plane_data):
+    origin = point3d(plane_data["origin"])
+    normal = vector3d(plane_data["normal"])
+    u_direction = vector3d(plane_data["u_direction"])
+    v_direction = vector3d(plane_data["v_direction"])
+    plane = adsk.core.Plane.create(origin, normal)
+    plane.setUVDirections(u_direction, v_direction)
+    return plane
+
+def matrix3d(matrix_data):
+    matrix = adsk.core.Matrix3D.create()
+    origin = point3d(matrix_data["origin"])
+    x_axis = vector3d(matrix_data["x_axis"])
+    y_axis = vector3d(matrix_data["y_axis"])
+    z_axis = vector3d(matrix_data["z_axis"])
+    matrix.setWithCoordinateSystem(origin, x_axis, y_axis, z_axis)
+    return matrix
+
+def feature_operations(operation_data):
+    if operation_data == "JoinFeatureOperation":
+        return adsk.fusion.FeatureOperations.JoinFeatureOperation
+    if operation_data == "CutFeatureOperation":
+        return adsk.fusion.FeatureOperations.CutFeatureOperation
+    if operation_data == "IntersectFeatureOperation":
+        return adsk.fusion.FeatureOperations.IntersectFeatureOperation
+    if operation_data == "NewBodyFeatureOperation":
+        return adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+    if operation_data == "NewComponentFeatureOperation":
+        return adsk.fusion.FeatureOperations.NewComponentFeatureOperation
