@@ -37,10 +37,27 @@ class Fusion360Client():
 
     def mesh(self, file):
         """Retreive a mesh in .stl format and write it to a local file"""
+        suffix = file.suffix
+        valid_formats = [".stl"]
+        if suffix not in valid_formats:
+            return self.__return_error(f"Invalid file format: {suffix}")
         command_data = {
-            "format": "stl"
+            "format": suffix
         }
         r = self.send_command("mesh", data=command_data, stream=True)
+        self.__write_file(r, file)
+        return r
+
+    def brep(self, file):
+        """Retreive a brep in a format (step/smt) and write it to a local file"""
+        suffix = file.suffix
+        valid_formats = [".step", ".smt"]
+        if suffix not in valid_formats:
+            return self.__return_error(f"Invalid file format: {suffix}")
+        command_data = {
+            "format": suffix
+        }
+        r = self.send_command("brep", data=command_data, stream=True)
         self.__write_file(r, file)
         return r
 

@@ -28,7 +28,9 @@ class CommandRunner():
         elif command == "clear":
             result = self.clear()
         elif command == "mesh":
-            result = self.mesh()
+            result = self.mesh(data)
+        elif command == "brep":
+            result = self.brep(data)            
         # Update the UI
         adsk.doEvents()
         return result
@@ -56,20 +58,47 @@ class CommandRunner():
         except Exception as ex:
             return self.__return_exception(ex)
     
-    def mesh(self):
+    def mesh(self, data):
+        """Create a mesh in the given format (currently .stl) and send it back as a binary file"""
         design = adsk.fusion.Design.cast(self.app.activeProduct)
         try:
-            temp_stl = tempfile.NamedTemporaryFile(suffix=".stl")
-            temp_stl.close()
-            stl_export_options = design.exportManager.createSTLExportOptions(design.rootComponent, temp_stl.name)
+            temp_file = tempfile.NamedTemporaryFile(suffix=".stl")
+            temp_file.close()
+            stl_export_options = design.exportManager.createSTLExportOptions(design.rootComponent, temp_file.name)
             stl_export_options.sendToPrintUtility = False
             export_result = design.exportManager.execute(stl_export_options)
-            stl_exists = os.path.exists(temp_stl.name)
-            if export_result and stl_exists:
-                self.logger.log_text(f"Mesh temp file written to: {temp_stl.name}")
-                return self.__return_success(temp_stl.name)
+            file_exists = os.path.exists(temp_file.name)
+            if export_result and file_exists:
+                self.logger.log_text(f"Mesh temp file written to: {temp_file.name}")
+                return self.__return_success(temp_file.name)
             else:
                 return self.__return_failure(".stl export failure")
+        except Exception as ex:
+            return self.__return_exception(ex)
+
+    def brep(self, data):
+        """Create a brep in the given format (currently .step, smt) and send it back as a binary file"""
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+        if data is None or "format" not in data:
+            return self.__return_failure("format not specified")
+        suffix = data["format"]
+        valid_formats = [".step", ".smt"]
+        if suffix not in valid_formats:
+            return self.__return_failure("invalid format specified")
+        try:
+            temp_file = tempfile.NamedTemporaryFile(suffix=suffix)
+            temp_file.close()
+            if suffix == ".step":
+                export_options = design.exportManager.createSTEPExportOptions(temp_file.name, design.rootComponent)
+            elif suffix == ".smt":
+                export_options = design.exportManager.createSMTExportOptions(temp_file.name, design.rootComponent)
+            export_result = design.exportManager.execute(export_options)
+            file_exists = os.path.exists(temp_file.name)
+            if export_result and file_exists:
+                self.logger.log_text(f"BRep temp file written to: {temp_file.name}")
+                return self.__return_success(temp_file.name)
+            else:
+                return self.__return_failure(f"{suffix} export failure")
         except Exception as ex:
             return self.__return_exception(ex)
 
