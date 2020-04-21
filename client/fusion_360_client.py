@@ -15,7 +15,11 @@ class Fusion360Client():
         }
         if data is not None:
             command_data["data"] = data
-        return requests.post(url=url, data=command_data)
+        return requests.post(url=self.url, data=json.dumps(command_data))
+
+    def ping(self):
+        """Ping for debugging"""
+        return self.send_command("ping")
 
     def reconstruct(self, json_file):
         """Reconstruct a design from the provided json file"""
@@ -26,6 +30,10 @@ class Fusion360Client():
         with open(json_file) as f:
             json_data = json.load(f)
         return self.send_command("reconstruct", json_data)
+
+    def clear(self):
+        """Clear (i.e. close) all open designs in Fusion"""
+        return self.send_command("clear")
 
     def mesh(self, file):
         """Retreive a mesh in .stl format and write it to a local file"""
@@ -39,10 +47,6 @@ class Fusion360Client():
     def sketch_images(self, folder):
         """Retreive each sketch as an image and save to a local folder"""
         pass
-
-    def clear(self):
-        """Clear (i.e. close) all open designs in Fusion"""
-        return self.send_command("clear")
 
     def detach(self):
         """Detach the server from Fusion, taking it offline"""

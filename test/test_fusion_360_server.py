@@ -25,28 +25,25 @@ class TestFusion360Server(unittest.TestCase):
         cls.client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
         cls.data_path = Path("data")
 
-    def test_reconstruct(self):
-        json_file = self.data_path / "test.json"
-        r = self.client.reconstruct(json_file)
+    def test_ping(self):
+        r = self.client.ping()
+        self.assertEqual(r.status_code, 200)
+        # print(r.json())
+        # self.client.detach()
+        # self.assertEqual(r.status_code, 200)
+
+    # def test_reconstruct(self):
+    #     json_file = self.data_path / "SingleSketchExtrude_RootComponent.json"
+    #     r = self.client.reconstruct(json_file)
+    #     self.assertEqual(r.status_code, 200)
+
+    def test_detactch(self):
+        r = self.client.detach()
         self.assertEqual(r.status_code, 200)
 
-    # params = {
-    #     "hello": "world"
-    # }  
-    # print("Sending get request to Fusion 360...")
-    # response = requests.get(url=API_ENDPOINT, params=params) 
-    # print("Get Response", response)
-
-    # data = {
-    #     "hello": "world"
-    # } 
-    # print("Sending post request to Fusion 360...")
-    # response = requests.post(url=API_ENDPOINT, data=data) 
-    # print("Post Response", response)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.detach()
+    # @classmethod
+    # def tearDownClass(cls):
+    #     cls.client.detach()
 
 
 if __name__ == '__main__':

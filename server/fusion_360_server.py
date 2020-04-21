@@ -3,6 +3,7 @@ import adsk.core
 import adsk.fusion
 import traceback
 import json
+import threading
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
 from .command_runner import CommandRunner
@@ -14,43 +15,27 @@ PORT_NUMBER = 8080
 
 # Global logger
 logger = None
-
-
-def start_server():
-    # Setup the logger globally after Fusion has started
-    global logger
-    logger = LoggingUtil()
-    logger.log_text("Starting server...")
-    httpd = HTTPServer((HOST_NAME, PORT_NUMBER), Fusion360Server)
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    httpd.server_close()
+# Global command runner
+runner = None
 
 
 class OnlineStatusChangedHandler(adsk.core.ApplicationEventHandler):
-
     def notify(self, args):
         # Start the server when onlineStatusChanged handler returns
         start_server()
 
 
-class Fusion360Server(BaseHTTPRequestHandler):
-
-    def __init__(self, request, client_address, server):
-        BaseHTTPRequestHandler.__init__(self, request, client_address, server)
-        self.runner = CommandRunner()
+class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
 
     def do_HEAD(self):
         return
 
     def do_POST(self):
         try:
-            data = self.get_post_json()
+            post_data = self.get_post_data()
             logger.log_text("Post received!")
-            logger.log_text(json.dumps(data))
-            if "command" not in data:
+            logger.log_text(json.dumps(post_data))
+            if "command" not in post_data:
                 self.respond(400, "Command not present")
                 return
 
@@ -59,11 +44,16 @@ class Fusion360Server(BaseHTTPRequestHandler):
                 self.respond(500, "Start-up is not completed")
                 return
 
-            command = data["command"]
+            command = post_data["command"]
+            logger.log_text(f"Command: {command}")
             if command == "detach":
                 self.detach()
+            
+            data = None
+            if "data" in post_data:
+                data = post_data["data"]
 
-            status_code, message = self.runner.run_command(command, data)
+            status_code, message = runner.run_command(command, data)
             self.respond(status_code, message)
 
         except Exception as ex:
@@ -73,24 +63,52 @@ class Fusion360Server(BaseHTTPRequestHandler):
         self.respond(400, "GET not supported, use POST")
 
     def get_post_data(self):
-        content_len = int(self.headers.get("Content-length", 0))
+        content_len = int(self.headers.get('Content-Length'))
         post_body = self.rfile.read(content_len)
-        return json.loads(post_body.decode("utf-8"))
-
-    def handle_http(self, status, content_type, message):
-        self.send_response(status)
-        self.send_header("Content-type", content_type)
-        self.end_headers()
-        return bytes(message, "UTF-8")
+        logger.log_text(f"post_body: {post_body}")
+        post_body_json = json.loads(post_body)
+        return post_body_json
 
     def respond(self, status, message):
         logger.log_text(f"[{status}] {message}")
-        content = self.handle_http(status, "text/plain", message)
-        self.wfile.write(content)
+        data = {
+            "status": status,
+            "message": message
+        }
+        json_string = json.dumps(data)
+        self.send_response(status)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        self.wfile.write(json_string.encode(encoding='utf_8'))
 
     def detach(self):
-        self.server.shutdown()
-        exit()
+        # We have to shutdown the server from a separate thread to avoid deadlock
+        logger.log_text("Shutting down...")
+        server_shutdown_thread = threading.Thread(target=self.server.shutdown)
+        server_shutdown_thread.daemon = True
+        server_shutdown_thread.start()
+
+
+
+def start_server():
+    """Start the server"""
+    # Setup the logger globally after Fusion has started
+    global logger
+    logger = LoggingUtil()
+    logger.log_text("Started server...")
+    # Set up the command runner we use to execute commands
+    global runner
+    runner = CommandRunner()
+    runner.set_logger(logger)
+
+    # Launch the server which will block the UI thread
+    server = HTTPServer((HOST_NAME, PORT_NUMBER), Fusion360ServerRequestHandler)
+    try:
+        server.serve_forever(poll_interval=1.0)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
 
 
 def run(context):
