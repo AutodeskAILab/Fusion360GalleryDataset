@@ -9,13 +9,13 @@ class Fusion360Client():
     def __init__(self, url="http://127.0.0.1:8080"):
         self.url = url
 
-    def send_command(self, command, data=None):
+    def send_command(self, command, data=None, stream=False):
         command_data = {
             "command": command,
         }
         if data is not None:
             command_data["data"] = data
-        return requests.post(url=self.url, data=json.dumps(command_data))
+        return requests.post(url=self.url, data=json.dumps(command_data), stream=stream)
 
     def ping(self):
         """Ping for debugging"""
@@ -40,7 +40,7 @@ class Fusion360Client():
         command_data = {
             "format": "stl"
         }
-        r = self.send_command("mesh", command_data)
+        r = self.send_command("mesh", data=command_data, stream=True)
         self.__write_file(r, file)
         return r
 
@@ -53,13 +53,11 @@ class Fusion360Client():
         return self.send_command("detach")
 
     def __return_error(self, message):
-        return {
-            "status": "Error",
-            "message": message
-        }
+        print(message)
+        return None
 
     def __write_file(self, r, file):
         if r.status_code == 200:
-            with open(file, "wb") as f:
-                r.raw.decode_content = True
-                shutil.copyfileobj(r.raw, f)
+            with open(file, "wb") as file_handle:
+                for chunk in r.iter_content(chunk_size=128):
+                    file_handle.write(chunk)

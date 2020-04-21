@@ -4,6 +4,7 @@ import adsk.fusion
 import traceback
 import json
 import threading
+import shutil
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
 from .command_runner import CommandRunner
@@ -33,8 +34,8 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             post_data = self.get_post_data()
-            logger.log_text("Post received!")
-            logger.log_text(json.dumps(post_data))
+            logger.log_text("\n")
+            # logger.log_text(json.dumps(post_data))
             if "command" not in post_data:
                 self.respond(400, "Command not present")
                 return
@@ -53,8 +54,12 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
             if "data" in post_data:
                 data = post_data["data"]
 
-            status_code, message = runner.run_command(command, data)
-            self.respond(status_code, message)
+            status_code, message, binary_file = runner.run_command(command, data)
+            if binary_file is not None:
+                self.respond_binary_file(status_code, binary_file)
+            else:
+                self.respond(status_code, message)
+
 
         except Exception as ex:
             self.respond(500, str(ex.args))
@@ -65,18 +70,26 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
     def get_post_data(self):
         content_len = int(self.headers.get('Content-Length'))
         post_body = self.rfile.read(content_len)
-        logger.log_text(f"post_body: {post_body}")
+        # logger.log_text(f"post_body: {post_body}")
         post_body_json = json.loads(post_body)
         return post_body_json
 
-    def respond(self, status, message):
-        logger.log_text(f"[{status}] {message}")
+    def respond_binary_file(self, status_code, binary_file):
+        logger.log_text(f"[{status_code}] {binary_file}")
+        self.send_response(status_code)
+        self.send_header("Content-type", "application/octet-stream")
+        self.end_headers()
+        with open(binary_file, "rb") as file_handle:
+            shutil.copyfileobj(file_handle, self.wfile)
+
+    def respond(self, status_code, message):
+        logger.log_text(f"[{status_code}] {message}")
         data = {
-            "status": status,
+            "status": status_code,
             "message": message
         }
         json_string = json.dumps(data)
-        self.send_response(status)
+        self.send_response(status_code)
         self.send_header("Content-type", "application/json")
         self.end_headers()
         self.wfile.write(json_string.encode(encoding='utf_8'))
