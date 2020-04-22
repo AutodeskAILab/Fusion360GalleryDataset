@@ -25,25 +25,38 @@ class TestFusion360Server(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
-        # TEST FILES
-        cls.data_path = Path(TEST_DIR) / "data"
-        filename = "SingleSketchExtrude_RootComponent"
-        # Good json reconstruction file
-        cls.test_json_file = cls.data_path / f"{filename}.json"
-        # Invalid json reconstruction file
-        cls.test_json_invalid_file = cls.data_path / f"{filename}_Invalid.json"
-        # Mesh stl file
-        cls.test_mesh_file = cls.data_path / f"{filename}.stl"
-        # BRep step file
-        cls.test_brep_step_file = cls.data_path / f"{filename}.step"
-        # BRep smt file
-        cls.test_brep_smt_file = cls.data_path / f"{filename}.smt"
         # Clear all documents so we start with a clean slate
         cls.client.clear()
+        # ------------------------------------------
+        # TEST FILES
+        cls.data_path = Path(TEST_DIR) / "data"
+        box_design = "SingleSketchExtrude_RootComponent"
+        hex_design = "Z0HexagonCutJoin_RootComponent"
+        # Box json reconstruction file
+        cls.box_design_json_file = cls.data_path / f"{box_design}.json"
+        # Hex shape json reconstruction file
+        cls.hex_design_json_file = cls.data_path / f"{hex_design}.json"
+        # Invalid json reconstruction file
+        cls.test_json_invalid_file = cls.data_path / f"{box_design}_Invalid.json"
+        #
+        # OUTPUT FILES
+        # Mesh stl file
+        cls.test_mesh_file = cls.data_path / f"{box_design}.stl"
+        # BRep step file
+        cls.test_brep_step_file = cls.data_path / f"{box_design}.step"
+        # BRep smt file
+        cls.test_brep_smt_file = cls.data_path / f"{box_design}.smt"
+        # Sketch temp folder
+        cls.sketch_folder = cls.data_path / "sketches"
+        # ------------------------------------------
 
     def test_ping(self):
         r = self.client.ping()
         self.assertEqual(r.status_code, 200, msg="ping status code")
+
+    def test_refresh(self):
+        r = self.client.refresh()
+        self.assertEqual(r.status_code, 200, msg="refresh status code")
 
     def test_clear(self):
         r = self.client.clear()
@@ -56,7 +69,7 @@ class TestFusion360Server(unittest.TestCase):
         self.assertIsNone(r, msg="reconstruct response is None")
 
     def test_reconstruct(self):
-        r = self.client.reconstruct(self.test_json_file)
+        r = self.client.reconstruct(self.box_design_json_file)
         self.assertIsNotNone(r, msg="reconstruct response is not None")
         self.assertEqual(r.status_code, 200, msg="reconstruct status code")
         r = self.client.clear()
@@ -68,7 +81,7 @@ class TestFusion360Server(unittest.TestCase):
 
     def test_mesh_invalid_format(self):
         # Reconstruct first
-        r = self.client.reconstruct(self.test_json_file)
+        r = self.client.reconstruct(self.box_design_json_file)
         # Save out the mesh
         test_invalid_mesh_file = self.data_path / "file.obj"
         r = self.client.mesh(test_invalid_mesh_file)
@@ -77,7 +90,7 @@ class TestFusion360Server(unittest.TestCase):
 
     def test_mesh(self):
         # Reconstruct first
-        r = self.client.reconstruct(self.test_json_file)
+        r = self.client.reconstruct(self.box_design_json_file)
         # Save out the mesh
         r = self.client.mesh(self.test_mesh_file)
         self.assertIsNotNone(r, msg="mesh response is not None")
@@ -98,7 +111,7 @@ class TestFusion360Server(unittest.TestCase):
 
     def test_mesh_invalid_format(self):
         # Reconstruct first
-        r = self.client.reconstruct(self.test_json_file)
+        r = self.client.reconstruct(self.box_design_json_file)
         # Save out the mesh
         test_invalid_file = self.data_path / "file.obj"
         r = self.client.mesh(test_invalid_file)
@@ -108,7 +121,7 @@ class TestFusion360Server(unittest.TestCase):
 
     def test_brep_step(self):
         # Reconstruct first
-        r = self.client.reconstruct(self.test_json_file)
+        r = self.client.reconstruct(self.box_design_json_file)
         # Save out the brep
         r = self.client.brep(self.test_brep_step_file)
         self.assertIsNotNone(r, msg="brep response is not None")
@@ -121,7 +134,7 @@ class TestFusion360Server(unittest.TestCase):
 
     def test_brep_smt(self):
         # Reconstruct first
-        r = self.client.reconstruct(self.test_json_file)
+        r = self.client.reconstruct(self.box_design_json_file)
         # Save out the brep
         r = self.client.brep(self.test_brep_smt_file)
         self.assertIsNotNone(r, msg="brep response is not None")
@@ -134,11 +147,97 @@ class TestFusion360Server(unittest.TestCase):
 
     def test_brep_invalid_format(self):
         # Reconstruct first
-        r = self.client.reconstruct(self.test_json_file)
+        r = self.client.reconstruct(self.box_design_json_file)
         # Save out the mesh
         test_invalid_file = self.data_path / "file.sat"
         r = self.client.brep(test_invalid_file)
         self.assertIsNone(r, msg="brep response is None")
+        # Clear
+        r = self.client.clear()
+
+    def test_sketches_png(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        # Make the folder
+        if not self.sketch_folder.exists():
+            self.sketch_folder.mkdir()
+        # Save out the sketches
+        r = self.client.sketches(self.sketch_folder)
+        self.assertIsNotNone(r, msg="sketches response is not None")
+        self.assertEqual(r.status_code, 200, msg="sketch status code")
+        for i in range(1):
+            sketch_file = self.sketch_folder / f"Sketch{i+1}.png"
+            self.assertTrue(sketch_file.exists())
+            self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch image file size greater than 0")
+            sketch_file.unlink()
+        # Clear
+        r = self.client.clear()
+        self.sketch_folder.rmdir()
+
+    def test_sketches_png_multiple(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.hex_design_json_file)
+        # Make the folder
+        if not self.sketch_folder.exists():
+            self.sketch_folder.mkdir()
+        # Save out the sketches
+        r = self.client.sketches(self.sketch_folder)
+        self.assertIsNotNone(r, msg="sketches response is not None")
+        self.assertEqual(r.status_code, 200, msg="sketch status code")
+        for i in range(3):
+            sketch_file = self.sketch_folder / f"Sketch{i+1}.png"
+            self.assertTrue(sketch_file.exists())
+            self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch image file size greater than 0")
+            sketch_file.unlink()
+        # Clear
+        r = self.client.clear()
+        self.sketch_folder.rmdir()
+
+    def test_sketches_dxf(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        # Make the folder
+        if not self.sketch_folder.exists():
+            self.sketch_folder.mkdir()
+        # Save out the sketches
+        r = self.client.sketches(self.sketch_folder, ".dxf")
+        self.assertIsNotNone(r, msg="sketches response is not None")
+        self.assertEqual(r.status_code, 200, msg="sketch status code")
+        for i in range(1):
+            sketch_file = self.sketch_folder / f"Sketch{i+1}.dxf"
+            self.assertTrue(sketch_file.exists())
+            self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch dxf file size greater than 0")
+            sketch_file.unlink()
+        # Clear
+        r = self.client.clear()
+        self.sketch_folder.rmdir()
+
+    def test_sketches_dxf_multiple(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.hex_design_json_file)
+        # Make the folder
+        if not self.sketch_folder.exists():
+            self.sketch_folder.mkdir()
+        # Save out the sketches
+        r = self.client.sketches(self.sketch_folder, ".dxf")
+        self.assertIsNotNone(r, msg="sketches response is not None")
+        self.assertEqual(r.status_code, 200, msg="sketch status code")
+        for i in range(3):
+            sketch_file = self.sketch_folder / f"Sketch{i+1}.dxf"
+            self.assertTrue(sketch_file.exists())
+            self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch dxf file size greater than 0")
+            sketch_file.unlink()
+        # Clear
+        r = self.client.clear()
+        self.sketch_folder.rmdir()
+
+    def test_sketches_invalid_format(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        # Save out the mesh
+        test_invalid_folder = self.data_path / "yo"
+        r = self.client.sketches(test_invalid_folder)
+        self.assertIsNone(r, msg="sketch response is None")
         # Clear
         r = self.client.clear()
 

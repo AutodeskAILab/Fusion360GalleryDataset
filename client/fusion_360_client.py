@@ -2,6 +2,8 @@ import requests
 import json
 from pathlib import Path
 import shutil
+import tempfile
+from zipfile import ZipFile
 
 
 class Fusion360Client():
@@ -20,6 +22,10 @@ class Fusion360Client():
     def ping(self):
         """Ping for debugging"""
         return self.send_command("ping")
+
+    def refresh(self):
+        """Refresh the active viewport"""
+        return self.send_command("refresh")
 
     def reconstruct(self, json_file):
         """Reconstruct a design from the provided json file"""
@@ -61,9 +67,25 @@ class Fusion360Client():
         self.__write_file(r, file)
         return r
 
-    def sketch_images(self, folder):
-        """Retreive each sketch as an image and save to a local folder"""
-        pass
+    def sketches(self, dir, format=".png"):
+        """Retreive each sketch in a given format (e.g. .png) and save to a local directory"""
+        if not dir.is_dir():
+            return self.__return_error(f"Not an existing directory")
+        valid_formats = [".png", ".dxf"]
+        if format not in valid_formats:
+            return self.__return_error(f"Invalid file format: {format}")
+        command_data = {
+            "format": format
+        }
+        r = self.send_command("sketches", data=command_data, stream=True)
+        # Save out the zip file with the sketch data
+        temp_file = tempfile.NamedTemporaryFile(suffix=".zip")
+        temp_file.close()
+        self.__write_file(r, temp_file.name)
+        # Extract all the files to the given directory
+        with ZipFile(temp_file.name, "r") as zipObj:
+            zipObj.extractall(dir)
+        return r
 
     def detach(self):
         """Detach the server from Fusion, taking it offline"""
