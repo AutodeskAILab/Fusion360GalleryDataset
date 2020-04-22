@@ -68,7 +68,7 @@ class Fusion360Client():
         return r
 
     def sketches(self, dir, format=".png"):
-        """Retreive each sketch in a given format (e.g. .png) and save to a local directory"""
+        """Retreive each sketch in a given format (e.g. .png, .dxf) and save to a local directory"""
         if not dir.is_dir():
             return self.__return_error(f"Not an existing directory")
         valid_formats = [".png", ".dxf"]
@@ -88,7 +88,7 @@ class Fusion360Client():
         return r
 
     def detach(self):
-        """Detach the server from Fusion, taking it offline"""
+        """Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again"""
         return self.send_command("detach")
 
     def __return_error(self, message):
