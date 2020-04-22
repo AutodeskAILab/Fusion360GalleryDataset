@@ -14,7 +14,7 @@ To run the server in debug mode you need to install [Visual Studio Code](https:/
  
 ## Client
 ### Running
-For a simple example of how to interact with the server check out [client/client_example.py](client/client_example.py). You will need to have the `requests` module installed via pip.
+For a simple example of how to interact with the server check out [client/client_example.py](client/client_example.py). You will need to have the `requests` module installed via pip and the server up and running.
 ```
 cd /path/to/Fusion360Server/client
 python client_example.py
