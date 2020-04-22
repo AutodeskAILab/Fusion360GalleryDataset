@@ -241,7 +241,7 @@ class TestFusion360Server(unittest.TestCase):
         # Clear
         r = self.client.clear()
 
-    # @unittest.skip("Skipping detach")
+    @unittest.skip("Skipping detach")
     def test_detach(self):
         r = self.client.detach()
         self.assertEqual(r.status_code, 200)

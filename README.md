@@ -24,7 +24,7 @@ This script will output various files to the [data](data) directory and you will
 ### Interface
 See [client/fusion_360_client.py](client/fusion_360_client.py) for the implementation of the following calls:
 #### Reconstruction
-- `reconstruct(json_file)`: Reconstruct a design from the provided json file
+- `reconstruct(file)`: Reconstruct a design from the provided json file
 - `clear()`: Clear (i.e. close) all open designs in Fusion
 #### Export
 - `mesh(file)`: Retreive a mesh in .stl format and write it to a local file

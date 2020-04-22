@@ -27,13 +27,13 @@ class Fusion360Client():
         """Refresh the active viewport"""
         return self.send_command("refresh")
 
-    def reconstruct(self, json_file):
+    def reconstruct(self, file):
         """Reconstruct a design from the provided json file"""
-        if isinstance(json_file, str):
-            json_file = Path(json_file)
-        if not json_file.exists():
+        if isinstance(file, str):
+            file = Path(file)
+        if not file.exists():
             return self.__return_error("JSON file does not exist")
-        with open(json_file) as f:
+        with open(file) as f:
             json_data = json.load(f)
         return self.send_command("reconstruct", json_data)
 
