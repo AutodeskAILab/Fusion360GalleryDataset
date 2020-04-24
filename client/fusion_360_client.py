@@ -33,8 +33,8 @@ class Fusion360Client():
             file = Path(file)
         if not file.exists():
             return self.__return_error("JSON file does not exist")
-        with open(file) as f:
-            json_data = json.load(f)
+        with open(file) as file_handle:
+            json_data = json.load(file_handle)
         return self.send_command("reconstruct", json_data)
 
     def clear(self):
@@ -48,7 +48,7 @@ class Fusion360Client():
         if suffix not in valid_formats:
             return self.__return_error(f"Invalid file format: {suffix}")
         command_data = {
-            "format": suffix
+            "file": file.name
         }
         r = self.send_command("mesh", data=command_data, stream=True)
         self.__write_file(r, file)
@@ -61,7 +61,7 @@ class Fusion360Client():
         if suffix not in valid_formats:
             return self.__return_error(f"Invalid file format: {suffix}")
         command_data = {
-            "format": suffix
+            "file": file.name
         }
         r = self.send_command("brep", data=command_data, stream=True)
         self.__write_file(r, file)
@@ -78,18 +78,53 @@ class Fusion360Client():
             "format": format
         }
         r = self.send_command("sketches", data=command_data, stream=True)
+        if r.status_code != 200:
+            return r
         # Save out the zip file with the sketch data
-        temp_file = tempfile.NamedTemporaryFile(suffix=".zip")
-        temp_file.close()
-        self.__write_file(r, temp_file.name)
+        temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
+        zip_file = Path(temp_file_path)
+        self.__write_file(r, zip_file)
         # Extract all the files to the given directory
-        with ZipFile(temp_file.name, "r") as zipObj:
+        with ZipFile(zip_file, "r") as zipObj:
             zipObj.extractall(dir)
+        zip_file.unlink()
         return r
 
     def detach(self):
         """Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again"""
         return self.send_command("detach")
+
+    def commands(self, command_list, dir=None):
+        """Send a series of commands to the server"""
+        if dir is not None:
+            if not dir.is_dir():
+                return self.__return_error(f"Not an existing directory")
+        if command_list is None or not isinstance(command_list, list) or len(command_list) == 0:
+            return self.__return_error("Command list argument missing or not a populated list")
+        # Flag to mark down if we will get a binary back
+        binary_response = False
+        # Check that each command_set has a command
+        for command_set in command_list:
+            if "command" not in command_set:
+                return self.__return_error("Command list command argument missing")
+            command = command_set["command"]
+            if command in ["mesh", "brep", "sketches"]:
+                binary_response = True
+        # We are getting a file back
+        if binary_response:
+            r = self.send_command("commands", data=command_list, stream=True)
+            if r.status_code != 200:
+                return r
+            temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
+            zip_file = Path(temp_file_path)
+            self.__write_file(r, zip_file)
+            # Extract all the files to the given directory
+            with ZipFile(zip_file, "r") as zipObj:
+                zipObj.extractall(dir)
+            zip_file.unlink()
+            return r
+        else:
+            return self.send_command("commands", command_list)
 
     def __return_error(self, message):
         print(message)

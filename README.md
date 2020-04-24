@@ -34,5 +34,32 @@ See [client/fusion_360_client.py](client/fusion_360_client.py) for the implement
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
+- `commands(command_list, dir)`: Send a list of commands to run in sequence on the server and output files to `dir`. Commands for `command_list` are formatted as follows:
+    ```
+    [
+        {
+            "command": "reconstruct",
+            "data": json_data
+        },
+        {
+            "command": "sketches",
+            "data": {
+                "format": ".png"
+            }
+        },
+        {
+            "command": "mesh",
+            "data": {
+                "file": "test.stl"
+            }
+        },
+        {
+            "command": "clear"
+        }
+    ]
+    ```
+
+## Test
+See [test/test_fusion_360_server.py](test/test_fusion_360_server.py) for test coverage and additional usage examples.
 
 

@@ -5,6 +5,9 @@ import sys
 import os
 import numpy
 from stl import mesh
+import importlib
+import json
+import shutil
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(TEST_DIR)
@@ -13,6 +16,8 @@ CLIENT_DIR = os.path.join(ROOT_DIR, "client")
 # Add the client folder to sys.path
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
+import fusion_360_client
+importlib.reload(fusion_360_client)
 from fusion_360_client import Fusion360Client
 sys.path.remove(CLIENT_DIR)
 
@@ -48,6 +53,9 @@ class TestFusion360Server(unittest.TestCase):
         cls.test_brep_smt_file = cls.data_dir / f"{box_design}.smt"
         # Sketch temp folder
         cls.sketch_dir = cls.data_dir / "sketches"
+        # Make sure it is empty first
+        if cls.sketch_dir.exists():
+            shutil.rmtree(cls.sketch_dir)
         # ------------------------------------------
 
     def test_ping(self):
@@ -95,16 +103,7 @@ class TestFusion360Server(unittest.TestCase):
         r = self.client.mesh(self.test_mesh_file)
         self.assertIsNotNone(r, msg="mesh response is not None")
         self.assertEqual(r.status_code, 200, msg="mesh status code")
-        self.assertTrue(self.test_mesh_file.exists())
-        self.assertGreater(self.test_mesh_file.stat().st_size, 0, msg="mesh file size greater than 0")
-        # Check the mesh data
-        local_mesh = mesh.Mesh.from_file(self.test_mesh_file)
-        volume, cog, inertia = local_mesh.get_mass_properties()
-        self.assertAlmostEqual(volume, 12.5)
-        self.assertAlmostEqual(cog[0], 2.5)
-        self.assertAlmostEqual(cog[1], 0.5)
-        self.assertAlmostEqual(cog[2], 1.25)
-        self.assertEqual(len(local_mesh.points), 12)
+        self.__test_box_mesh(self.test_mesh_file)
         # Clear
         r = self.client.clear()
         self.test_mesh_file.unlink()
@@ -169,10 +168,9 @@ class TestFusion360Server(unittest.TestCase):
             sketch_file = self.sketch_dir / f"Sketch{i+1}.png"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch image file size greater than 0")
-            sketch_file.unlink()
         # Clear
         r = self.client.clear()
-        self.sketch_dir.rmdir()
+        shutil.rmtree(self.sketch_dir)
 
     def test_sketches_png_multiple(self):
         # Reconstruct first
@@ -207,10 +205,9 @@ class TestFusion360Server(unittest.TestCase):
             sketch_file = self.sketch_dir / f"Sketch{i+1}.dxf"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch dxf file size greater than 0")
-            sketch_file.unlink()
         # Clear
         r = self.client.clear()
-        self.sketch_dir.rmdir()
+        shutil.rmtree(self.sketch_dir)
 
     def test_sketches_dxf_multiple(self):
         # Reconstruct first
@@ -226,10 +223,9 @@ class TestFusion360Server(unittest.TestCase):
             sketch_file = self.sketch_dir / f"Sketch{i+1}.dxf"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch dxf file size greater than 0")
-            sketch_file.unlink()
         # Clear
         r = self.client.clear()
-        self.sketch_dir.rmdir()
+        shutil.rmtree(self.sketch_dir)
 
     def test_sketches_invalid_format(self):
         # Reconstruct first
@@ -241,10 +237,164 @@ class TestFusion360Server(unittest.TestCase):
         # Clear
         r = self.client.clear()
 
+    def test_commands_clear_ping(self):
+        command_list = [
+            {"command": "clear"},
+            {"command": "ping"}
+        ]
+        r = self.client.commands(command_list)
+        self.assertIsNotNone(r, msg="commands response is not None")
+        self.assertEqual(r.status_code, 200, msg="commands status code")
+
+    def test_commands_reconstruct_mesh_clear(self):
+        self.__test_commands_reconstruct_model("mesh", ".stl")
+
+    def test_commands_reconstruct_brep_step_clear(self):
+        self.__test_commands_reconstruct_model("brep", ".step")
+
+    def test_commands_reconstruct_brep_smt_clear(self):
+        self.__test_commands_reconstruct_model("brep", ".smt")
+
+    def test_commands_reconstruct_sketches_dxf_clear(self):
+        self.__test_commands_reconstruct_sketches(".dxf")
+
+    def test_commands_reconstruct_sketches_png_clear(self):
+        self.__test_commands_reconstruct_sketches(".png")
+
+    def test_commands_reconstruct_sketches_png_mesh_clear(self):
+        # Prepare the whole json file
+        with open(self.hex_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        # Construct the command list
+        command_list = [
+            {
+                "command": "reconstruct",
+                "data": json_data
+            },
+            {
+                "command": "sketches",
+                "data": {
+                    "format": ".png"
+                }
+            },
+            {
+                "command": "mesh",
+                "data": {
+                    "file": self.test_mesh_file.name
+                }
+            },
+            {"command": "clear"}
+        ]
+        # Make the folder
+        if not self.sketch_dir.exists():
+            self.sketch_dir.mkdir()
+        r = self.client.commands(command_list, self.sketch_dir)
+        self.assertIsNotNone(r, msg="commands response is not None")
+        self.assertEqual(r.status_code, 200, msg="commands status code")
+        for i in range(3):
+            sketch_file = self.sketch_dir / f"Sketch{i+1}.png"
+            self.assertTrue(sketch_file.exists())
+            self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch png file size greater than 0")
+        output_model = self.sketch_dir / self.test_mesh_file.name
+        self.assertTrue(output_model.exists())
+        self.assertGreater(output_model.stat().st_size, 0, msg="stl file size greater than 0")
+        self.__test_hex_mesh(output_model)
+
+        # Clear
+        r = self.client.clear()
+        shutil.rmtree(self.sketch_dir)
+
     @unittest.skip("Skipping detach")
     def test_detach(self):
         r = self.client.detach()
         self.assertEqual(r.status_code, 200)
+
+    def __test_box_mesh(self, mesh_file):
+        # Check the mesh data
+        local_mesh = mesh.Mesh.from_file(mesh_file)
+        volume, cog, inertia = local_mesh.get_mass_properties()
+        self.assertAlmostEqual(volume, 12.5)
+        self.assertAlmostEqual(cog[0], 2.5)
+        self.assertAlmostEqual(cog[1], 0.5)
+        self.assertAlmostEqual(cog[2], 1.25)
+        self.assertEqual(len(local_mesh.points), 12)
+
+    def __test_hex_mesh(self, mesh_file):
+        # Check the mesh data
+        local_mesh = mesh.Mesh.from_file(mesh_file)
+        volume, cog, inertia = local_mesh.get_mass_properties()
+        self.assertAlmostEqual(volume, 20.648000439008076)
+        self.assertAlmostEqual(cog[0], 1.0659047)
+        self.assertAlmostEqual(cog[1], 1.99999998)
+        self.assertAlmostEqual(cog[2], 0.99999999)
+        self.assertEqual(len(local_mesh.points), 64)
+
+    def __test_commands_reconstruct_model(self, command, suffix):
+        # Prepare the whole json file
+        with open(self.box_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        output_model = self.sketch_dir / self.box_design_json_file.with_suffix(suffix).name
+        # Construct the command list
+        command_list = [
+            {
+                "command": "reconstruct",
+                "data": json_data
+            },
+            {
+                "command": command,
+                "data": {
+                    "file": output_model.name
+                }
+            },
+            {"command": "clear"}
+        ]
+        # Make the folder
+        if not self.sketch_dir.exists():
+            self.sketch_dir.mkdir()
+        r = self.client.commands(command_list, self.sketch_dir)
+        self.assertIsNotNone(r, msg="commands response is not None")
+        self.assertEqual(r.status_code, 200, msg="commands status code")
+        self.assertTrue(output_model.exists())
+        self.assertGreater(output_model.stat().st_size, 0, msg=f"{suffix} file size greater than 0")
+        if suffix == ".stl":
+            self.__test_box_mesh(output_model)
+
+        # Clear
+        r = self.client.clear()
+        shutil.rmtree(self.sketch_dir)
+
+    def __test_commands_reconstruct_sketches(self, suffix):
+        # Prepare the whole json file
+        with open(self.hex_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        # Construct the command list
+        command_list = [
+            {
+                "command": "reconstruct",
+                "data": json_data
+            },
+            {
+                "command": "sketches",
+                "data": {
+                    "format": suffix
+                }
+            },
+            {"command": "clear"}
+        ]
+        # Make the folder
+        if not self.sketch_dir.exists():
+            self.sketch_dir.mkdir()
+        r = self.client.commands(command_list, self.sketch_dir)
+        self.assertIsNotNone(r, msg="commands response is not None")
+        self.assertEqual(r.status_code, 200, msg="commands status code")
+        for i in range(3):
+            sketch_file = self.sketch_dir / f"Sketch{i+1}{suffix}"
+            self.assertTrue(sketch_file.exists())
+            self.assertGreater(sketch_file.stat().st_size, 0, msg=f"sketch {suffix} file size greater than 0")
+
+        # Clear
+        r = self.client.clear()
+        shutil.rmtree(self.sketch_dir)
 
     # @classmethod
     # def tearDownClass(cls):

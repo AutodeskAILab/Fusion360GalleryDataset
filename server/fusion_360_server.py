@@ -81,6 +81,8 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         with open(binary_file, "rb") as file_handle:
             shutil.copyfileobj(file_handle, self.wfile)
+        # Remove the file we made after we are done
+        binary_file.unlink()
 
     def respond(self, status_code, message):
         logger.log_text(f"[{status_code}] {message}")
