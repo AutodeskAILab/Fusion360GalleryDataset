@@ -24,8 +24,8 @@ LAUNCH_JSON_FILE = Path(SERVER_DIR) / "launch.json"
 parser = argparse.ArgumentParser()
 parser.add_argument("--detach", dest="detach", default=False, action="store_true", help="Detach the launched Fusion 360 instances [default: False]")
 parser.add_argument("--ping", dest="ping", default=False, action="store_true", help="Ping the launched Fusion 360 instances [default: False]")
-parser.add_argument("--host", type=str, default="127.0.0.1", help="Host name [default: 127.0.0.1]")
-parser.add_argument("--start_port", type=int, default=8080, help="The starting port [default: 8080]")
+parser.add_argument("--host", type=str, default="127.0.0.1", help="Host name as an IP address [default: 127.0.0.1]")
+parser.add_argument("--start_port", type=int, default=8080, help="The starting port for the first Fusion 360 instance [default: 8080]")
 parser.add_argument("--instances", type=int, default=2, help="The number of Fusion 360 instances to start [default: 2]")
 args = parser.parse_args()
 

@@ -8,6 +8,41 @@ A server running inside Fusion 360 as an add-in to communicate with the outside 
 3. In the popup, select the Add-in panel, click the green '+' icon and select the [`server`](server) directory in this repo
 4. Click 'Run' to start the server
 5. Optionally select 'Run on startup' if you want the server to start when Fusion does
+
+### Launching Multiple Servers
+Multiple instances of the server can be launched and assigned a range of ports using [`launch.py`](server/launch.py). 
+1. Complete steps 1-5 in **Running** section above. Especially important is step 5, selecting 'Run on startup'.
+2. From the command line:
+    ```
+    cd path/to/Fusion360Server/server
+    python launch.py
+    Launching Fusion 360 instance: 127.0.0.1:8080
+    Launching Fusion 360 instance: 127.0.0.1:8081
+    ```
+3. This will launch 2 instances of Fusion 360 at the default endpoints: http://127.0.0.1:8080 and http://127.0.0.1:8081
+4. Observe that several instances of Fusion 360 will launch and become unresponsive as the server is running in the UI thread
+5. Verify that the servers are connected by running from the command line:
+    ```
+    python launch.py --ping
+    Ping response from http://127.0.0.1:8080: 200
+    Ping response from http://127.0.0.1:8081: 200
+    ```
+6. To detach the servers and make Fusion 360 responsive again:
+    ```
+    python launch.py --detach
+    Detaching http://127.0.0.1:8080...
+    Detaching http://127.0.0.1:8081...
+    ```
+
+#### Additional Arguments
+The following additional arguments can be passed to [`launch.py`](server/launch.py):
+- `--host`: Host name as an IP address [default: 127.0.0.1]
+- `--start_port`: The starting port for the first Fusion 360 instance [default: 8080]
+- `--instances`: The number of Fusion 360 instances to start [default: 2]
+
+Launching multiple servers has been tested on both Windows and Mac. 
+
+
 ### Debugging
 To run the server in debug mode you need to install [Visual Studio Code](https://code.visualstudio.com/). For a general overview of how to debug in Fusion 360 from Visual Studio Code, check out [this post](https://modthemachine.typepad.com/my_weblog/2019/09/debug-fusion-360-add-ins.html). Also note there is an [additional step](https://modthemachine.typepad.com/my_weblog/2019/10/problem-debugging-python-code.html) to make sure you are running the correct version of Python compatible with Fusion 360.
 
