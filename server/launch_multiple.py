@@ -32,21 +32,25 @@ def start_fusion():
     if sys.platform == "darwin":
         # Shortcut location that links to the latest version
         # /Users/username/Library/Application Support/Autodesk/webdeploy/production/Autodesk Fusion 360.app
-        USER_PATH = Path(os.path.expanduser("~"))
-        FUSION_PATH = USER_PATH / "Library/Application Support/Autodesk/webdeploy/production/Autodesk Fusion 360.app"
-        args = ["open", "-n", str(FUSION_PATH.resolve())]
+        user_path = Path(os.path.expanduser("~"))
+        fusion_app = user_path / "Library/Application Support/Autodesk/webdeploy/production/Autodesk Fusion 360.app"
+        fusion_path = str(fusion_app.resolve())
+        args = ["open", "-n", str(fusion_path.resolve())]
+        subprocess.call(args)
 
     elif sys.platform == "win32":
         # Shortcut location that links to the latest version
         # C:\Users\username\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Autodesk
         # Actual location
         # C:\Users\username\AppData\Local\Autodesk\webdeploy\production\6a0c9611291d45bb9226980209917c3d\FusionLauncher.exe
-        roaming_dir = Path(os.environ["APPDATA"])
-        FUSION_PATH = roaming_dir / "Microsoft/Windows/Start Menu/Programs/Autodesk/Autodesk Fusion 360.lnk"
-        args = ["start", str(FUSION_PATH.resolve())]
+        # roaming_dir = Path(os.environ["APPDATA"])
+        # FUSION_PATH = roaming_dir / "Microsoft/Windows/Start Menu/Programs/Autodesk/Autodesk\ Fusion\ 360.lnk"
+        fusion_path = os.path.join(os.environ["APPDATA"], "Microsoft", "Windows", "Start Menu", "Programs", "Autodesk", "Autodesk Fusion 360.lnk")
+        # args = [fusion_path]
+        os.startfile(fusion_path)
 
-    print("Fusion path set to:", str(FUSION_PATH.resolve()))
-    subprocess.call(args)
+    print("Fusion path set to:", fusion_path)
+    
 
 
 def launch_instances(host, start_port, instances):
