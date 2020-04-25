@@ -304,7 +304,7 @@ class TestFusion360Server(unittest.TestCase):
         r = self.client.clear()
         shutil.rmtree(self.sketch_dir)
 
-    @unittest.skip("Skipping detach")
+    # @unittest.skip("Skipping detach")
     def test_detach(self):
         r = self.client.detach()
         self.assertEqual(r.status_code, 200)
