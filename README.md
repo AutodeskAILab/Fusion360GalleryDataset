@@ -61,10 +61,15 @@ See [client/fusion_360_client.py](client/fusion_360_client.py) for the implement
 #### Reconstruction
 - `reconstruct(file)`: Reconstruct a design from the provided json file
 - `clear()`: Clear (i.e. close) all open designs in Fusion
+#### Incremenetal Construction
+- `add_sketch(sketch_plane)`: sketch_plane can be XY, XZ... or the face face_id. If sketch_plane is not specified makes a new sketch on the XY plane. Returns the sketch name.
+- `add_line(p1, p2, sketch_name)`: Adds a line to the given sketch. p1 and p2 are 2D coords in sketch space. Returns the sketch json.
+- `add_extrude(sketch_name, profile_index, distance, operation)`: Operation can be cut or join. Return a brep vertices, face information with face_id
+
 #### Export
-- `mesh(file)`: Retreive a mesh in .stl format and write it to a local file
-- `brep(file)`: Retreive a brep in a format (step/smt) and write it to a local file
-- `sketches(dir, format)`: Retreive each sketch in a given format (e.g. .png, .dxf) and save to a local directory
+- `mesh(file)`: Retreive a mesh in .stl format and write it to the local file provided.
+- `brep(file)`: Retreive a brep in a format (step/smt) and write it to a local file provided.
+- `sketches(dir, format)`: Retreive each sketch in a given format (e.g. .png, .dxf) and save to the local directory provided
 #### Utility
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
