@@ -49,6 +49,10 @@ class CommandRunner():
                 result = self.add_sketch(data)
             elif command == "add_line":
                 result = self.add_line(data)
+            elif command == "add_extrude":
+                result = self.add_extrude(data)
+            else:
+                return self.__return_failure("Unknown command")
             return result
         except Exception as ex:
             return self.__return_exception(ex)
@@ -240,7 +244,44 @@ class CommandRunner():
 
     def add_extrude(self, data):
         """Add an extrude feature from a sketch"""
-        pass
+        if (data is None or "sketch_name" not in data or
+                "profile_id" not in data or "distance" not in data or
+                "operation" not in data):
+            return self.__return_failure("add_extrude data not specified")
+        sketch = match.sketch_by_name(data["sketch_name"])
+        if sketch is None:
+            return self.__return_failure("extrude sketch not found")
+        profile = match.sketch_profile_by_id(data["profile_id"], [sketch])
+        if profile is None:
+            return self.__return_failure("extrude sketch profile not found")
+        operation = self.__get_extrude_operation(data["operation"])
+        if operation is None:
+            return self.__return_failure("extrude operation not found")
+
+        # Make the extrude
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+        extrudes = design.rootComponent.features.extrudeFeatures
+        extrude_input = extrudes.createInput(profile, operation)
+        distance = adsk.core.ValueInput.createByReal(data["distance"])
+        extent_distance = adsk.fusion.DistanceExtentDefinition.create(distance)
+        extrude_input.setOneSideExtent(extent_distance, adsk.fusion.ExtentDirections.PositiveExtentDirection)
+        extrude_feature = extrudes.add(extrude_input)
+        # Serialize the data and return
+        extrude_feature_data = serialize.extrude_feature_brep(extrude_feature)
+        return self.__return_success(extrude_feature_data)
+
+    def __get_extrude_operation(self, operation):
+        """Return an appropriate extrude operation"""
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+        # Check that the operation is going to work
+        body_count = 0
+        for component in design.allComponents:
+            for body in component.bRepBodies:
+                body_count += 1
+        # If there are no other bodies, we have to make a new body
+        if body_count == 0:
+            operation = "NewBodyFeatureOperation"
+        return deserialize.feature_operations(operation)
 
     def __export_sketch_pngs(self, dest_dir=None, use_zip=True):
         """Export all sketches as png files and return a zip file"""

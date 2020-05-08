@@ -183,7 +183,7 @@ class SketchExtrudeImporter():
         # The start extent is initialized to be the profile plane
         # but we may need to change it to an offset
         # after all other changes
-        self.set_start_extent(extrude_input, extrude_data["start_extent"])       
+        self.set_start_extent(extrude_input, extrude_data["start_extent"])
         return extrudes.add(extrude_input)
 
     def set_start_extent(self, extrude_input, start_extent):

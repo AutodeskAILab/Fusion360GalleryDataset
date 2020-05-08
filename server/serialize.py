@@ -14,6 +14,26 @@ def object_type(entity):
     return entity.objectType.split("::")[-1]
 
 
+def surface_type(surface):
+    if surface.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType:
+        return "PlaneSurfaceType"
+    elif surface.surfaceType == adsk.core.SurfaceTypes.CylinderSurfaceType:
+        return "CylinderSurfaceType"
+    elif surface.surfaceType == adsk.core.SurfaceTypes.ConeSurfaceType:
+        return "ConeSurfaceType"
+    elif surface.surfaceType == adsk.core.SurfaceTypes.SphereSurfaceType:
+        return "SphereSurfaceType"
+    elif surface.surfaceType == adsk.core.SurfaceTypes.TorusSurfaceType:
+        return "TorusSurfaceType"
+    elif surface.surfaceType == adsk.core.SurfaceTypes.EllipticalCylinderSurfaceType:
+        return "EllipticalCylinderSurfaceType"
+    elif surface.surfaceType == adsk.core.SurfaceTypes.EllipticalConeSurfaceType:
+        return "EllipticalConeSurfaceType"                
+    elif surface.surfaceType == adsk.core.SurfaceTypes.NurbsSurfaceType:
+        return "NurbsSurfaceType"
+    return None
+
+
 def point2d(point):
     data = {}
     data["type"] = object_type(point)
@@ -67,6 +87,14 @@ def matrix3d_coordinate_system(matrix3d):
     data["x_axis"] = vector3d(x_axis)
     data["y_axis"] = vector3d(y_axis)
     data["z_axis"] = vector3d(z_axis)
+    return data
+
+
+def bounding_box3d(box):
+    data = {}
+    data['type'] = object_type(box)
+    data['max_point'] = point3d(box.maxPoint)
+    data['min_point'] = point3d(box.minPoint)
     return data
 
 
@@ -135,6 +163,49 @@ def sketch_profile_properties(profile):
     data["area"] = props.area
     data["centroid"] = point3d(props.centroid)
     data["perimeter"] = props.perimeter
+    return data
+
+
+def extrude_feature_brep(extrude_feature):
+    """Return a data structure representing a brep"""
+    data = {}
+    data["type"] = object_type(extrude_feature)
+    faces = []
+    start_faces = brep_faces(extrude_feature.startFaces)
+    for face in start_faces:
+        face["location_in_feature"] = "StartFace"
+        faces.append(face)
+    side_faces = brep_faces(extrude_feature.sideFaces)
+    for face in side_faces:
+        face["location_in_feature"] = "SideFace"
+        faces.append(face)
+    end_faces = brep_faces(extrude_feature.endFaces)
+    for face in end_faces:
+        face["location_in_feature"] = "EndFace"
+        faces.append(face)
+    data["faces"] = faces
+    return data
+
+
+def brep_faces(faces):
+    """Return a list of BRepFaces"""
+    data = []
+    for face in faces:
+        face_data = brep_face(face)
+        data.append(face_data)
+    return data
+
+
+def brep_face(face):
+    data = {}
+    data["type"] = object_type(face)
+    data["face_id"] = face.tempId
+    data["point_on_face"] = point3d(face.pointOnFace)
+    data["surface_type"] = surface_type(face.geometry)
+    data["vertices"] = []
+    for vert in face.vertices:
+        pt = point3d(vert.geometry)
+        data["vertices"].append(pt)
     return data
 
 

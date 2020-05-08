@@ -19,22 +19,26 @@ def sketch_by_name(sketch_name):
     return design.rootComponent.sketches.itemByName(sketch_name)
 
 
-def sketch_by_id(sketch_id):
+def sketch_by_id(sketch_id, sketches=None):
     """Return a sketch with a given sketch id"""
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
-    for sketch in design.rootComponent.sketches:
+    if sketches is None:
+        sketches = design.rootComponent.sketches
+    for sketch in sketches:
         uuid = name.get_uuid(sketch)
         if uuid is not None and uuid == sketch_id:
             return sketch
     return None
 
 
-def sketch_profile(sketch_profile_id):
+def sketch_profile_by_id(sketch_profile_id, sketches=None):
     """Return a sketch profile with a given id"""
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
-    for sketch in design.rootComponent.sketches:
+    if sketches is None:
+        sketches = design.rootComponent.sketches
+    for sketch in sketches:
         for profile in sketch.profiles:
             uuid = name.get_profile_uuid(profile)
             if uuid is not None and uuid == sketch_profile_id:
@@ -42,12 +46,14 @@ def sketch_profile(sketch_profile_id):
     return None
 
 
-def sketch_profiles_by_id(sketch_curve_id):
+def sketch_profiles_by_curve_id(sketch_curve_id, sketches=None):
     """Return the sketch profiles that contain the given curve id"""
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
     matches = []
-    for sketch in design.rootComponent.sketches:
+    if sketches is None:
+        sketches = design.rootComponent.sketches
+    for sketch in sketches:
         for profile in sketch.profiles:
             for loop in profile.profileLoops:
                 for curve in loop.profileCurves:
@@ -74,13 +80,14 @@ def sketch_plane(sketch_plane_data):
         construction_plane = deserialize.construction_plane(sketch_plane_data)
         if construction_plane is not None:
             return construction_plane
-        # Now lets see if it is a brep tempid
-        brep_face = face_by_id(sketch_plane_data)
-        if brep_face is not None:
-            return brep_face
     elif isinstance(sketch_plane_data, dict):
         point_on_face = deserialize.point3d(sketch_plane_data)
         brep_face = face_by_point3d(point_on_face)
+        if brep_face is not None:
+            return brep_face
+    elif isinstance(sketch_plane_data, int):
+        # Now lets see if it is a brep tempid
+        brep_face = face_by_id(sketch_plane_data)
         if brep_face is not None:
             return brep_face
     return None

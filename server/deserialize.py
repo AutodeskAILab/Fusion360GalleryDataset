@@ -68,6 +68,7 @@ def feature_operations(operation_data):
         return adsk.fusion.FeatureOperations.NewBodyFeatureOperation
     if operation_data == "NewComponentFeatureOperation":
         return adsk.fusion.FeatureOperations.NewComponentFeatureOperation
+    return None
 
 
 def construction_plane(name):
