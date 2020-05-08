@@ -4,7 +4,6 @@ Test incremental design creation functionality of the Fusion 360 Server
 
 """
 
-
 import unittest
 import requests
 from pathlib import Path
@@ -52,8 +51,10 @@ class TestFusion360Server(unittest.TestCase):
         response_json = r.json()
         self.assertIn("data", response_json, msg="add_sketch response has data")
         response_data = response_json["data"]
-        self.assertIn("id", response_data, msg="add_sketch response has id")
-        self.assertIsInstance(response_data["id"], str, msg="add_sketch id is string")
+        self.assertIn("sketch_id", response_data, msg="add_sketch response has sketch_id")
+        self.assertIsInstance(response_data["sketch_id"], str, msg="add_sketch sketch_id is string")
+        self.assertIn("sketch_name", response_data, msg="add_sketch response has sketch_name")
+        self.assertIsInstance(response_data["sketch_name"], str, msg="add_sketch sketch_name is string")
         self.client.clear()
 
     def test_add_sketch_invalid(self):
@@ -70,7 +71,7 @@ class TestFusion360Server(unittest.TestCase):
         r = self.client.add_sketch("XY")
         response_json = r.json()
         response_data = response_json["data"]
-        sketch_id = response_data["id"]
+        sketch_id = response_data["sketch_id"]
         pt1 = {"x": 0, "y": 0}
         pt2 = {"x": 10, "y": 10}
         r = self.client.add_line(sketch_id, pt1, pt2)
@@ -78,9 +79,77 @@ class TestFusion360Server(unittest.TestCase):
         response_json = r.json()
         self.assertIn("data", response_json, msg="add_line response has data")
         response_data = response_json["data"]
-        self.assertIn("id", response_data, msg="add_line response has id")
-        self.assertIsInstance(response_data["id"], str, msg="add_line id is string")        
+        # sketch_id
+        self.assertIn("sketch_id", response_data, msg="add_line response has sketch_id")
+        self.assertIsInstance(response_data["sketch_id"], str, msg="add_line sketch_id is string")
+        # sketch_name
+        self.assertIn("sketch_name", response_data, msg="add_line response has sketch_name")
+        self.assertIsInstance(response_data["sketch_name"], str, msg="add_line sketch_name is string")
+        # line_id
+        self.assertIn("line_id", response_data, msg="add_line response has line_id")
+        self.assertIsInstance(response_data["line_id"], str, msg="add_line line_id is string")
+        self.assertEqual(len(response_data["line_id"]), 36, msg="add_line line_id length equals 36")
+        # profiles
+        self.assertIn("profiles", response_data, msg="add_line response has profiles")
+        self.assertIsInstance(response_data["profiles"], dict, msg="add_line profiles are dict")
+        self.assertEqual(len(response_data["profiles"]), 0, msg="add_line profiles length equals 0")
+
         self.client.clear()
+        # r = self.client.detach()
+
+    def test_add_lines(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        sketch_id = response_json["data"]["sketch_id"]
+        pts = [
+            {"x": 0, "y": 0},
+            {"x": 10, "y": 0},
+            {"x": 10, "y": 10},
+            {"x": 0, "y": 10},
+            {"x": 0, "y": 0}
+        ]
+        line_ids = []
+        sketch_ids = []
+        sketch_names = []
+        profiles = []
+        for index in range(4):
+            r = self.client.add_line(sketch_id, pts[index], pts[index + 1])
+            self.assertEqual(r.status_code, 200, msg="add_line status code")
+            response_json = r.json()
+            response_data = response_json["data"]
+            print(response_data)
+            line_ids.append(response_data["line_id"])
+            sketch_ids.append(response_data["sketch_id"])
+            sketch_names.append(response_data["sketch_name"])
+            profiles.append(response_data["profiles"])
+
+        # sketch_id
+        self.assertEqual(len(set(sketch_ids)), 1, msg="add_line sketch_ids are all the same")
+        for sketch_id in sketch_ids:
+            self.assertIsInstance(sketch_id, str, msg="add_line sketch_id is string")
+            self.assertEqual(len(sketch_id), 36, msg="add_line sketch_id length equals 36")
+
+        # sketch_name
+        self.assertEqual(len(set(sketch_names)), 1, msg="add_line sketch_name are all the same")
+        for sketch_name in sketch_names:
+            self.assertIsInstance(sketch_name, str, msg="add_line sketch_name is string")
+
+        # line_id
+        ids_unique = len(line_ids) == len(set(line_ids))
+        self.assertEqual(ids_unique, True, msg="add_line ids are unique")
+        for line_id in line_ids:
+            self.assertIsInstance(line_id, str, msg="add_line line_id is string")
+            self.assertEqual(len(line_id), 36, msg="add_line line_id length equals 36")
+
+        for profile in profiles:
+            self.assertIsInstance(profile, dict, msg="add_line profiles are dict")
+
+        # The last profile response should contain some information
+        self.assertEqual(len(profiles[3]), 1, msg="add_line profiles length equals 1")
+
+        # self.client.clear()
+        # r = self.client.detach()
 
 
 if __name__ == "__main__":

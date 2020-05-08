@@ -11,6 +11,7 @@ from .sketch_extrude_importer import SketchExtrudeImporter
 from . import name
 from . import match
 from . import deserialize
+from . import serialize
 
 
 class CommandRunner():
@@ -226,7 +227,8 @@ class CommandRunner():
         sketch = sketches.addWithoutEdges(sketch_plane)
         sketch_uuid = name.set_uuid(sketch)
         return self.__return_success({
-            "id": sketch_uuid
+            "sketch_id": sketch_uuid,
+            "sketch_name": sketch.name
         })
 
     def add_line(self, data):
@@ -242,9 +244,18 @@ class CommandRunner():
         end_point = deserialize.point3d(data["pt2"])
         line = sketch.sketchCurves.sketchLines.addByTwoPoints(start_point, end_point)
         line_uuid = name.set_uuid(line)
+        name.set_uuids_for_sketch(sketch)
+        profile_data = serialize.sketch_profiles(sketch.profiles)
         return self.__return_success({
-            "id": line_uuid
+            "sketch_id": data["sketch_id"],
+            "sketch_name": sketch.name,
+            "line_id": line_uuid,
+            "profiles": profile_data
         })
+
+    def add_extrude(self, data):
+        """Add an extrude feature from a sketch"""
+        pass
 
     def __export_sketch_pngs(self, dest_dir=None, use_zip=True):
         """Export all sketches as png files and return a zip file"""

@@ -1,3 +1,10 @@
+"""
+
+Give and get names for Fusion 360 entities
+
+"""
+
+
 import adsk.core
 import adsk.fusion
 import uuid
@@ -29,7 +36,10 @@ def get_profile_uuid(profile):
     for loop in profile.profileLoops:
         for curve in loop.profileCurves:
             sketch_ent = curve.sketchEntity
-            profile_curves.append(get_uuid(sketch_ent))
+            curve_uuid = get_uuid(sketch_ent)
+            if curve_uuid is None:
+                return None
+            profile_curves.append(curve_uuid)
     # Concat all the uuids from the curves
     curve_uuids = "_".join(profile_curves)
     # Generate a UUID by hashing the curve_uuids
@@ -53,3 +63,17 @@ def set_uuids_for_collection(entities, group_name="Dataset"):
     for ent in entities:
         if ent is not None:
             set_uuid(ent, group_name)
+
+
+def set_uuids_for_sketch(sketch, group_name="Dataset"):
+    # Work around to ensure the profiles are populated
+    # on a newly opened design
+    sketch.isComputeDeferred = True
+    sketch.isVisible = False
+    sketch.isVisible = True
+    sketch.isComputeDeferred = False
+    # We are only interested points and curves
+    set_uuids_for_collection(sketch.sketchCurves)
+    set_uuids_for_collection(sketch.sketchPoints)
+
+

@@ -1,3 +1,9 @@
+"""
+
+Deserialize dictionary data from json to Fusion 360 entities
+
+"""
+
 import adsk.core
 import adsk.fusion
 

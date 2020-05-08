@@ -1,3 +1,9 @@
+"""
+
+Match Fusion 360 entities to ids
+
+"""
+
 
 import adsk.core
 import adsk.fusion
@@ -11,14 +17,48 @@ def sketch(sketch_id):
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
     for sketch in design.rootComponent.sketches:
-        uuid = name.get_uuid(sketch_id)
-        if uuid is not None:
+        uuid = name.get_uuid(sketch)
+        if uuid is not None and uuid == sketch_id:
             return sketch
     return None
 
 
+def sketch_profile(sketch_profile_id):
+    """Return a sketch profile with a given id"""
+    app = adsk.core.Application.get()
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    for sketch in design.rootComponent.sketches:
+        for profile in sketch.profiles:
+            uuid = name.get_profile_uuid(profile)
+            if uuid is not None and uuid == sketch_profile_id:
+                return profile
+    return None
+
+
+def sketch_profiles_by_curve_id(sketch_curve_id):
+    """Return the sketch profiles that contain the given curve id"""
+    app = adsk.core.Application.get()
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    matches = []
+    for sketch in design.rootComponent.sketches:
+        for profile in sketch.profiles:
+            for loop in profile.profileLoops:
+                for curve in loop.profileCurves:
+                    sketch_ent = curve.sketchEntity
+                    curve_uuid = name.get_uuid(sketch_ent)
+                    if curve_uuid is not None and curve_uuid == sketch_curve_id:
+                        matches.append(profile)
+    return matches
+
+
 def sketch_plane(sketch_plane_data):
-    """Return the sketch plane to create a sketch on"""
+    """
+    Return the sketch plane to create a sketch
+    Can be passed either of:
+        - Construction plane axes: XY, XZ, YZ
+        - BRep temp it
+        - Point3d on the BRep face
+    """
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
     # String for brepface or construction plane
