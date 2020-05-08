@@ -71,7 +71,10 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
                 self.respond(status_code, message, return_data)
 
         except Exception as ex:
-            self.respond(500, str(ex.args))
+            message = f"""Error processing {command} command\n
+                Exception of type {type(ex)} with args: {ex.args}\n
+                {traceback.format_exc()}"""
+            self.respond(500, ex)
 
     def do_GET(self):
         self.respond(400, "GET not supported, use POST")

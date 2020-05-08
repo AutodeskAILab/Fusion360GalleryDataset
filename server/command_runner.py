@@ -26,31 +26,35 @@ class CommandRunner():
 
     def run_command(self, command, data=None):
         """Run a command and route it to the right method"""
-        self.last_command = command
-        result = None
-        if command == "ping":
-            result = self.ping()
-        elif command == "refresh":
-            result = self.refresh()
-        elif command == "reconstruct":
-            result = self.reconstruct(data)
-        elif command == "clear":
-            result = self.clear()
-        elif command == "mesh":
-            result = self.mesh(data)
-        elif command == "brep":
-            result = self.brep(data)
-        elif command == "sketches":
-            result = self.sketches(data)
-        elif command == "commands":
-            result = self.commands(data)
-        elif command == "add_sketch":
-            result = self.add_sketch(data)
-        elif command == "add_line":
-            result = self.add_line(data)       
-        # Update the UI
-        adsk.doEvents()
-        return result
+        try:
+            self.last_command = command
+            result = None
+            if command == "ping":
+                result = self.ping()
+            elif command == "refresh":
+                result = self.refresh()
+            elif command == "reconstruct":
+                result = self.reconstruct(data)
+            elif command == "clear":
+                result = self.clear()
+            elif command == "mesh":
+                result = self.mesh(data)
+            elif command == "brep":
+                result = self.brep(data)
+            elif command == "sketches":
+                result = self.sketches(data)
+            elif command == "commands":
+                result = self.commands(data)
+            elif command == "add_sketch":
+                result = self.add_sketch(data)
+            elif command == "add_line":
+                result = self.add_line(data)
+            return result
+        except Exception as ex:
+            return self.__return_exception(ex)
+        finally:
+            # Update the UI
+            adsk.doEvents()
 
     def ping(self):
         """Ping for debugging"""
@@ -63,65 +67,53 @@ class CommandRunner():
 
     def reconstruct(self, data):
         """Reconstruct a design from the provided json data"""
-        try:
-            importer = SketchExtrudeImporter(data)
-            importer.reconstruct()
-            return self.__return_success()
-        except Exception as ex:
-            return self.__return_exception(ex)
+        importer = SketchExtrudeImporter(data)
+        importer.reconstruct()
+        return self.__return_success()
 
     def clear(self):
         """Clear (i.e. close) all open designs in Fusion"""
-        try:
-            for doc in self.app.documents:
-                # Save without closing
-                doc.close(False)
-            return self.__return_success()
-        except Exception as ex:
-            return self.__return_exception(ex)
+        for doc in self.app.documents:
+            # Save without closing
+            doc.close(False)
+        return self.__return_success()
 
     def mesh(self, data, dest_dir=None):
         """Create a mesh in the given format (currently .stl) and send it back as a binary file"""
-        try:
-            error, suffix = self.__check_file(data, [".stl"])
-            if error is not None:
-                return self.__return_failure(error)
+        error, suffix = self.__check_file(data, [".stl"])
+        if error is not None:
+            return self.__return_failure(error)
 
-            temp_file = self.__get_temp_file(data["file"], dest_dir)
-            design = adsk.fusion.Design.cast(self.app.activeProduct)
-            stl_export_options = design.exportManager.createSTLExportOptions(design.rootComponent, str(temp_file.resolve()))
-            stl_export_options.sendToPrintUtility = False
-            export_result = design.exportManager.execute(stl_export_options)
-            file_exists = temp_file.exists()
-            if export_result and file_exists:
-                self.logger.log_text(f"Mesh temp file written to: {temp_file}")
-                return self.__return_success(temp_file)
-            else:
-                return self.__return_failure(f"{suffix} export failure")
-        except Exception as ex:
-            return self.__return_exception(ex)
+        temp_file = self.__get_temp_file(data["file"], dest_dir)
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+        stl_export_options = design.exportManager.createSTLExportOptions(design.rootComponent, str(temp_file.resolve()))
+        stl_export_options.sendToPrintUtility = False
+        export_result = design.exportManager.execute(stl_export_options)
+        file_exists = temp_file.exists()
+        if export_result and file_exists:
+            self.logger.log_text(f"Mesh temp file written to: {temp_file}")
+            return self.__return_success(temp_file)
+        else:
+            return self.__return_failure(f"{suffix} export failure")
 
     def brep(self, data, dest_dir=None):
         """Create a brep in the given format (currently .step, smt) and send it back as a binary file"""
-        try:
-            error, suffix = self.__check_file(data, [".step", ".smt"])
-            if error is not None:
-                return self.__return_failure(error)
-            temp_file = self.__get_temp_file(data["file"], dest_dir)
-            design = adsk.fusion.Design.cast(self.app.activeProduct)
-            if suffix == ".step":
-                export_options = design.exportManager.createSTEPExportOptions(str(temp_file.resolve()), design.rootComponent)
-            elif suffix == ".smt":
-                export_options = design.exportManager.createSMTExportOptions(str(temp_file.resolve()), design.rootComponent)
-            export_result = design.exportManager.execute(export_options)
-            file_exists = temp_file.exists()
-            if export_result and file_exists:
-                self.logger.log_text(f"BRep temp file written to: {temp_file}")
-                return self.__return_success(temp_file)
-            else:
-                return self.__return_failure(f"{suffix} export failure")
-        except Exception as ex:
-            return self.__return_exception(ex)
+        error, suffix = self.__check_file(data, [".step", ".smt"])
+        if error is not None:
+            return self.__return_failure(error)
+        temp_file = self.__get_temp_file(data["file"], dest_dir)
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+        if suffix == ".step":
+            export_options = design.exportManager.createSTEPExportOptions(str(temp_file.resolve()), design.rootComponent)
+        elif suffix == ".smt":
+            export_options = design.exportManager.createSMTExportOptions(str(temp_file.resolve()), design.rootComponent)
+        export_result = design.exportManager.execute(export_options)
+        file_exists = temp_file.exists()
+        if export_result and file_exists:
+            self.logger.log_text(f"BRep temp file written to: {temp_file}")
+            return self.__return_success(temp_file)
+        else:
+            return self.__return_failure(f"{suffix} export failure")
 
     def sketches(self, data, dest_dir=None, use_zip=True):
         """Generate sketches in a given format (e.g. .png) and return as a binary zip file"""
@@ -132,88 +124,81 @@ class CommandRunner():
         valid_formats = [".png", ".dxf"]
         if suffix not in valid_formats:
             return self.__return_failure("invalid format specified")
-        try:
-            if suffix == ".png":
-                zip_file = self.__export_sketch_pngs(dest_dir, use_zip)
-            elif suffix == ".dxf":
-                zip_file = self.__export_sketch_dxfs(dest_dir, use_zip)
-            return self.__return_success(zip_file)
-        except Exception as ex:
-            return self.__return_exception(ex)
+        if suffix == ".png":
+            zip_file = self.__export_sketch_pngs(dest_dir, use_zip)
+        elif suffix == ".dxf":
+            zip_file = self.__export_sketch_dxfs(dest_dir, use_zip)
+        return self.__return_success(zip_file)
 
     def commands(self, data):
         """Run a series of commands one after the other"""
-        try:
-            if not isinstance(data, list) or len(data) == 0:
-                return self.__return_failure("command list not specified")
-            # Make a list of the valid commands
-            command_list = []
-            # Keep track of how many bits of data to return
-            return_data_count = 0
-            # Build the list of commands to run
-            for command_set in data:
-                if "command" in command_set:
-                    command_string = command_set["command"]
-                    if isinstance(command_string, str):
-                        command = getattr(self, command_string)
-                        if command is not None:
-                            # Count how many sets of data we are returning
-                            if command_string in ["mesh", "brep", "sketches"]:
-                                return_data_count += 1
-                            valid_command_set = {
-                                "command": command,
-                                "command_string": command_string
-                            }
-                            if "data" in command_set:
-                                data = command_set["data"]
-                                valid_command_set["data"] = data
-                            command_list.append(valid_command_set)
+        if not isinstance(data, list) or len(data) == 0:
+            return self.__return_failure("command list not specified")
+        # Make a list of the valid commands
+        command_list = []
+        # Keep track of how many bits of data to return
+        return_data_count = 0
+        # Build the list of commands to run
+        for command_set in data:
+            if "command" in command_set:
+                command_string = command_set["command"]
+                if isinstance(command_string, str):
+                    command = getattr(self, command_string)
+                    if command is not None:
+                        # Count how many sets of data we are returning
+                        if command_string in ["mesh", "brep", "sketches"]:
+                            return_data_count += 1
+                        valid_command_set = {
+                            "command": command,
+                            "command_string": command_string
+                        }
+                        if "data" in command_set:
+                            data = command_set["data"]
+                            valid_command_set["data"] = data
+                        command_list.append(valid_command_set)
 
-            if len(command_list) == 0:
-                return self.__return_failure("no valid commands found")
+        if len(command_list) == 0:
+            return self.__return_failure("no valid commands found")
 
-            if return_data_count > 0:
-                # Create a temp directory for the output to go
-                dest_dir = Path(tempfile.mkdtemp())
-            # Execute the list of commands
-            for command_set in command_list:
-                command_string = command_set["command_string"]
-                self.logger.log_text(f"Executing {command_string} command")
-                if command_string in ["ping", "refresh", "clear"]:
-                    status, message, return_data = command_set["command"]()
-                    if status == 500:
-                        return status, message, return_data
-                elif command_string == "reconstruct":
-                    if "data" not in command_set:
-                        return self.__return_failure("missing arguments")
-                    data = command_set["data"]
-                    status, message, return_data = command_set["command"](data)
-                    if status == 500:
-                        return status, message, return_data
-                elif command_string in ["mesh", "brep"]:
-                    if "data" not in command_set:
-                        return self.__return_failure("missing arguments")
-                    data = command_set["data"]
-                    status, message, return_data = command_set["command"](data, dest_dir=dest_dir)
-                    if status == 500:
-                        return status, message, return_data
-                # Commands creating a folder of output
-                elif command_string == "sketches":
-                    if "data" not in command_set:
-                        return self.__return_failure("missing arguments")
-                    data = command_set["data"]
-                    status, message, return_data = command_set["command"](data, dest_dir=dest_dir, use_zip=False)
-                    if status == 500:
-                        return status, message, return_data
-            # Zip all the files we produced up and pass them back
-            if return_data_count > 0:
-                zip_file = self.__zip_dir(dest_dir)
-                return self.__return_success(zip_file)
-            else:
-                return self.__return_success()
-
-        except Exception as ex:
-            return self.__return_exception(ex)
+        if return_data_count > 0:
+            # Create a temp directory for the output to go
+            dest_dir = Path(tempfile.mkdtemp())
+        # Execute the list of commands
+        for command_set in command_list:
+            command_string = command_set["command_string"]
+            self.logger.log_text(f"Executing {command_string} command")
+            if command_string in ["ping", "refresh", "clear"]:
+                status, message, return_data = command_set["command"]()
+                if status == 500:
+                    return status, message, return_data
+            elif command_string == "reconstruct":
+                if "data" not in command_set:
+                    return self.__return_failure("missing arguments")
+                data = command_set["data"]
+                status, message, return_data = command_set["command"](data)
+                if status == 500:
+                    return status, message, return_data
+            elif command_string in ["mesh", "brep"]:
+                if "data" not in command_set:
+                    return self.__return_failure("missing arguments")
+                data = command_set["data"]
+                status, message, return_data = command_set["command"](data, dest_dir=dest_dir)
+                if status == 500:
+                    return status, message, return_data
+            # Commands creating a folder of output
+            elif command_string == "sketches":
+                if "data" not in command_set:
+                    return self.__return_failure("missing arguments")
+                data = command_set["data"]
+                status, message, return_data = command_set["command"](data, dest_dir=dest_dir, use_zip=False)
+                if status == 500:
+                    return status, message, return_data
+        # Zip all the files we produced up and pass them back
+        if return_data_count > 0:
+            zip_file = self.__zip_dir(dest_dir)
+            return self.__return_success(zip_file)
+        else:
+            return self.__return_success()
 
     def add_sketch(self, data):
         """Add a sketch to the existing design"""
