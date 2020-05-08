@@ -96,7 +96,7 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
     - `profile_id`: is the uuid of the profile returned by `add_line()`
     - `distance`: is the extrude distance perpendicular to the profile plane
-    - `operation`: a string with the values: `Cut`, `Intersect`, `Join`, or `NewBody`.
+    - `operation`: a string with the values: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
     - Returns BRep vertices of the resulting body, BRep face information
 
 #### Export
