@@ -71,10 +71,10 @@ class TestFusion360Server(unittest.TestCase):
         r = self.client.add_sketch("XY")
         response_json = r.json()
         response_data = response_json["data"]
-        sketch_id = response_data["sketch_id"]
+        sketch_name = response_data["sketch_name"]
         pt1 = {"x": 0, "y": 0}
         pt2 = {"x": 10, "y": 10}
-        r = self.client.add_line(sketch_id, pt1, pt2)
+        r = self.client.add_line(sketch_name, pt1, pt2)
         self.assertEqual(r.status_code, 200, msg="add_line status code")
         response_json = r.json()
         self.assertIn("data", response_json, msg="add_line response has data")
@@ -101,7 +101,7 @@ class TestFusion360Server(unittest.TestCase):
         self.client.clear()
         r = self.client.add_sketch("XY")
         response_json = r.json()
-        sketch_id = response_json["data"]["sketch_id"]
+        sketch_name = response_json["data"]["sketch_name"]
         pts = [
             {"x": 0, "y": 0},
             {"x": 10, "y": 0},
@@ -114,7 +114,7 @@ class TestFusion360Server(unittest.TestCase):
         sketch_names = []
         profiles = []
         for index in range(4):
-            r = self.client.add_line(sketch_id, pts[index], pts[index + 1])
+            r = self.client.add_line(sketch_name, pts[index], pts[index + 1])
             self.assertEqual(r.status_code, 200, msg="add_line status code")
             response_json = r.json()
             response_data = response_json["data"]

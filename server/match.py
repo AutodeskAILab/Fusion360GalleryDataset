@@ -12,8 +12,15 @@ from . import deserialize
 from . import name
 
 
-def sketch(sketch_id):
-    """Return a sketch with a given id"""
+def sketch_by_name(sketch_name):
+    """Return a sketch with a given name"""
+    app = adsk.core.Application.get()
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    return design.rootComponent.sketches.itemByName(sketch_name)
+
+
+def sketch_by_id(sketch_id):
+    """Return a sketch with a given sketch id"""
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
     for sketch in design.rootComponent.sketches:
@@ -35,7 +42,7 @@ def sketch_profile(sketch_profile_id):
     return None
 
 
-def sketch_profiles_by_curve_id(sketch_curve_id):
+def sketch_profiles_by_id(sketch_curve_id):
     """Return the sketch profiles that contain the given curve id"""
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
@@ -68,7 +75,7 @@ def sketch_plane(sketch_plane_data):
         if construction_plane is not None:
             return construction_plane
         # Now lets see if it is a brep tempid
-        brep_face = face_by_temp_id(sketch_plane_data)
+        brep_face = face_by_id(sketch_plane_data)
         if brep_face is not None:
             return brep_face
     elif isinstance(sketch_plane_data, dict):
@@ -79,8 +86,8 @@ def sketch_plane(sketch_plane_data):
     return None
 
 
-def face_by_temp_id(temp_id):
-    """Find a face with a given tempid"""
+def face_by_id(temp_id):
+    """Find a face with a given id"""
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
     for component in design.allComponents:

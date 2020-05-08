@@ -233,13 +233,13 @@ class CommandRunner():
 
     def add_line(self, data):
         """Add a line to an existing sketch"""
-        if (data is None or "sketch_id" not in data or
+        if (data is None or "sketch_name" not in data or
                 "pt1" not in data or "pt2" not in data):
             return self.__return_failure("add_line data not specified")
-        sketch = match.sketch(data["sketch_id"])
-        # TODO: Debug why id is None
+        sketch = match.sketch_by_name(data["sketch_name"])
         if sketch is None:
             return self.__return_failure("sketch not found")
+        sketch_uuid = name.get_uuid(sketch)
         start_point = deserialize.point3d(data["pt1"])
         end_point = deserialize.point3d(data["pt2"])
         line = sketch.sketchCurves.sketchLines.addByTwoPoints(start_point, end_point)
@@ -247,7 +247,7 @@ class CommandRunner():
         name.set_uuids_for_sketch(sketch)
         profile_data = serialize.sketch_profiles(sketch.profiles)
         return self.__return_success({
-            "sketch_id": data["sketch_id"],
+            "sketch_id": sketch_uuid,
             "sketch_name": sketch.name,
             "line_id": line_uuid,
             "profiles": profile_data
