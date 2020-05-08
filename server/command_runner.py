@@ -8,6 +8,9 @@ from zipfile import ZipFile
 from pathlib import Path
 
 from .sketch_extrude_importer import SketchExtrudeImporter
+from . import name
+from . import match
+from . import deserialize
 
 
 class CommandRunner():
@@ -35,15 +38,19 @@ class CommandRunner():
         elif command == "mesh":
             result = self.mesh(data)
         elif command == "brep":
-            result = self.brep(data)    
+            result = self.brep(data)
         elif command == "sketches":
             result = self.sketches(data)
         elif command == "commands":
-            result = self.commands(data)            
+            result = self.commands(data)
+        elif command == "add_sketch":
+            result = self.add_sketch(data)
+        elif command == "add_line":
+            result = self.add_line(data)       
         # Update the UI
         adsk.doEvents()
         return result
-    
+
     def ping(self):
         """Ping for debugging"""
         return self.__return_success()
@@ -71,14 +78,14 @@ class CommandRunner():
             return self.__return_success()
         except Exception as ex:
             return self.__return_exception(ex)
-    
+
     def mesh(self, data, dest_dir=None):
         """Create a mesh in the given format (currently .stl) and send it back as a binary file"""
         try:
             error, suffix = self.__check_file(data, [".stl"])
             if error is not None:
                 return self.__return_failure(error)
-        
+
             temp_file = self.__get_temp_file(data["file"], dest_dir)
             design = adsk.fusion.Design.cast(self.app.activeProduct)
             stl_export_options = design.exportManager.createSTLExportOptions(design.rootComponent, str(temp_file.resolve()))
@@ -160,7 +167,7 @@ class CommandRunner():
                                 data = command_set["data"]
                                 valid_command_set["data"] = data
                             command_list.append(valid_command_set)
-            
+
             if len(command_list) == 0:
                 return self.__return_failure("no valid commands found")
 
@@ -172,31 +179,31 @@ class CommandRunner():
                 command_string = command_set["command_string"]
                 self.logger.log_text(f"Executing {command_string} command")
                 if command_string in ["ping", "refresh", "clear"]:
-                    status, message, binary_file = command_set["command"]()
+                    status, message, return_data = command_set["command"]()
                     if status == 500:
-                        return status, message, binary_file
+                        return status, message, return_data
                 elif command_string == "reconstruct":
                     if "data" not in command_set:
                         return self.__return_failure("missing arguments")
                     data = command_set["data"]
-                    status, message, binary_file = command_set["command"](data)
+                    status, message, return_data = command_set["command"](data)
                     if status == 500:
-                        return status, message, binary_file
+                        return status, message, return_data
                 elif command_string in ["mesh", "brep"]:
                     if "data" not in command_set:
                         return self.__return_failure("missing arguments")
                     data = command_set["data"]
-                    status, message, binary_file = command_set["command"](data, dest_dir=dest_dir)
+                    status, message, return_data = command_set["command"](data, dest_dir=dest_dir)
                     if status == 500:
-                        return status, message, binary_file
+                        return status, message, return_data
                 # Commands creating a folder of output
                 elif command_string == "sketches":
                     if "data" not in command_set:
                         return self.__return_failure("missing arguments")
                     data = command_set["data"]
-                    status, message, binary_file = command_set["command"](data, dest_dir=dest_dir, use_zip=False)
+                    status, message, return_data = command_set["command"](data, dest_dir=dest_dir, use_zip=False)
                     if status == 500:
-                        return status, message, binary_file
+                        return status, message, return_data
             # Zip all the files we produced up and pass them back
             if return_data_count > 0:
                 zip_file = self.__zip_dir(dest_dir)
@@ -206,6 +213,38 @@ class CommandRunner():
 
         except Exception as ex:
             return self.__return_exception(ex)
+
+    def add_sketch(self, data):
+        """Add a sketch to the existing design"""
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+        if data is None or "sketch_plane" not in data:
+            return self.__return_failure("sketch_plane not specified")
+        sketch_plane = match.sketch_plane(data["sketch_plane"])
+        if sketch_plane is None:
+            return self.__return_failure("sketch_plane could not be found")
+        sketches = design.rootComponent.sketches
+        sketch = sketches.addWithoutEdges(sketch_plane)
+        sketch_uuid = name.set_uuid(sketch)
+        return self.__return_success({
+            "id": sketch_uuid
+        })
+
+    def add_line(self, data):
+        """Add a line to an existing sketch"""
+        if (data is None or "sketch_id" not in data or
+                "pt1" not in data or "pt2" not in data):
+            return self.__return_failure("add_line data not specified")
+        sketch = match.sketch(data["sketch_id"])
+        # TODO: Debug why id is None
+        if sketch is None:
+            return self.__return_failure("sketch not found")
+        start_point = deserialize.point3d(data["pt1"])
+        end_point = deserialize.point3d(data["pt2"])
+        line = sketch.sketchCurves.sketchLines.addByTwoPoints(start_point, end_point)
+        line_uuid = name.set_uuid(line)
+        return self.__return_success({
+            "id": line_uuid
+        })
 
     def __export_sketch_pngs(self, dest_dir=None, use_zip=True):
         """Export all sketches as png files and return a zip file"""
@@ -217,20 +256,20 @@ class CommandRunner():
             for body in component.bRepBodies:
                 body.isVisible = False
             for sketch in component.sketches:
-                sketch.isVisible = False               
+                sketch.isVisible = False
 
         # Then we loop over each sketch and export a PNG
         for component in design.allComponents:
             for sketch in component.sketches:
                 self.__export_sketch_png(sketch, dest_dir)
-        
+
         # Now lets show all the bodies and sketches again
         for component in design.allComponents:
             for body in component.bRepBodies:
                 body.isVisible = True
             for sketch in component.sketches:
                 sketch.isVisible = True
-        
+
         if use_zip:
             return self.__zip_dir(dest_dir)
         else:
@@ -249,7 +288,7 @@ class CommandRunner():
         # We will fit to the contents of the screen
         # So we just need to point the camera in the right direction
         camera.target = origin
-        camera.upVector = yAxis    
+        camera.upVector = yAxis
         eye_offset = zAxis.asPoint()
         camera.eye = adsk.core.Point3D.create(
             origin.x + eye_offset.x,
@@ -259,7 +298,7 @@ class CommandRunner():
 
         # Set this once to fit to the camera view
         # But fit() needs to also be called below
-        camera.isFitView = True 
+        camera.isFitView = True
         self.app.activeViewport.camera = camera  # Update the viewport
         # Call fit to the screen after we have changed to top view
         self.app.activeViewport.fit()
@@ -272,7 +311,6 @@ class CommandRunner():
         sketch.isVisible = False
         adsk.doEvents()
         self.app.activeViewport.refresh()
-        
 
     def __export_sketch_dxfs(self, dest_dir=None, use_zip=True):
         """Export all sketches as dxf files and return a zip file"""
@@ -301,7 +339,7 @@ class CommandRunner():
             # Iterate over all the files in directory
             for folder_name, subfolders, files in os.walk(src_dir):
                 for file in files:
-                    #create complete filepath of file in directory
+                    # create complete filepath of file in directory
                     file_path = os.path.join(folder_name, file)
                     # Add file to zip
                     zip_obj.write(file_path, file)
@@ -331,9 +369,9 @@ class CommandRunner():
         temp_file = dest_dir / file
         return temp_file
 
-    def __return_success(self, binary_file=None):
+    def __return_success(self, data=None):
         message = f"Success processing {self.last_command} command"
-        return 200, message, binary_file
+        return 200, message, data
 
     def __return_failure(self, reason):
         message = f"Failed processing {self.last_command} command due to {reason}"

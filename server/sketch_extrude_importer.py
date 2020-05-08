@@ -9,6 +9,7 @@ import math
 from pathlib import Path
 
 from . import deserialize
+from . import name
 
 
 class SketchExtrudeImporter():
@@ -52,7 +53,7 @@ class SketchExtrudeImporter():
             for loop in profile.profileLoops:
                 for curve in loop.profileCurves:
                     sketch_ent = curve.sketchEntity
-                    curve_uuid = self.get_uuid(sketch_ent)
+                    curve_uuid = name.get_uuid(sketch_ent)
                     if curve_uuid is not None:
                         found_curve_uuids.append(curve_uuid)
             sorted_found_curve_uuids = sorted(found_curve_uuids)
@@ -76,18 +77,6 @@ class SketchExtrudeImporter():
         if not math.isclose(profile_props.centroid.z, profile_data["properties"]["centroid"]["z"], abs_tol=tolerance):
             return False
         return True
-
-    def get_uuid(self, entity):
-        uuid_att = entity.attributes.itemByName("Dataset", "uuid")
-        if uuid_att is not None:
-            return uuid_att.value
-        else:
-            return None
-
-    def set_uuid(self, entity, unique_id):
-        uuid_att = entity.attributes.itemByName("Dataset", "uuid")
-        if uuid_att is None:
-            entity.attributes.add("Dataset", "uuid", unique_id)
 
     def get_curve_uuids(self, profile_data):
         loops = profile_data["loops"]
@@ -148,7 +137,7 @@ class SketchExtrudeImporter():
         start_point = deserialize.point3d(points_data[start_point_uuid])
         end_point = deserialize.point3d(points_data[end_point_uuid])
         line = sketch_lines.addByTwoPoints(start_point, end_point)
-        self.set_uuid(line, curve_uuid)
+        name.set_custom_uuid(line, curve_uuid)
 
     def reconstruct_sketch_arc(self, sketch_arcs, curve_data, curve_uuid, points_data):
         start_point_uuid = curve_data["start_point"]
@@ -157,14 +146,14 @@ class SketchExtrudeImporter():
         center_point = deserialize.point3d(points_data[center_point_uuid])
         sweep_angle = curve_data["end_angle"] - curve_data["start_angle"]
         arc = sketch_arcs.addByCenterStartSweep(center_point, start_point, sweep_angle)
-        self.set_uuid(arc, curve_uuid)
+        name.set_custom_uuid(arc, curve_uuid)
 
     def reconstruct_sketch_circle(self, sketch_circles, curve_data, curve_uuid, points_data):
         center_point_uuid = curve_data["center_point"]
         center_point = deserialize.point3d(points_data[center_point_uuid])
         radius = curve_data["radius"]
         circle = sketch_circles.addByCenterRadius(center_point, radius)
-        self.set_uuid(circle, curve_uuid)
+        name.set_custom_uuid(circle, curve_uuid)
 
     def reconstruct_extrude_feature(self, extrude_data, sketch_profiles):
         extrudes = self.design.rootComponent.features.extrudeFeatures

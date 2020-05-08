@@ -1,84 +1,88 @@
 {
+    "metadata": {
+        "parent_project": "Z0HexagonCutJoin",
+        "component_name": "Untitled"
+    },
     "timeline": [
         {
             "index": 0,
-            "entity": "31048dea-79c4-11ea-b17a-acde48001122"
+            "entity": "2c81829c-90ac-11ea-afd3-acde48001122"
         },
         {
             "index": 1,
-            "entity": "31066ff2-79c4-11ea-b17a-acde48001122"
+            "entity": "2c863472-90ac-11ea-afd3-acde48001122"
         },
         {
             "index": 2,
-            "entity": "31068032-79c4-11ea-b17a-acde48001122"
+            "entity": "2c8649da-90ac-11ea-afd3-acde48001122"
         },
         {
             "index": 3,
-            "entity": "310b220e-79c4-11ea-b17a-acde48001122"
+            "entity": "2c8d5ef0-90ac-11ea-afd3-acde48001122"
         },
         {
             "index": 4,
-            "entity": "310b351e-79c4-11ea-b17a-acde48001122"
+            "entity": "2c8d7872-90ac-11ea-afd3-acde48001122"
         },
         {
             "index": 5,
-            "entity": "31100378-79c4-11ea-b17a-acde48001122"
+            "entity": "2c95833c-90ac-11ea-afd3-acde48001122"
         }
     ],
     "entities": {
-        "31048dea-79c4-11ea-b17a-acde48001122": {
+        "2c81829c-90ac-11ea-afd3-acde48001122": {
             "name": "Sketch1",
             "type": "Sketch",
             "points": {
-                "31057ac0-79c4-11ea-b17a-acde48001122": {
+                "2c833b00-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "3105874a-79c4-11ea-b17a-acde48001122": {
+                "2c834cb2-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 4.0,
                     "z": 0.0
                 },
-                "31059668-79c4-11ea-b17a-acde48001122": {
+                "2c8363f0-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": -1.0,
                     "y": 3.0,
                     "z": 0.0
                 },
-                "3105a810-79c4-11ea-b17a-acde48001122": {
+                "2c837b38-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": -1.0,
                     "y": 1.0,
                     "z": 0.0
                 },
-                "3105bb84-79c4-11ea-b17a-acde48001122": {
+                "2c839406-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "3105d056-79c4-11ea-b17a-acde48001122": {
+                "2c83aec8-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 2.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "3105e730-79c4-11ea-b17a-acde48001122": {
+                "2c83cb7e-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 3.0,
                     "y": 1.0,
                     "z": 0.0
                 },
-                "3105fee6-79c4-11ea-b17a-acde48001122": {
+                "2c83ea64-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 3.0,
                     "y": 3.0,
                     "z": 0.0
                 },
-                "310618e0-79c4-11ea-b17a-acde48001122": {
+                "2c840abc-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 2.0,
                     "y": 4.0,
@@ -86,112 +90,112 @@
                 }
             },
             "curves": {
-                "3104d926-79c4-11ea-b17a-acde48001122": {
+                "2c826842-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "3105874a-79c4-11ea-b17a-acde48001122",
-                    "end_point": "31059668-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c834cb2-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8363f0-90ac-11ea-afd3-acde48001122"
                 },
-                "3104ea2e-79c4-11ea-b17a-acde48001122": {
+                "2c828188-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "31059668-79c4-11ea-b17a-acde48001122",
-                    "end_point": "3105a810-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8363f0-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c837b38-90ac-11ea-afd3-acde48001122"
                 },
-                "3104f8de-79c4-11ea-b17a-acde48001122": {
+                "2c82988a-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "3105a810-79c4-11ea-b17a-acde48001122",
-                    "end_point": "3105bb84-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c837b38-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c839406-90ac-11ea-afd3-acde48001122"
                 },
-                "31050ab8-79c4-11ea-b17a-acde48001122": {
+                "2c82af8c-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": false,
-                    "start_point": "3105bb84-79c4-11ea-b17a-acde48001122",
-                    "end_point": "3105d056-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c839406-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c83aec8-90ac-11ea-afd3-acde48001122"
                 },
-                "31051ec2-79c4-11ea-b17a-acde48001122": {
+                "2c82c972-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "3105d056-79c4-11ea-b17a-acde48001122",
-                    "end_point": "3105e730-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c83aec8-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c83cb7e-90ac-11ea-afd3-acde48001122"
                 },
-                "31053376-79c4-11ea-b17a-acde48001122": {
+                "2c82e3bc-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "3105e730-79c4-11ea-b17a-acde48001122",
-                    "end_point": "3105fee6-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c83cb7e-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c83ea64-90ac-11ea-afd3-acde48001122"
                 },
-                "31054a14-79c4-11ea-b17a-acde48001122": {
+                "2c82fff0-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "3105fee6-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310618e0-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c83ea64-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c840abc-90ac-11ea-afd3-acde48001122"
                 },
-                "3105633c-79c4-11ea-b17a-acde48001122": {
+                "2c831ecc-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "310618e0-79c4-11ea-b17a-acde48001122",
-                    "end_point": "3105874a-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c840abc-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c834cb2-90ac-11ea-afd3-acde48001122"
                 }
             },
             "constraints": {
-                "3106305a-79c4-11ea-b17a-acde48001122": {
-                    "line": "3104ea2e-79c4-11ea-b17a-acde48001122",
+                "2c842830-90ac-11ea-afd3-acde48001122": {
+                    "line": "2c828188-90ac-11ea-afd3-acde48001122",
                     "type": "VerticalConstraint"
                 },
-                "310639e2-79c4-11ea-b17a-acde48001122": {
-                    "entity": "31057ac0-79c4-11ea-b17a-acde48001122",
-                    "point": "3105bb84-79c4-11ea-b17a-acde48001122",
+                "2c84358c-90ac-11ea-afd3-acde48001122": {
+                    "entity": "2c833b00-90ac-11ea-afd3-acde48001122",
+                    "point": "2c839406-90ac-11ea-afd3-acde48001122",
                     "type": "CoincidentConstraint"
                 },
-                "3106437e-79c4-11ea-b17a-acde48001122": {
-                    "line_one": "31050ab8-79c4-11ea-b17a-acde48001122",
-                    "line_two": "3104ea2e-79c4-11ea-b17a-acde48001122",
+                "2c844310-90ac-11ea-afd3-acde48001122": {
+                    "line_one": "2c82af8c-90ac-11ea-afd3-acde48001122",
+                    "line_two": "2c828188-90ac-11ea-afd3-acde48001122",
                     "type": "PerpendicularConstraint"
                 },
-                "31064cc0-79c4-11ea-b17a-acde48001122": {
-                    "line_one": "31053376-79c4-11ea-b17a-acde48001122",
-                    "line_two": "31050ab8-79c4-11ea-b17a-acde48001122",
+                "2c86065a-90ac-11ea-afd3-acde48001122": {
+                    "line_one": "2c82e3bc-90ac-11ea-afd3-acde48001122",
+                    "line_two": "2c82af8c-90ac-11ea-afd3-acde48001122",
                     "type": "PerpendicularConstraint"
                 },
-                "310655e4-79c4-11ea-b17a-acde48001122": {
-                    "line_one": "31054a14-79c4-11ea-b17a-acde48001122",
-                    "line_two": "31051ec2-79c4-11ea-b17a-acde48001122",
+                "2c861302-90ac-11ea-afd3-acde48001122": {
+                    "line_one": "2c82fff0-90ac-11ea-afd3-acde48001122",
+                    "line_two": "2c82c972-90ac-11ea-afd3-acde48001122",
                     "type": "PerpendicularConstraint"
                 },
-                "31065f4e-79c4-11ea-b17a-acde48001122": {
-                    "line_one": "3105633c-79c4-11ea-b17a-acde48001122",
-                    "line_two": "31053376-79c4-11ea-b17a-acde48001122",
+                "2c861eba-90ac-11ea-afd3-acde48001122": {
+                    "line_one": "2c831ecc-90ac-11ea-afd3-acde48001122",
+                    "line_two": "2c82e3bc-90ac-11ea-afd3-acde48001122",
                     "type": "PerpendicularConstraint"
                 }
             },
             "profiles": {
-                "9454a840-ad2e-3f3a-97e5-0d03a83ff1cd": {
+                "b873a65b-4c7b-39ff-a25f-34b19e251bdc": {
                     "loops": [
                         {
                             "is_outer": true,
@@ -210,7 +214,7 @@
                                         "y": 4.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3105633c-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c831ecc-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -226,7 +230,7 @@
                                         "y": 3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3104d926-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c826842-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -242,7 +246,7 @@
                                         "y": 1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3104ea2e-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c828188-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -258,7 +262,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3104f8de-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c82988a-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -274,7 +278,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31050ab8-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c82af8c-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -290,7 +294,7 @@
                                         "y": 1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31051ec2-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c82c972-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -306,7 +310,7 @@
                                         "y": 3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31053376-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c82e3bc-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -322,7 +326,7 @@
                                         "y": 4.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31054a14-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c82fff0-90ac-11ea-afd3-acde48001122"
                                 }
                             ]
                         }
@@ -367,15 +371,49 @@
                     "z": 1.0,
                     "length": 1.0
                 }
+            },
+            "reference_plane": {
+                "type": "ConstructionPlane",
+                "name": "XY",
+                "plane": {
+                    "type": "Plane",
+                    "origin": {
+                        "type": "Point3D",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "normal": {
+                        "type": "Vector3D",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 1.0,
+                        "length": 1.0
+                    },
+                    "u_direction": {
+                        "type": "Vector3D",
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": -0.0,
+                        "length": 1.0
+                    },
+                    "v_direction": {
+                        "type": "Vector3D",
+                        "x": -0.0,
+                        "y": 1.0,
+                        "z": 0.0,
+                        "length": 1.0
+                    }
+                }
             }
         },
-        "31066ff2-79c4-11ea-b17a-acde48001122": {
+        "2c863472-90ac-11ea-afd3-acde48001122": {
             "name": "Extrude1",
             "type": "ExtrudeFeature",
             "profiles": [
                 {
-                    "profile": "9454a840-ad2e-3f3a-97e5-0d03a83ff1cd",
-                    "sketch": "31048dea-79c4-11ea-b17a-acde48001122"
+                    "profile": "b873a65b-4c7b-39ff-a25f-34b19e251bdc",
+                    "sketch": "2c81829c-90ac-11ea-afd3-acde48001122"
                 }
             ],
             "operation": "NewBodyFeatureOperation",
@@ -399,83 +437,83 @@
                 "type": "DistanceExtentDefinition"
             }
         },
-        "31068032-79c4-11ea-b17a-acde48001122": {
+        "2c8649da-90ac-11ea-afd3-acde48001122": {
             "name": "Sketch2",
             "type": "Sketch",
             "points": {
-                "3108c004-79c4-11ea-b17a-acde48001122": {
+                "2c891b4c-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "3108df44-79c4-11ea-b17a-acde48001122": {
+                "2c893cb2-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": -2.0,
                     "y": -4.0,
                     "z": 0.0
                 },
-                "31090230-79c4-11ea-b17a-acde48001122": {
+                "2c8960c0-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": -4.0,
                     "z": 0.0
                 },
-                "31092602-79c4-11ea-b17a-acde48001122": {
+                "2c89858c-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 1.0,
                     "y": -3.0,
                     "z": 0.0
                 },
-                "31095046-79c4-11ea-b17a-acde48001122": {
+                "2c89ac88-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 1.0,
                     "y": -1.0,
                     "z": 0.0
                 },
-                "310979b8-79c4-11ea-b17a-acde48001122": {
+                "2c8aa66a-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "3109a8b6-79c4-11ea-b17a-acde48001122": {
+                "2c8ad270-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": -2.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "3109d660-79c4-11ea-b17a-acde48001122": {
+                "2c8b010a-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": -3.0,
                     "y": -1.0,
                     "z": 0.0
                 },
-                "310a0400-79c4-11ea-b17a-acde48001122": {
+                "2c8b324c-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": -3.0,
                     "y": -3.0,
                     "z": 0.0
                 },
-                "310a3146-79c4-11ea-b17a-acde48001122": {
+                "2c8c4cc2-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": -3.0,
                     "z": 0.0
                 },
-                "310a60d0-79c4-11ea-b17a-acde48001122": {
+                "2c8c8372-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": -2.0,
                     "y": -3.0,
                     "z": 0.0
                 },
-                "310a9186-79c4-11ea-b17a-acde48001122": {
+                "2c8cb7b6-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": -2.0,
                     "y": -1.0,
                     "z": 0.0
                 },
-                "310ac3ae-79c4-11ea-b17a-acde48001122": {
+                "2c8cedee-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": -1.0,
@@ -483,135 +521,135 @@
                 }
             },
             "curves": {
-                "3106d2da-79c4-11ea-b17a-acde48001122": {
+                "2c8721f2-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "3108df44-79c4-11ea-b17a-acde48001122",
-                    "end_point": "31090230-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c893cb2-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8960c0-90ac-11ea-afd3-acde48001122"
                 },
-                "3106f382-79c4-11ea-b17a-acde48001122": {
+                "2c8744fc-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "31090230-79c4-11ea-b17a-acde48001122",
-                    "end_point": "31092602-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8960c0-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c89858c-90ac-11ea-afd3-acde48001122"
                 },
-                "3107184e-79c4-11ea-b17a-acde48001122": {
+                "2c87666c-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "31092602-79c4-11ea-b17a-acde48001122",
-                    "end_point": "31095046-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c89858c-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c89ac88-90ac-11ea-afd3-acde48001122"
                 },
-                "31073b94-79c4-11ea-b17a-acde48001122": {
+                "2c8788c2-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "31095046-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310979b8-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c89ac88-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8aa66a-90ac-11ea-afd3-acde48001122"
                 },
-                "3107607e-79c4-11ea-b17a-acde48001122": {
+                "2c87b162-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "310979b8-79c4-11ea-b17a-acde48001122",
-                    "end_point": "3109a8b6-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8aa66a-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8ad270-90ac-11ea-afd3-acde48001122"
                 },
-                "310787ca-79c4-11ea-b17a-acde48001122": {
+                "2c87d7d2-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "3109a8b6-79c4-11ea-b17a-acde48001122",
-                    "end_point": "3109d660-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8ad270-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8b010a-90ac-11ea-afd3-acde48001122"
                 },
-                "3107b196-79c4-11ea-b17a-acde48001122": {
+                "2c880298-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "3109d660-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310a0400-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8b010a-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8b324c-90ac-11ea-afd3-acde48001122"
                 },
-                "3107dc66-79c4-11ea-b17a-acde48001122": {
+                "2c882cbe-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "310a0400-79c4-11ea-b17a-acde48001122",
-                    "end_point": "3108df44-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8b324c-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c893cb2-90ac-11ea-afd3-acde48001122"
                 },
-                "31080790-79c4-11ea-b17a-acde48001122": {
+                "2c88581a-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "310a3146-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310a60d0-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8c4cc2-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8c8372-90ac-11ea-afd3-acde48001122"
                 },
-                "31083396-79c4-11ea-b17a-acde48001122": {
+                "2c888592-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "310a60d0-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310a9186-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8c8372-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8cb7b6-90ac-11ea-afd3-acde48001122"
                 },
-                "31086244-79c4-11ea-b17a-acde48001122": {
+                "2c88b40e-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "310a9186-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310ac3ae-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8cb7b6-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8cedee-90ac-11ea-afd3-acde48001122"
                 },
-                "310893cc-79c4-11ea-b17a-acde48001122": {
+                "2c88ece4-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "310ac3ae-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310a3146-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c8cedee-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c8c4cc2-90ac-11ea-afd3-acde48001122"
                 }
             },
             "constraints": {
-                "310aeb72-79c4-11ea-b17a-acde48001122": {
-                    "line": "31080790-79c4-11ea-b17a-acde48001122",
+                "2c8d1bd4-90ac-11ea-afd3-acde48001122": {
+                    "line": "2c88581a-90ac-11ea-afd3-acde48001122",
                     "type": "HorizontalConstraint"
                 },
-                "310af734-79c4-11ea-b17a-acde48001122": {
-                    "line": "31083396-79c4-11ea-b17a-acde48001122",
+                "2c8d2b74-90ac-11ea-afd3-acde48001122": {
+                    "line": "2c888592-90ac-11ea-afd3-acde48001122",
                     "type": "VerticalConstraint"
                 },
-                "310b02e2-79c4-11ea-b17a-acde48001122": {
-                    "line": "31086244-79c4-11ea-b17a-acde48001122",
+                "2c8d39d4-90ac-11ea-afd3-acde48001122": {
+                    "line": "2c88b40e-90ac-11ea-afd3-acde48001122",
                     "type": "HorizontalConstraint"
                 },
-                "310b0f44-79c4-11ea-b17a-acde48001122": {
-                    "line": "310893cc-79c4-11ea-b17a-acde48001122",
+                "2c8d47e4-90ac-11ea-afd3-acde48001122": {
+                    "line": "2c88ece4-90ac-11ea-afd3-acde48001122",
                     "type": "VerticalConstraint"
                 }
             },
             "profiles": {
-                "42823974-8b3c-3007-82bf-fc7db00ff1ba": {
+                "e1f78aac-7c62-3786-92dc-0bcd8bf79b4b": {
                     "loops": [
                         {
                             "is_outer": false,
@@ -630,7 +668,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "310893cc-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c88ece4-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -646,7 +684,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31080790-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c88581a-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -662,7 +700,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31083396-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c888592-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -678,7 +716,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31086244-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c88b40e-90ac-11ea-afd3-acde48001122"
                                 }
                             ]
                         },
@@ -699,7 +737,7 @@
                                         "y": -4.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3107dc66-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c882cbe-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -715,7 +753,7 @@
                                         "y": -4.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3106d2da-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c8721f2-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -731,7 +769,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3106f382-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c8744fc-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -747,7 +785,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3107184e-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c87666c-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -763,7 +801,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31073b94-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c8788c2-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -779,7 +817,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3107607e-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c87b162-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -795,7 +833,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "310787ca-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c87d7d2-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -811,7 +849,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "3107b196-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c880298-90ac-11ea-afd3-acde48001122"
                                 }
                             ]
                         }
@@ -827,7 +865,7 @@
                         "perimeter": 21.656854249492383
                     }
                 },
-                "b46ce40e-4969-377a-bbef-16b1bb2f942e": {
+                "5f6c5bd9-734b-3098-b532-482c9e4d07f0": {
                     "loops": [
                         {
                             "is_outer": true,
@@ -846,7 +884,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31086244-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c88b40e-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -862,7 +900,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31083396-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c888592-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -878,7 +916,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "31080790-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c88581a-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -894,7 +932,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "310893cc-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c88ece4-90ac-11ea-afd3-acde48001122"
                                 }
                             ]
                         }
@@ -939,15 +977,54 @@
                     "z": 1.0,
                     "length": 1.0
                 }
+            },
+            "reference_plane": {
+                "type": "BRepFace",
+                "point_on_face": {
+                    "type": "Point3D",
+                    "x": 2.5,
+                    "y": 2.0,
+                    "z": 2.0
+                },
+                "plane": {
+                    "type": "Plane",
+                    "origin": {
+                        "type": "Point3D",
+                        "x": 1.0,
+                        "y": 2.0,
+                        "z": 2.0
+                    },
+                    "normal": {
+                        "type": "Vector3D",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 1.0,
+                        "length": 1.0
+                    },
+                    "u_direction": {
+                        "type": "Vector3D",
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": -0.0,
+                        "length": 1.0
+                    },
+                    "v_direction": {
+                        "type": "Vector3D",
+                        "x": -0.0,
+                        "y": 1.0,
+                        "z": 0.0,
+                        "length": 1.0
+                    }
+                }
             }
         },
-        "310b220e-79c4-11ea-b17a-acde48001122": {
+        "2c8d5ef0-90ac-11ea-afd3-acde48001122": {
             "name": "Extrude2",
             "type": "ExtrudeFeature",
             "profiles": [
                 {
-                    "profile": "b46ce40e-4969-377a-bbef-16b1bb2f942e",
-                    "sketch": "31068032-79c4-11ea-b17a-acde48001122"
+                    "profile": "5f6c5bd9-734b-3098-b532-482c9e4d07f0",
+                    "sketch": "2c8649da-90ac-11ea-afd3-acde48001122"
                 }
             ],
             "operation": "CutFeatureOperation",
@@ -971,59 +1048,59 @@
                 "type": "DistanceExtentDefinition"
             }
         },
-        "310b351e-79c4-11ea-b17a-acde48001122": {
+        "2c8d7872-90ac-11ea-afd3-acde48001122": {
             "name": "Sketch3",
             "type": "Sketch",
             "points": {
-                "310d88aa-79c4-11ea-b17a-acde48001122": {
+                "2c921166-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "310dc298-79c4-11ea-b17a-acde48001122": {
+                "2c924c08-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 1.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "310dff42-79c4-11ea-b17a-acde48001122": {
+                "2c928722-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 3.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "310e3c0a-79c4-11ea-b17a-acde48001122": {
+                "2c92cea8-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 3.0,
                     "y": 2.0,
                     "z": 0.0
                 },
-                "310e7bf2-79c4-11ea-b17a-acde48001122": {
+                "2c930f94-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 1.0,
                     "y": 2.0,
                     "z": 0.0
                 },
-                "310ebeb4-79c4-11ea-b17a-acde48001122": {
+                "2c934f9a-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 1.1000000163912773,
                     "y": 1.9000000283122063,
                     "z": 0.0
                 },
-                "310f018a-79c4-11ea-b17a-acde48001122": {
+                "2c9472ee-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 2.9000000432133675,
                     "y": 1.9000000283122063,
                     "z": 0.0
                 },
-                "310f4802-79c4-11ea-b17a-acde48001122": {
+                "2c94c1cc-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 2.9000000432133675,
                     "y": 0.10000000149011612,
                     "z": 0.0
                 },
-                "310f8e5c-79c4-11ea-b17a-acde48001122": {
+                "2c9507cc-90ac-11ea-afd3-acde48001122": {
                     "type": "Point3D",
                     "x": 1.1000000163912773,
                     "y": 0.10000000149011612,
@@ -1031,99 +1108,99 @@
                 }
             },
             "curves": {
-                "310b9856-79c4-11ea-b17a-acde48001122": {
+                "2c8e7024-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "310dc298-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310dff42-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c924c08-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c928722-90ac-11ea-afd3-acde48001122"
                 },
-                "310bcfb0-79c4-11ea-b17a-acde48001122": {
+                "2c8eaac6-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "310dff42-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310e3c0a-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c928722-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c92cea8-90ac-11ea-afd3-acde48001122"
                 },
-                "310c0868-79c4-11ea-b17a-acde48001122": {
+                "2c8ee20c-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "310e3c0a-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310e7bf2-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c92cea8-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c930f94-90ac-11ea-afd3-acde48001122"
                 },
-                "310c4486-79c4-11ea-b17a-acde48001122": {
+                "2c8f1a74-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
-                    "start_point": "310e7bf2-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310dc298-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c930f94-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c924c08-90ac-11ea-afd3-acde48001122"
                 },
-                "310c8270-79c4-11ea-b17a-acde48001122": {
+                "2c902518-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "310ebeb4-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310f018a-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c934f9a-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c9472ee-90ac-11ea-afd3-acde48001122"
                 },
-                "310cc1c2-79c4-11ea-b17a-acde48001122": {
+                "2c906b36-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "310f018a-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310f4802-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c9472ee-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c94c1cc-90ac-11ea-afd3-acde48001122"
                 },
-                "310d022c-79c4-11ea-b17a-acde48001122": {
+                "2c90b0aa-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "310f4802-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310f8e5c-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c94c1cc-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c9507cc-90ac-11ea-afd3-acde48001122"
                 },
-                "310d473c-79c4-11ea-b17a-acde48001122": {
+                "2c91c58a-90ac-11ea-afd3-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
-                    "start_point": "310f8e5c-79c4-11ea-b17a-acde48001122",
-                    "end_point": "310ebeb4-79c4-11ea-b17a-acde48001122"
+                    "start_point": "2c9507cc-90ac-11ea-afd3-acde48001122",
+                    "end_point": "2c934f9a-90ac-11ea-afd3-acde48001122"
                 }
             },
             "constraints": {
-                "310fc48a-79c4-11ea-b17a-acde48001122": {
-                    "line": "310c8270-79c4-11ea-b17a-acde48001122",
+                "2c953e72-90ac-11ea-afd3-acde48001122": {
+                    "line": "2c902518-90ac-11ea-afd3-acde48001122",
                     "type": "HorizontalConstraint"
                 },
-                "310fd344-79c4-11ea-b17a-acde48001122": {
-                    "line": "310cc1c2-79c4-11ea-b17a-acde48001122",
+                "2c954df4-90ac-11ea-afd3-acde48001122": {
+                    "line": "2c906b36-90ac-11ea-afd3-acde48001122",
                     "type": "VerticalConstraint"
                 },
-                "310fe10e-79c4-11ea-b17a-acde48001122": {
-                    "line": "310d022c-79c4-11ea-b17a-acde48001122",
+                "2c955cea-90ac-11ea-afd3-acde48001122": {
+                    "line": "2c90b0aa-90ac-11ea-afd3-acde48001122",
                     "type": "HorizontalConstraint"
                 },
-                "310feed8-79c4-11ea-b17a-acde48001122": {
-                    "line": "310d473c-79c4-11ea-b17a-acde48001122",
+                "2c956be0-90ac-11ea-afd3-acde48001122": {
+                    "line": "2c91c58a-90ac-11ea-afd3-acde48001122",
                     "type": "VerticalConstraint"
                 }
             },
             "profiles": {
-                "98543d3d-5ca7-3154-b347-d83d81536da4": {
+                "7742a1e3-8255-3bcf-a241-e0d7c60d3a49": {
                     "loops": [
                         {
                             "is_outer": false,
@@ -1142,7 +1219,7 @@
                                         "y": 1.9000000283122063,
                                         "z": 0.0
                                     },
-                                    "curve": "310d473c-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c91c58a-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1158,7 +1235,7 @@
                                         "y": 1.9000000283122063,
                                         "z": 0.0
                                     },
-                                    "curve": "310c8270-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c902518-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1174,7 +1251,7 @@
                                         "y": 0.10000000149011612,
                                         "z": 0.0
                                     },
-                                    "curve": "310cc1c2-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c906b36-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1190,7 +1267,7 @@
                                         "y": 0.10000000149011612,
                                         "z": 0.0
                                     },
-                                    "curve": "310d022c-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c90b0aa-90ac-11ea-afd3-acde48001122"
                                 }
                             ]
                         },
@@ -1211,7 +1288,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "310c4486-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c8f1a74-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1227,7 +1304,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "310b9856-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c8e7024-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1243,7 +1320,7 @@
                                         "y": 2.0,
                                         "z": 0.0
                                     },
-                                    "curve": "310bcfb0-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c8eaac6-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1259,7 +1336,7 @@
                                         "y": 2.0,
                                         "z": 0.0
                                     },
-                                    "curve": "310c0868-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c8ee20c-90ac-11ea-afd3-acde48001122"
                                 }
                             ]
                         }
@@ -1275,7 +1352,7 @@
                         "perimeter": 15.20000010728836
                     }
                 },
-                "f521a7f9-9fc9-3fab-8273-dbfe33ba128e": {
+                "aeb81405-4097-3d38-acc8-5880006cac3f": {
                     "loops": [
                         {
                             "is_outer": true,
@@ -1294,7 +1371,7 @@
                                         "y": 0.10000000149011612,
                                         "z": 0.0
                                     },
-                                    "curve": "310d022c-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c90b0aa-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1310,7 +1387,7 @@
                                         "y": 0.10000000149011612,
                                         "z": 0.0
                                     },
-                                    "curve": "310cc1c2-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c906b36-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1326,7 +1403,7 @@
                                         "y": 1.9000000283122063,
                                         "z": 0.0
                                     },
-                                    "curve": "310c8270-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c902518-90ac-11ea-afd3-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1342,7 +1419,7 @@
                                         "y": 1.9000000283122063,
                                         "z": 0.0
                                     },
-                                    "curve": "310d473c-79c4-11ea-b17a-acde48001122"
+                                    "curve": "2c91c58a-90ac-11ea-afd3-acde48001122"
                                 }
                             ]
                         }
@@ -1387,15 +1464,54 @@
                     "z": 0.0,
                     "length": 1.0
                 }
+            },
+            "reference_plane": {
+                "type": "BRepFace",
+                "point_on_face": {
+                    "type": "Point3D",
+                    "x": 3.0,
+                    "y": 1.0500000081956387,
+                    "z": 1.0
+                },
+                "plane": {
+                    "type": "Plane",
+                    "origin": {
+                        "type": "Point3D",
+                        "x": 3.0,
+                        "y": 1.0,
+                        "z": 0.0
+                    },
+                    "normal": {
+                        "type": "Vector3D",
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": 0.0,
+                        "length": 1.0
+                    },
+                    "u_direction": {
+                        "type": "Vector3D",
+                        "x": -0.0,
+                        "y": 1.0,
+                        "z": 0.0,
+                        "length": 1.0
+                    },
+                    "v_direction": {
+                        "type": "Vector3D",
+                        "x": 0.0,
+                        "y": -0.0,
+                        "z": 1.0,
+                        "length": 1.0
+                    }
+                }
             }
         },
-        "31100378-79c4-11ea-b17a-acde48001122": {
+        "2c95833c-90ac-11ea-afd3-acde48001122": {
             "name": "Extrude3",
             "type": "ExtrudeFeature",
             "profiles": [
                 {
-                    "profile": "f521a7f9-9fc9-3fab-8273-dbfe33ba128e",
-                    "sketch": "310b351e-79c4-11ea-b17a-acde48001122"
+                    "profile": "aeb81405-4097-3d38-acc8-5880006cac3f",
+                    "sketch": "2c8d7872-90ac-11ea-afd3-acde48001122"
                 }
             ],
             "operation": "JoinFeatureOperation",

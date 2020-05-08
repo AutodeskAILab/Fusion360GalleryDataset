@@ -55,19 +55,20 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
             if command == "detach":
                 logger.log_text("Shutting down...")
                 self.detach()
-            
+
             data = None
             if "data" in post_data:
                 data = post_data["data"]
 
-            status_code, message, binary_file = runner.run_command(command, data)
-            if binary_file is not None:
-                logger.log_text(f"[{status_code}] {binary_file}")
-                self.respond_binary_file(status_code, binary_file)
+            status_code, message, return_data = runner.run_command(command, data)
+            if return_data is not None and isinstance(return_data, Path):
+                    logger.log_text(f"[{status_code}] {return_data}")
+                    self.respond_binary_file(status_code, return_data)
             else:
                 logger.log_text(f"[{status_code}] {message}")
-                self.respond(status_code, message)
-
+                if return_data is not None:
+                    logger.log_text(f"\t{return_data}")
+                self.respond(status_code, message, return_data)
 
         except Exception as ex:
             self.respond(500, str(ex.args))
@@ -91,11 +92,13 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
         # Remove the file we made after we are done
         binary_file.unlink()
 
-    def respond(self, status_code, message):
+    def respond(self, status_code, message, return_data=None):
         data = {
             "status": status_code,
             "message": message
         }
+        if return_data is not None:
+            data["data"] = return_data
         json_string = json.dumps(data)
         self.send_response(status_code)
         self.send_header("Content-type", "application/json")
@@ -131,6 +134,7 @@ def get_launch_endpoint():
         with open(launch_json_file, "w") as file_handle:
             json.dump(launch_data, file_handle, indent=4)
     return host_name, port_number
+
 
 def start_server():
     """Start the server"""

@@ -126,6 +126,42 @@ class Fusion360Client():
         else:
             return self.send_command("commands", command_list)
 
+    def add_sketch(self, sketch_plane):
+        """Add a sketch to the design"""
+        is_str = isinstance(sketch_plane, str)
+        is_dict = isinstance(sketch_plane, dict)
+        if not is_str and not is_dict:
+            return self.__return_error(f"Invalid sketch_plane value")
+        if is_dict:
+            if ("x" not in sketch_plane or
+                    "y" not in sketch_plane or
+                    "z" not in sketch_plane):
+                return self.__return_error(f"Invalid sketch_plane value")
+
+        command_data = {
+            "sketch_plane": sketch_plane
+        }
+        return self.send_command("add_sketch", data=command_data)
+
+    def add_line(self, sketch_id, pt1, pt2):
+        """Add a line to the given sketch"""
+        pt1_is_dict = isinstance(pt1, dict)
+        if not pt1_is_dict or "x" not in pt1 or "y" not in pt1:
+            return self.__return_error(f"Invalid pt1 value")
+        pt2_is_dict = isinstance(pt1, dict)
+        if not pt2_is_dict or "x" not in pt2 or "y" not in pt2:
+            return self.__return_error(f"Invalid pt2 value")
+        pt1["z"] = 0.0
+        pt1["type"] = "Point3D"
+        pt2["z"] = 0.0
+        pt2["type"] = "Point3D"
+        command_data = {
+            "sketch_id": sketch_id,
+            "pt1": pt1,
+            "pt2": pt2
+        }
+        return self.send_command("add_line", data=command_data)
+
     def __return_error(self, message):
         print(message)
         return None
