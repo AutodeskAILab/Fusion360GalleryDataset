@@ -245,6 +245,64 @@ class TestFusion360Server(unittest.TestCase):
         self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
         self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
 
+    def test_add_double_extrude_by_point(self):
+        self.client.clear()
+        time.sleep(10)
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        sketch_name = response_json["data"]["sketch_name"]
+        pts = [
+            {"x": 0, "y": 0},
+            {"x": 10, "y": 0},
+            {"x": 10, "y": 10},
+            {"x": 0, "y": 10},
+            {"x": 0, "y": 0}
+        ]
+        for index in range(4):
+            r = self.client.add_line(sketch_name, pts[index], pts[index + 1])
+        response_json = r.json()
+        response_data = response_json["data"]
+        # Pull out the first profile id
+        profile_id = next(iter(response_data["profiles"]))
+
+        # Extrude
+        r = self.client.add_extrude(sketch_name, profile_id, 5.0, "NewBodyFeatureOperation")
+        response_json = r.json()
+        response_data = response_json["data"]
+        faces = response_data["faces"]
+
+        # Start the second sketch with a point on the end face
+        r = self.client.add_sketch({
+            "x": 5.0,
+            "y": 5.0,
+            "z": 5.0
+        })
+        response_json = r.json()
+        sketch_name = response_json["data"]["sketch_name"]
+        pts = [
+            {"x": 2.5, "y": 2.5},
+            {"x": 7.5, "y": 2.5},
+            {"x": 7.5, "y": 7.5},
+            {"x": 2.5, "y": 7.5},
+            {"x": 2.5, "y": 2.5}
+        ]
+        for index in range(4):
+            r = self.client.add_line(sketch_name, pts[index], pts[index + 1])
+        response_json = r.json()
+        response_data = response_json["data"]
+        # Pull out the first profile id
+        profile_id = next(iter(response_data["profiles"]))
+
+        # Extrude2
+        r = self.client.add_extrude(sketch_name, profile_id, 2.0, "JoinFeatureOperation")
+        response_json = r.json()
+        response_data = response_json["data"]
+
+        self.assertIn("type", response_data, msg="add_extrude response has type")
+        self.assertIn("faces", response_data, msg="add_extrude response has faces")
+        self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
+        self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
+
         # self.client.clear()
         # r = self.client.detach()
 
