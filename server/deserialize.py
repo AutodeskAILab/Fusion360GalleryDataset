@@ -84,3 +84,29 @@ def construction_plane(name):
     if name_lower in construction_planes:
         return construction_planes[name_lower]
     return None
+
+
+def face_by_point3d(point3d_data):
+    """Find a face with given serialized point3d that sits on that face"""
+    point_on_face = point3d(point3d_data)
+    app = adsk.core.Application.get()
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    for component in design.allComponents:
+        try:
+            entities = component.findBRepUsingPoint(
+                point_on_face,
+                adsk.fusion.BRepEntityTypes.BRepFaceEntityType,
+                0.01, # -1.0 is the default tolerance
+                False
+            )
+            if entities is None or len(entities) == 0:
+                continue
+            else:
+                # Return the first face
+                # although there could be multiple matches
+                return entities[0]
+        except Exception as ex:
+            print("Exception finding BRepFace", ex)
+            # Ignore and keep looking
+            pass
+    return None
