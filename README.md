@@ -1,5 +1,7 @@
-# Fusion360Server
-A server running inside Fusion 360 as an add-in to communicate with the outside world.
+# Fusion 360 Gym
+A 'gym' environment for training ML models to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
+
+![Drawing a couch](https://i.gyazo.com/f667c274c2542ddd7ee5aef81af0614a.gif)
 
 ## Server
 ### Running
@@ -88,9 +90,10 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
         - BRep planar face id
         - point3d on a planar face of a BRep
     - Returns the `sketch_name` and `sketch_id`.
-- `add_line(sketch_name, p1, p2)`: Adds a line to the given sketch. 
+- `add_line(sketch_name, p1, p2, transform)`: Adds a line to the given sketch. 
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
     - `p1` and `p2`: are sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}`
+    - `transform` (optional): the transform for the sketch, necessary if you are replaying json data exported from Fusion
     - Returns the sketch profiles or an empty dict if there are no profiles. Note that profile uuid returned is only valid while the design does not change.
 - `add_extrude(sketch_name, profile_id, distance, operation)`: Add an extrude to the design.
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`

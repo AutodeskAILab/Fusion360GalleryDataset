@@ -4,6 +4,7 @@ import os
 import json
 from fusion_360_client import Fusion360Client
 
+
 # Before running ensure the Fusion360Server is running
 # and configured with the same host name and port number
 HOST_NAME = "127.0.0.1"
@@ -31,8 +32,9 @@ def main():
     # INCREMENTAL RECONSTRUCT
     # Send a list of commands directly to the server to run in sequence
     # We need to load the json as a dict to reconstruct
+    # NOTE: this will not work for all files
+    # only ones with single profiles (or the first profile used) in a sketch
     hex_design_json_file = data_dir / "Couch.json"
-    # hex_design_json_file = data_dir / "Z0HexagonCutJoin_RootComponent.json"
     with open(hex_design_json_file) as file_handle:
         hex_design_json_data = json.load(file_handle)
 
@@ -85,12 +87,9 @@ def add_profiles(client, sketch_name, sketch):
                 if curve["type"] != "Line3D":
                     print(f"Warning: Unsupported curve type - {curve['type']}")
                     continue
-                # Skip over curves that are not visible or construction geometry
+                # Skip over curves that are construction geometry
                 curve_id = curve["curve"]
-                curve_visible = original_curves[curve_id]["visible"]
                 curve_construction_geom = original_curves[curve_id]["construction_geom"]
-                # if not curve_visible:
-                #     continue
                 if curve_construction_geom:
                     continue
                 # We have to send the sketch transform here
@@ -102,7 +101,10 @@ def add_profiles(client, sketch_name, sketch):
         response_data = response_json["data"]
         for re_profile in response_data["profiles"]:
             profile_ids[original_profile_id] = re_profile
-    return profile_ids
+            # Note we make a silly assumption that its always the first
+            # profile we use, so we return early here
+            # when there could be many profiles in a sketch
+            return profile_ids
 
 
 def add_extrude_feature(client, extrude_feature, extrude_feature_id, sketches):
