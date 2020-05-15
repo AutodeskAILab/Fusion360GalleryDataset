@@ -69,7 +69,7 @@ def sketch_plane(sketch_plane_data):
     Return the sketch plane to create a sketch
     Can be passed either of:
         - Construction plane axes: XY, XZ, YZ
-        - BRep temp it
+        - BRep temp id
         - Point3d on the BRep face
     """
     app = adsk.core.Application.get()

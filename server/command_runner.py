@@ -231,6 +231,15 @@ class CommandRunner():
         sketch_uuid = name.get_uuid(sketch)
         start_point = deserialize.point3d(data["pt1"])
         end_point = deserialize.point3d(data["pt2"])
+        if "transform" in data:
+            # For mapping Fusion exported data back correctly
+            xform = deserialize.matrix3d(data["transform"])
+            sketch_transform = sketch.transform
+            sketch_transform.invert()
+            xform.transformBy(sketch_transform)
+            start_point.transformBy(xform)
+            end_point.transformBy(xform)
+
         line = sketch.sketchCurves.sketchLines.addByTwoPoints(start_point, end_point)
         line_uuid = name.set_uuid(line)
         name.set_uuids_for_sketch(sketch)
@@ -276,8 +285,7 @@ class CommandRunner():
         # Check that the operation is going to work
         body_count = 0
         for component in design.allComponents:
-            for body in component.bRepBodies:
-                body_count += 1
+            body_count += component.bRepBodies.count
         # If there are no other bodies, we have to make a new body
         if body_count == 0:
             operation = "NewBodyFeatureOperation"

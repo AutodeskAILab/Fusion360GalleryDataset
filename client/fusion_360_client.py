@@ -144,7 +144,7 @@ class Fusion360Client():
         }
         return self.send_command("add_sketch", data=command_data)
 
-    def add_line(self, sketch_name, pt1, pt2):
+    def add_line(self, sketch_name, pt1, pt2, transform=None):
         """Add a line to the given sketch"""
         if not isinstance(sketch_name, str):
             return self.__return_error(f"Invalid sketch_name")
@@ -163,6 +163,9 @@ class Fusion360Client():
             "pt1": pt1,
             "pt2": pt2
         }
+        if transform is not None:
+            if isinstance(transform, dict):
+                command_data["transform"] = transform
         return self.send_command("add_line", data=command_data)
 
     def add_extrude(self, sketch_name, profile_id, distance, operation):

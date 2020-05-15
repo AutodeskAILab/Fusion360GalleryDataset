@@ -31,7 +31,8 @@ def main():
     # INCREMENTAL RECONSTRUCT
     # Send a list of commands directly to the server to run in sequence
     # We need to load the json as a dict to reconstruct
-    hex_design_json_file = data_dir / "Z0HexagonCutJoin_RootComponent.json"
+    hex_design_json_file = data_dir / "Couch.json"
+    # hex_design_json_file = data_dir / "Z0HexagonCutJoin_RootComponent.json"
     with open(hex_design_json_file) as file_handle:
         hex_design_json_data = json.load(file_handle)
 
@@ -64,39 +65,48 @@ def add_sketch(client, sketch, sketch_id):
     # Get the sketch name back
     response_json = r.json()
     sketch_name = response_json["data"]["sketch_name"]
-    profile_ids = add_profiles(client, sketch_name, sketch["profiles"])
+    profile_ids = add_profiles(client, sketch_name, sketch)
     return {
         "sketch_name": sketch_name,
         "profile_ids": profile_ids
     }
 
 
-def add_profiles(client, sketch_name, profiles):
+def add_profiles(client, sketch_name, sketch):
     """Add the sketch profiles to the design"""
+    profiles = sketch["profiles"]
+    original_curves = sketch["curves"]
+    transform = sketch["transform"]
     profile_ids = {}
     response_json = None
     for original_profile_id, profile in profiles.items():
         for loop in profile["loops"]:
-            # Only draw the outside loop, not the inside loop
-            # i.e. the holes
-            if loop["is_outer"] is True:
-                curves = loop["profile_curves"]
-                for curve in curves:
-                    if curve["type"] != "Line3D":
-                        print(f"Warning: Unsupported curve type - {curve['type']}")
-                        continue
-
-                    r = client.add_line(sketch_name, curve["start_point"], curve["end_point"])
-                    response_json = r.json()
-
-        # Look at the final response and pull out profiles
+            for curve in loop["profile_curves"]:
+                if curve["type"] != "Line3D":
+                    print(f"Warning: Unsupported curve type - {curve['type']}")
+                    continue
+                # Skip over curves that are not visible or construction geometry
+                curve_id = curve["curve"]
+                curve_visible = original_curves[curve_id]["visible"]
+                curve_construction_geom = original_curves[curve_id]["construction_geom"]
+                # if not curve_visible:
+                #     continue
+                if curve_construction_geom:
+                    continue
+                # We have to send the sketch transform here
+                # due to the way Fusion saves out data from designs
+                r = client.add_line(sketch_name, curve["start_point"], curve["end_point"], transform)
+                response_json = r.json()
+        # Look at the response and add profiles to the lookup dict
+        # mapping between the original uuids and the profiles
         response_data = response_json["data"]
-        # Pull out the first profile
-        profile_ids[original_profile_id] = next(iter(response_data["profiles"]))
+        for re_profile in response_data["profiles"]:
+            profile_ids[original_profile_id] = re_profile
     return profile_ids
 
 
 def add_extrude_feature(client, extrude_feature, extrude_feature_id, sketches):
+    """Add an extrude feature to the design"""
     # We only handle a single profile
     original_profile_id = extrude_feature["profiles"][0]["profile"]
     original_sketch_id = extrude_feature["profiles"][0]["sketch"]
@@ -110,6 +120,8 @@ def add_extrude_feature(client, extrude_feature, extrude_feature_id, sketches):
     r = client.add_extrude(sketch_name, profile_id, distance, operation)
     response_json = r.json()
     response_data = response_json["data"]
+    print("Response from add_extrude()", response_data)
+
 
 if __name__ == "__main__":
     main()
