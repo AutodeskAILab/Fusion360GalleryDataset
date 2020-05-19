@@ -84,10 +84,10 @@ class TestFusion360Server(unittest.TestCase):
         # sketch_name
         self.assertIn("sketch_name", response_data, msg="add_line response has sketch_name")
         self.assertIsInstance(response_data["sketch_name"], str, msg="add_line sketch_name is string")
-        # line_id
-        self.assertIn("line_id", response_data, msg="add_line response has line_id")
-        self.assertIsInstance(response_data["line_id"], str, msg="add_line line_id is string")
-        self.assertEqual(len(response_data["line_id"]), 36, msg="add_line line_id length equals 36")
+        # curve_id
+        self.assertIn("curve_id", response_data, msg="add_line response has curve_id")
+        self.assertIsInstance(response_data["curve_id"], str, msg="add_line curve_id is string")
+        self.assertEqual(len(response_data["curve_id"]), 36, msg="add_line curve_id length equals 36")
         # profiles
         self.assertIn("profiles", response_data, msg="add_line response has profiles")
         self.assertIsInstance(response_data["profiles"], dict, msg="add_line profiles are dict")
@@ -108,7 +108,7 @@ class TestFusion360Server(unittest.TestCase):
             {"x": 0, "y": 10},
             {"x": 0, "y": 0}
         ]
-        line_ids = []
+        curve_ids = []
         sketch_ids = []
         sketch_names = []
         profiles = []
@@ -118,7 +118,7 @@ class TestFusion360Server(unittest.TestCase):
             response_json = r.json()
             response_data = response_json["data"]
             print(response_data)
-            line_ids.append(response_data["line_id"])
+            curve_ids.append(response_data["curve_id"])
             sketch_ids.append(response_data["sketch_id"])
             sketch_names.append(response_data["sketch_name"])
             profiles.append(response_data["profiles"])
@@ -134,12 +134,12 @@ class TestFusion360Server(unittest.TestCase):
         for sketch_name in sketch_names:
             self.assertIsInstance(sketch_name, str, msg="add_line sketch_name is string")
 
-        # line_id
-        ids_unique = len(line_ids) == len(set(line_ids))
+        # curve_id
+        ids_unique = len(curve_ids) == len(set(curve_ids))
         self.assertEqual(ids_unique, True, msg="add_line ids are unique")
-        for line_id in line_ids:
-            self.assertIsInstance(line_id, str, msg="add_line line_id is string")
-            self.assertEqual(len(line_id), 36, msg="add_line line_id length equals 36")
+        for curve_id in curve_ids:
+            self.assertIsInstance(curve_id, str, msg="add_line curve_id is string")
+            self.assertEqual(len(curve_id), 36, msg="add_line curve_id length equals 36")
 
         for profile in profiles:
             self.assertIsInstance(profile, dict, msg="add_line profiles are dict")
@@ -187,10 +187,13 @@ class TestFusion360Server(unittest.TestCase):
 
     def test_add_double_extrude_by_id(self):
         self.client.clear()
-        time.sleep(10)
+
+        # Create an empty sketch on the XY plane
         r = self.client.add_sketch("XY")
+        # Get the unique name of the sketch created
         response_json = r.json()
         sketch_name = response_json["data"]["sketch_name"]
+        # Add four lines to the sketch to make a square
         pts = [
             {"x": 0, "y": 0},
             {"x": 10, "y": 0},
@@ -200,27 +203,26 @@ class TestFusion360Server(unittest.TestCase):
         ]
         for index in range(4):
             r = self.client.add_line(sketch_name, pts[index], pts[index + 1])
+
+        # Pull out the first profile id
         response_json = r.json()
         response_data = response_json["data"]
-        # Pull out the first profile id
         profile_id = next(iter(response_data["profiles"]))
-
-        # Extrude
+        # Extrude by a given distance to make a new body
         r = self.client.add_extrude(sketch_name, profile_id, 5.0, "NewBodyFeatureOperation")
+
+        # Find the end face
         response_json = r.json()
         response_data = response_json["data"]
         faces = response_data["faces"]
-
-        # Find the end face
-        xy_face = None
         for face in faces:
             if face["location_in_feature"] == "EndFace":
                 xy_face = face
-
-        # Start the second sketch and extrude
+        # Create a second sketch on the end face
         r = self.client.add_sketch(xy_face["face_id"])
         response_json = r.json()
         sketch_name = response_json["data"]["sketch_name"]
+        # Draw the second smaller square
         pts = [
             {"x": 2.5, "y": 2.5},
             {"x": 7.5, "y": 2.5},
@@ -230,13 +232,14 @@ class TestFusion360Server(unittest.TestCase):
         ]
         for index in range(4):
             r = self.client.add_line(sketch_name, pts[index], pts[index + 1])
+
+        # Pull out the first profile id
         response_json = r.json()
         response_data = response_json["data"]
-        # Pull out the first profile id
         profile_id = next(iter(response_data["profiles"]))
-
-        # Extrude2
+        # Extrude by a given distance, adding to the existing body
         r = self.client.add_extrude(sketch_name, profile_id, 2.0, "JoinFeatureOperation")
+
         response_json = r.json()
         response_data = response_json["data"]
 

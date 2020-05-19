@@ -241,13 +241,13 @@ class CommandRunner():
             end_point.transformBy(xform)
 
         line = sketch.sketchCurves.sketchLines.addByTwoPoints(start_point, end_point)
-        line_uuid = name.set_uuid(line)
+        curve_uuid = name.set_uuid(line)
         name.set_uuids_for_sketch(sketch)
         profile_data = serialize.sketch_profiles(sketch.profiles)
         return self.__return_success({
             "sketch_id": sketch_uuid,
             "sketch_name": sketch.name,
-            "line_id": line_uuid,
+            "curve_id": curve_uuid,
             "profiles": profile_data
         })
 
