@@ -14,6 +14,9 @@ from .command_runner import CommandRunner
 from .logging_util import LoggingUtil
 
 
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 8080
+
 # Event handlers
 handlers = []
 
@@ -118,8 +121,8 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
 def get_launch_endpoint():
     """If we are launching multiple instances, find the right endpoint to use"""
     # Default endpoint
-    host_name = "127.0.0.1"
-    port_number = 8080
+    host_name = DEFAULT_HOST
+    port_number = DEFAULT_PORT
     # If we have a launch file then we find the host and port to use
     launch_json_file = Path(os.path.dirname(__file__)) / "launch.json"
     if launch_json_file.exists():
