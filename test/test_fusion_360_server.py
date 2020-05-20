@@ -1,3 +1,9 @@
+"""
+
+Test basic functionality of the Fusion 360 Server
+Including reconstruction
+
+"""
 import unittest
 import requests
 from pathlib import Path
@@ -299,15 +305,7 @@ class TestFusion360Server(unittest.TestCase):
         self.assertTrue(output_model.exists())
         self.assertGreater(output_model.stat().st_size, 0, msg="stl file size greater than 0")
         self.__test_hex_mesh(output_model)
-
-        # Clear
-        r = self.client.clear()
         shutil.rmtree(self.sketch_dir)
-
-    # @unittest.skip("Skipping detach")
-    def test_detach(self):
-        r = self.client.detach()
-        self.assertEqual(r.status_code, 200)
 
     def __test_box_mesh(self, mesh_file):
         # Check the mesh data
@@ -358,9 +356,6 @@ class TestFusion360Server(unittest.TestCase):
         self.assertGreater(output_model.stat().st_size, 0, msg=f"{suffix} file size greater than 0")
         if suffix == ".stl":
             self.__test_box_mesh(output_model)
-
-        # Clear
-        r = self.client.clear()
         shutil.rmtree(self.sketch_dir)
 
     def __test_commands_reconstruct_sketches(self, suffix):
@@ -391,14 +386,12 @@ class TestFusion360Server(unittest.TestCase):
             sketch_file = self.sketch_dir / f"Sketch{i+1}{suffix}"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg=f"sketch {suffix} file size greater than 0")
-
-        # Clear
-        r = self.client.clear()
         shutil.rmtree(self.sketch_dir)
 
     # @classmethod
     # def tearDownClass(cls):
     #     cls.client.detach()
+
 
 
 if __name__ == "__main__":

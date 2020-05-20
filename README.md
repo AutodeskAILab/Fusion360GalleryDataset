@@ -1,5 +1,7 @@
-# Fusion360Server
-A server running inside Fusion 360 as an add-in to communicate with the outside world.
+# Fusion 360 Gym
+A 'gym' environment for training ML models to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
+
+![Drawing a couch](https://i.gyazo.com/f667c274c2542ddd7ee5aef81af0614a.gif)
 
 ## Server
 ### Running
@@ -57,19 +59,62 @@ python client_example.py
 This script will output various files to the [data](data) directory and you will see the Fusion UI update as it processes requests.
 
 ### Interface
-See [client/fusion_360_client.py](client/fusion_360_client.py) for the implementation of the following calls:
+See [client/fusion_360_client.py](client/fusion_360_client.py) for the implementation of the calls below.
+
+#### Response Format
+All calls return a response object that can be accessed like so:
+
+```python
+# Create the client class to interact with the server
+client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
+# Make a call to the server to clear the design
+r = client.clear()
+# Example of how we read the response data
+response_data = r.json()
+print(f"[{r.status_code}] Response: {response_data['message']}")
+```
+The following keys can be expected inside the `response_data` returned by calling `r.json()`:
+- `status`: integer will be either `200` or `500`, see [here for more information](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status). This is a duplicate of the code in `r.status_code`.
+- `message`: message with the server response. When the server failed this will contain the error and stack trace to debug.
+- `data`: dict with data returned by the specific call.
+Note that when returning binary data (e.g. mesh, brep) the above keys will not be present.
+
+
 #### Reconstruction
 - `reconstruct(file)`: Reconstruct a design from the provided json file
 - `clear()`: Clear (i.e. close) all open designs in Fusion
+#### Incremenetal Construction
+- `add_sketch(sketch_plane)`: Adds a sketch to the design.
+    - `sketch_plane`: can be either one of:
+        - string value representing a construction plane: `XY`, `XZ`, or `YZ`
+        - BRep planar face id
+        - point3d on a planar face of a BRep
+    - Returns the `sketch_name` and `sketch_id`.
+- `add_line(sketch_name, p1, p2, transform)`: Adds a line to the given sketch. 
+    - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
+    - `p1` and `p2`: are sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}`
+    - `transform` (optional): the transform for the sketch, necessary if you are replaying json data exported from Fusion
+    - Returns the sketch profiles or an empty dict if there are no profiles. Note that profile uuid returned is only valid while the design does not change.
+- `add_extrude(sketch_name, profile_id, distance, operation)`: Add an extrude to the design.
+    - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
+    - `profile_id`: is the uuid of the profile returned by `add_line()`
+    - `distance`: is the extrude distance perpendicular to the profile plane
+    - `operation`: a string with the values: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
+    - Returns BRep vertices of the resulting body, BRep face information
+
 #### Export
-- `mesh(file)`: Retreive a mesh in .stl format and write it to a local file
-- `brep(file)`: Retreive a brep in a format (step/smt) and write it to a local file
-- `sketches(dir, format)`: Retreive each sketch in a given format (e.g. .png, .dxf) and save to a local directory
+- `mesh(file)`: Retreive a mesh in .stl format and write it to the local file provided.
+- `brep(file)`: Retreive a brep in a format (step/smt) and write it to a local file provided.
+- `sketches(dir, format)`: Retreive each sketch in a given format.
+    - `dir`: the local directory where the output will be saved
+    - `format`: a string with the values `.png` or `.dxf`
+
 #### Utility
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
-- `commands(command_list, dir)`: Send a list of commands to run in sequence on the server and output files to `dir`. Commands for `command_list` are formatted as follows:
+- `commands(command_list, dir)`: Send a list of commands to run in sequence on the server.
+    - `command_list`: a list of commands in the following format:
     ```
     [
         {
@@ -93,6 +138,7 @@ See [client/fusion_360_client.py](client/fusion_360_client.py) for the implement
         }
     ]
     ```
+    `dir`: is the (optional) local directory where files will be saved
 
 ## Test
 See [test/test_fusion_360_server.py](test/test_fusion_360_server.py) for test coverage and additional usage examples.
