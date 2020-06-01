@@ -83,7 +83,7 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 #### Reconstruction
 - `reconstruct(file)`: Reconstruct a design from the provided json file
 - `clear()`: Clear (i.e. close) all open designs in Fusion
-#### Incremenetal Construction
+#### Incremental Construction
 - `add_sketch(sketch_plane)`: Adds a sketch to the design.
     - `sketch_plane`: can be either one of:
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
