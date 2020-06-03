@@ -33,7 +33,7 @@ class SketchExtrudeImporter():
             entity_uuid = timeline_object["entity"]
             entity_index = timeline_object["index"]
             entity = self.data["entities"][entity_uuid]
-            print("Reconstructing", entity["name"])
+            # print("Reconstructing", entity["name"])
             if entity["type"] == "Sketch":
                 sketch_profile_set = self.reconstruct_sketch(entity, sketch_profiles)
                 if sketch_profile_set:
@@ -52,35 +52,34 @@ class SketchExtrudeImporter():
             profile = profile_dict["profile"]
             sorted_found_curve_uuids = profile_dict["curve_uuids"]
             if sorted_found_curve_uuids == sorted_curve_uuids and self.are_profile_properties_identical(profile, profile_data, xform):
-                print(f"Profile found with {len(sorted_curve_uuids)} curve uuids")
+                # print(f"Profile found with {len(sorted_curve_uuids)} curve uuids")
                 return profile, index
-        print(f"Profile not found: {profile_uuid} with {len(sorted_curve_uuids)} curves")
+        # print(f"Profile not found: {profile_uuid} with {len(sorted_curve_uuids)} curves")
         return None, -1
 
     def are_profile_properties_identical(self, profile, profile_data, xform):
         profile_props = profile.areaProperties(adsk.fusion.CalculationAccuracy.HighCalculationAccuracy)
         tolerance = 0.000001
         if not math.isclose(profile_props.area, profile_data["properties"]["area"], abs_tol=tolerance):
-            print("Profile area doesn't match")
+            # print("Profile area doesn't match")
             return False
         if not math.isclose(profile_props.perimeter, profile_data["properties"]["perimeter"], abs_tol=tolerance):
-            print("Profile perimeter doesn't match")
+            # print("Profile perimeter doesn't match")
             return False
         centroid_point = deserialize.point3d(profile_data["properties"]["centroid"])
         centroid_point.transformBy(xform)
         if not math.isclose(profile_props.centroid.x, centroid_point.x, abs_tol=tolerance):
-            print("Centroid.x doesn't match")
+            # print("Centroid.x doesn't match")
             return False
         if not math.isclose(profile_props.centroid.y, centroid_point.y, abs_tol=tolerance):
-            print("Centroid.y doesn't match")
+            # print("Centroid.y doesn't match")
             return False
         if not math.isclose(profile_props.centroid.z, centroid_point.z, abs_tol=tolerance):
-            print("Centroid.z doesn't match")
+            # print("Centroid.z doesn't match")
             return False
         return True
 
     def get_profile_curve_uuids(self, sketch):
-        print("Reconstructed profiles------------------")
         reconstructed_profiles = []
         for profile in sketch.profiles:
             # We use a set as there can be duplicate curves in the list
@@ -96,8 +95,6 @@ class SketchExtrudeImporter():
                 "profile": profile,
                 "curve_uuids": sorted_found_curve_uuids
             })
-            print(len(sorted_found_curve_uuids), sorted_found_curve_uuids)
-        print("---------------------------------------")
         return reconstructed_profiles
 
     def get_uuid(self, entity):
@@ -185,14 +182,12 @@ class SketchExtrudeImporter():
         if reference_plane["type"] == "ConstructionPlane" and "name" in reference_plane:
             sketch_plane = deserialize.construction_plane(reference_plane["name"])
             if sketch_plane is not None:
-                print(f"Sketch plane (Construction Plane) - {reference_plane['name']}")
                 return sketch_plane
         # BRepFace as reference plane
         elif reference_plane["type"] == "BRepFace" and "point_on_face" in reference_plane:
             face = deserialize.face_by_point3d(reference_plane["point_on_face"])
             if face is not None:
                 if face.geometry.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType:
-                    print(f"Sketch plane (BRepFace) - {face.tempId}")
                     return face
                 else:
                     print(f"Sketch plane (BRepFace) - invalid surface type {face.geometry.surfaceType}")
@@ -203,7 +198,6 @@ class SketchExtrudeImporter():
             profile_uuid = reference_plane["profile"]
             if profile_uuid in sketch_profiles:
                 profile = sketch_profiles[profile_uuid]
-                print(f"Sketch plane (Profile) - {profile_uuid}")
                 # We could reference the original sketch plane like this:
                 # return profile.parentSketch.referencePlane
                 # But the sketch plane can differ from the profile plane
@@ -218,11 +212,9 @@ class SketchExtrudeImporter():
                 plane = planes.add(plane_input)
                 return plane
 
-        print(f"Sketch plane - DEFAULT XY")
         return self.design.rootComponent.xYConstructionPlane
 
     def reconstruct_curves(self, sketch, sketch_data, xform):
-        print(len(sketch_data["points"]), "points,", len(sketch_data["curves"]), "curves")
         # Turn off sketch compute until we add all the curves
         sketch.isComputeDeferred = True
         self.reconstruct_sketch_curves(sketch, sketch_data["curves"], sketch_data["points"], xform)
@@ -276,7 +268,7 @@ class SketchExtrudeImporter():
             overlap = self.get_profile_curve_overlap_count(sorted_curve_uuids, reconstructed_profile["curve_uuids"])
             reconstructed_profile_curve_uuids_coint = len(reconstructed_profile["curve_uuids"])
             score = overlap - abs(reconstructed_profile_curve_uuids_coint-sorted_curve_uuids_count)
-            print(f"Score: {score} - {sorted_curve_uuids_count} vs {reconstructed_profile_curve_uuids_coint}")
+            # print(f"Score: {score} - {sorted_curve_uuids_count} vs {reconstructed_profile_curve_uuids_coint}")
             if score > max_score:
                 best_match_index = index
                 max_score = score
