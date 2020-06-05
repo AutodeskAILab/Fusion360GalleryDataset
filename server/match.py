@@ -117,7 +117,12 @@ def face_by_point3d(point3d):
     design = adsk.fusion.Design.cast(app.activeProduct)
     for component in design.allComponents:
         try:
-            entities = component.findBRepUsingPoint(point3d, adsk.fusion.BRepEntityTypes.BRepFaceEntityType)
+            entities = component.findBRepUsingPoint(
+                point3d,
+                adsk.fusion.BRepEntityTypes.BRepFaceEntityType,
+                0.01, # -1.0 is the default tolerance
+                False
+            )
             if entities is None or len(entities) == 0:
                 continue
             else:
