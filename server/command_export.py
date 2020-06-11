@@ -88,32 +88,8 @@ class CommandExport():
         """Run a series of commands one after the other"""
         if not isinstance(data, list) or len(data) == 0:
             return self.runner.return_failure("command list not specified")
-        # Make a list of the valid commands
-        command_list = []
-        # Keep track of how many bits of data to return
-        return_data_count = 0
-        # Build the list of commands to run
-        for command_set in data:
-            if "command" in command_set:
-                command_string = command_set["command"]
-                if isinstance(command_string, str):
-                    if command_string in ["ping", "refresh", "clear"]:
-                        command = getattr(self.runner, command_string)
-                    else:
-                        command = getattr(self, command_string)
-                    if command is not None:
-                        # Count how many sets of data we are returning
-                        if command_string in ["mesh", "brep", "sketches"]:
-                            return_data_count += 1
-                        valid_command_set = {
-                            "command": command,
-                            "command_string": command_string
-                        }
-                        if "data" in command_set:
-                            data = command_set["data"]
-                            valid_command_set["data"] = data
-                        command_list.append(valid_command_set)
-
+        # Get a list of the commands to run
+        command_list, return_data_count = self.__build_command_list(data)
         if len(command_list) == 0:
             return self.runner.return_failure("no valid commands found")
 
@@ -156,6 +132,34 @@ class CommandExport():
             return self.runner.return_success(zip_file)
         else:
             return self.runner.return_success()
+
+    def __build_command_list(self, data):
+        """Build the command list to execute"""
+        command_list = []
+        # Keep track of how many bits of data to return
+        return_data_count = 0
+        # Build the list of commands to run
+        for command_set in data:
+            if "command" in command_set:
+                command_string = command_set["command"]
+                if isinstance(command_string, str):
+                    if command_string in ["ping", "refresh", "clear"]:
+                        command = getattr(self.runner, command_string)
+                    else:
+                        command = getattr(self, command_string)
+                    if command is not None:
+                        # Count how many sets of data we are returning
+                        if command_string in ["mesh", "brep", "sketches"]:
+                            return_data_count += 1
+                        valid_command_set = {
+                            "command": command,
+                            "command_string": command_string
+                        }
+                        if "data" in command_set:
+                            data = command_set["data"]
+                            valid_command_set["data"] = data
+                        command_list.append(valid_command_set)
+        return command_list, return_data_count
 
     def __export_sketch_pngs(self, dest_dir=None, use_zip=True):
         """Export all sketches as png files and return a zip file"""
