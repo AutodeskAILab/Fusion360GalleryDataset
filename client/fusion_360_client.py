@@ -144,6 +144,24 @@ class Fusion360Client():
         }
         return self.send_command("add_sketch", data=command_data)
 
+    def add_point(self, sketch_name, pt, transform=None):
+        """Add a point to create a new sequential line in the given sketch"""
+        if not isinstance(sketch_name, str):
+            return self.__return_error(f"Invalid sketch_name")
+        pt_is_dict = isinstance(pt, dict)
+        if not pt_is_dict or "x" not in pt or "y" not in pt:
+            return self.__return_error(f"Invalid pt value")
+        pt["z"] = 0.0
+        pt["type"] = "Point3D"
+        command_data = {
+            "sketch_name": sketch_name,
+            "pt": pt
+        }
+        if transform is not None:
+            if isinstance(transform, dict):
+                command_data["transform"] = transform
+        return self.send_command("add_point", data=command_data)
+
     def add_line(self, sketch_name, pt1, pt2, transform=None):
         """Add a line to the given sketch"""
         if not isinstance(sketch_name, str):
@@ -167,6 +185,15 @@ class Fusion360Client():
             if isinstance(transform, dict):
                 command_data["transform"] = transform
         return self.send_command("add_line", data=command_data)
+
+    def close_profile(self, sketch_name):
+        """Close the current set of lines to create one or more profiles
+           by joining the first point to the last"""
+        if not isinstance(sketch_name, str):
+            return self.__return_error(f"Invalid sketch_name")
+        command_data = {
+            "sketch_name": sketch_name        }
+        return self.send_command("close_profile", data=command_data)
 
     def add_extrude(self, sketch_name, profile_id, distance, operation):
         """Add an extrude using the given sketch profile"""

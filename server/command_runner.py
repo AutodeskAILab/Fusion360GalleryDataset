@@ -54,10 +54,12 @@ class CommandRunner():
                 result = self.export.commands(data)
             elif command == "add_sketch":
                 result = self.increment.add_sketch(data)
-            # elif command == "add_point":
-            #     result = self.increment.add_point(data)
+            elif command == "add_point":
+                result = self.increment.add_point(data)
             elif command == "add_line":
                 result = self.increment.add_line(data)
+            elif command == "close_profile":
+                result = self.increment.close_profile(data)
             elif command == "add_extrude":
                 result = self.increment.add_extrude(data)
             else:
@@ -83,6 +85,7 @@ class CommandRunner():
         for doc in self.app.documents:
             # Save without closing
             doc.close(False)
+        self.increment.clear()
         return self.return_success()
 
     def return_success(self, data=None):
