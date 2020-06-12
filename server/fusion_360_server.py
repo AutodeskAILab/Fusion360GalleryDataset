@@ -32,17 +32,18 @@ class OnlineStatusChangedHandler(adsk.core.ApplicationEventHandler):
 
 class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
 
+    def __init__(self, logger, runner, *args):
+        self.logger = logger
+        self.runner = runner
+        BaseHTTPRequestHandler.__init__(self, *args)
+
     def do_HEAD(self):
         return
 
     def do_POST(self):
         try:
-            logger = LoggingUtil()
-            runner = CommandRunner()
-            runner.set_logger(logger)
-
             post_data = self.get_post_data()
-            logger.log_text("\n")
+            self.logger.log_text("\n")
             # logger.log_text(json.dumps(post_data))
             if "command" not in post_data:
                 self.respond(400, "Command not present")
@@ -54,23 +55,23 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
                 return
 
             command = post_data["command"]
-            logger.log_text(f"Command: {command}")
+            self.logger.log_text(f"Command: {command}")
             if command == "detach":
-                logger.log_text("Shutting down...")
+                self.logger.log_text("Shutting down...")
                 self.detach()
 
             data = None
             if "data" in post_data:
                 data = post_data["data"]
 
-            status_code, message, return_data = runner.run_command(command, data)
+            status_code, message, return_data = self.runner.run_command(command, data)
             if return_data is not None and isinstance(return_data, Path):
-                    logger.log_text(f"[{status_code}] {return_data}")
+                    self.logger.log_text(f"[{status_code}] {return_data}")
                     self.respond_binary_file(status_code, return_data)
             else:
-                logger.log_text(f"[{status_code}] {message}")
+                self.logger.log_text(f"[{status_code}] {message}")
                 if return_data is not None:
-                    logger.log_text(f"\t{return_data}")
+                    self.logger.log_text(f"\t{return_data}")
                 self.respond(status_code, message, return_data)
 
         except Exception as ex:
@@ -85,7 +86,7 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
     def get_post_data(self):
         content_len = int(self.headers.get('Content-Length'))
         post_body = self.rfile.read(content_len)
-        # logger.log_text(f"post_body: {post_body}")
+        # self.logger.log_text(f"post_body: {post_body}")
         post_body_json = json.loads(post_body)
         return post_body_json
 
@@ -145,19 +146,23 @@ def get_launch_endpoint():
 def start_server():
     """Start the server"""
 
-    # Setup the logger globally after Fusion has started
+    # # Setup the logger globally after Fusion has started
     logger = LoggingUtil()
     logger.log_text("Started server...")
-    # Set up the command runner we use to execute commands
+    # # Set up the command runner we use to execute commands
     runner = CommandRunner()
     runner.set_logger(logger)
+
+    # Workaround to pass the logger and runner
+    def handler(*args):
+        Fusion360ServerRequestHandler(logger, runner, *args)
 
     # Check if we need to use a different host name and port
     host_name, port_number = get_launch_endpoint()
 
     # Launch the server which will block the UI thread
     logger.log_text(f"Connecting on: {host_name}:{port_number}")
-    server = HTTPServer((host_name, port_number), Fusion360ServerRequestHandler)
+    server = HTTPServer((host_name, port_number), handler)
     try:
         server.serve_forever(poll_interval=1.0)
     except KeyboardInterrupt:

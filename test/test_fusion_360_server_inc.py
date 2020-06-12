@@ -117,7 +117,6 @@ class TestFusion360Server(unittest.TestCase):
             self.assertEqual(r.status_code, 200, msg="add_line status code")
             response_json = r.json()
             response_data = response_json["data"]
-            print(response_data)
             curve_ids.append(response_data["curve_id"])
             sketch_ids.append(response_data["sketch_id"])
             sketch_names.append(response_data["sketch_name"])
@@ -309,6 +308,220 @@ class TestFusion360Server(unittest.TestCase):
         # self.client.clear()
         # r = self.client.detach()
 
+    def test_add_point(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+        pt1 = {"x": 0, "y": 0}
+        r = self.client.add_point(sketch_name, pt1)
+        self.assertEqual(r.status_code, 200, msg="add_point status code")
+        response_json = r.json()
+        self.assertIn("data", response_json, msg="add_point response has data")
+        response_data = response_json["data"]
+        # sketch_id
+        self.assertIn("sketch_id", response_data, msg="add_point response has sketch_id")
+        self.assertIsInstance(response_data["sketch_id"], str, msg="add_point sketch_id is string")
+        # sketch_name
+        self.assertIn("sketch_name", response_data, msg="add_point response has sketch_name")
+        self.assertIsInstance(response_data["sketch_name"], str, msg="add_point sketch_name is string")
+        # curve_id
+        self.assertNotIn("curve_id", response_data, msg="add_point response has no curve_id")
+        # profiles
+        self.assertIn("profiles", response_data, msg="add_point response has profiles")
+
+    def test_add_points(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        sketch_name = response_json["data"]["sketch_name"]
+        pts = [
+            {"x": 0, "y": 0},
+            {"x": 10, "y": 0},
+            {"x": 10, "y": 10},
+            {"x": 0, "y": 10},
+            {"x": 0, "y": 0}
+        ]
+        curve_ids = []
+        sketch_ids = []
+        sketch_names = []
+        profiles = []
+        for index, pt in enumerate(pts):
+            r = self.client.add_point(sketch_name, pt)
+            self.assertEqual(r.status_code, 200, msg="add_point status code")
+            response_json = r.json()
+            response_data = response_json["data"]
+            # There won't always be a curve id
+            curve_id = response_data["curve_id"] if "curve_id" in response_data else None
+            curve_ids.append(curve_id)
+            sketch_ids.append(response_data["sketch_id"])
+            sketch_names.append(response_data["sketch_name"])
+            profiles.append(response_data["profiles"])
+
+        # sketch_id
+        self.assertEqual(len(set(sketch_ids)), 1, msg="add_point sketch_ids are all the same")
+        for sketch_id in sketch_ids:
+            self.assertIsInstance(sketch_id, str, msg="add_point sketch_id is string")
+            self.assertEqual(len(sketch_id), 36, msg="add_point sketch_id length equals 36")
+
+        # sketch_name
+        self.assertEqual(len(set(sketch_names)), 1, msg="add_point sketch_name are all the same")
+        for sketch_name in sketch_names:
+            self.assertIsInstance(sketch_name, str, msg="add_point sketch_name is string")
+
+        # curve_id
+        ids_unique = len(curve_ids) == len(set(curve_ids))
+        self.assertEqual(ids_unique, True, msg="add_point ids are unique")
+        for index, curve_id in enumerate(curve_ids):
+            if index == 0:
+                self.assertIsNone(curve_id)
+            else:
+                self.assertIsNotNone(curve_id)
+                self.assertIsInstance(curve_id, str, msg="add_point curve_id is string")
+                self.assertEqual(len(curve_id), 36, msg="add_point curve_id length equals 36")
+
+        for profile in profiles:
+            self.assertIsInstance(profile, dict, msg="add_point profiles are dict")
+
+        # The last profile response should contain some information
+        self.assertEqual(len(profiles[-1]), 1, msg="add_point profiles length equals 1")
+
+    def test_add_points_close(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        sketch_name = response_json["data"]["sketch_name"]
+        pts = [
+            {"x": 0, "y": 0},
+            {"x": 10, "y": 0},
+            {"x": 10, "y": 10},
+            None
+        ]
+        curve_ids = []
+        sketch_ids = []
+        sketch_names = []
+        profiles = []
+        for index, pt in enumerate(pts):
+            if index < len(pts) - 1:
+                r = self.client.add_point(sketch_name, pt)
+                self.assertEqual(r.status_code, 200, msg="add_point status code")
+            else:
+                r = self.client.close_profile(sketch_name)
+                self.assertEqual(r.status_code, 200, msg="close_profile status code")
+            response_json = r.json()
+            response_data = response_json["data"]
+            # There won't always be a curve id
+            curve_id = response_data["curve_id"] if "curve_id" in response_data else None
+            curve_ids.append(curve_id)
+            sketch_ids.append(response_data["sketch_id"])
+            sketch_names.append(response_data["sketch_name"])
+            profiles.append(response_data["profiles"])
+
+        # sketch_id
+        self.assertEqual(len(set(sketch_ids)), 1, msg="add_point sketch_ids are all the same")
+        for sketch_id in sketch_ids:
+            self.assertIsInstance(sketch_id, str, msg="add_point sketch_id is string")
+            self.assertEqual(len(sketch_id), 36, msg="add_point sketch_id length equals 36")
+
+        # sketch_name
+        self.assertEqual(len(set(sketch_names)), 1, msg="add_point sketch_name are all the same")
+        for sketch_name in sketch_names:
+            self.assertIsInstance(sketch_name, str, msg="add_point sketch_name is string")
+
+        # curve_id
+        ids_unique = len(curve_ids) == len(set(curve_ids))
+        self.assertEqual(ids_unique, True, msg="add_point ids are unique")
+        for index, curve_id in enumerate(curve_ids):
+            if index == 0:
+                self.assertIsNone(curve_id)
+            else:
+                self.assertIsNotNone(curve_id)
+                self.assertIsInstance(curve_id, str, msg="add_point curve_id is string")
+                self.assertEqual(len(curve_id), 36, msg="add_point curve_id length equals 36")
+
+        for profile in profiles:
+            self.assertIsInstance(profile, dict, msg="add_point profiles are dict")
+
+        # The last profile response should contain some information
+        self.assertEqual(len(profiles[-1]), 1, msg="add_point profiles length equals 1")
+
+    def test_add_one_point_close(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+        pt1 = {"x": 0, "y": 0}
+        r = self.client.add_point(sketch_name, pt1)
+        self.assertEqual(r.status_code, 200, msg="add_point status code")
+        r = self.client.close_profile(sketch_name)
+        self.assertEqual(r.status_code, 500, msg="close_profile status code")
+
+    def test_add_two_point_close(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+        pt1 = {"x": 0, "y": 0}
+        r = self.client.add_point(sketch_name, pt1)
+        self.assertEqual(r.status_code, 200, msg="add_point status code")
+        pt2 = {"x": 0, "y": 10}
+        r = self.client.add_point(sketch_name, pt2)
+        self.assertEqual(r.status_code, 200, msg="add_point status code")
+        r = self.client.close_profile(sketch_name)
+        self.assertEqual(r.status_code, 500, msg="close_profile status code")
+
+    def test_add_three_point_close(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+        pt1 = {"x": 0, "y": 0}
+        r = self.client.add_point(sketch_name, pt1)
+        self.assertEqual(r.status_code, 200, msg="add_point status code")
+        pt2 = {"x": 0, "y": 10}
+        r = self.client.add_point(sketch_name, pt2)
+        self.assertEqual(r.status_code, 200, msg="add_point status code")
+        pt3 = {"x": 10, "y": 10}
+        r = self.client.add_point(sketch_name, pt3)
+        self.assertEqual(r.status_code, 200, msg="add_point status code")
+        r = self.client.close_profile(sketch_name)
+        self.assertEqual(r.status_code, 200, msg="close_profile status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        profiles = response_data["profiles"]
+        self.assertEqual(len(profiles), 1, msg="add_point profiles length equals 1")
+
+    def test_add_three_point_close_extrude(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+        pt1 = {"x": 0, "y": 0}
+        pt2 = {"x": 0, "y": 10}
+        pt3 = {"x": 10, "y": 10}
+        r = self.client.add_point(sketch_name, pt1)
+        r = self.client.add_point(sketch_name, pt2)
+        r = self.client.add_point(sketch_name, pt3)
+        r = self.client.close_profile(sketch_name)
+        response_json = r.json()
+        response_data = response_json["data"]
+        profile_id = next(iter(response_data["profiles"]))
+
+        # Extrude
+        r = self.client.add_extrude(sketch_name, profile_id, 5.0, "NewBodyFeatureOperation")
+        self.assertEqual(r.status_code, 200, msg="add_extrude status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+
+        self.assertIn("type", response_data, msg="add_extrude response has type")
+        self.assertIn("faces", response_data, msg="add_extrude response has faces")
+        self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
+        self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
 
 if __name__ == "__main__":
     unittest.main()

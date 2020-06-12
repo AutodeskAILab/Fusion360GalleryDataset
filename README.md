@@ -90,12 +90,19 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
         - BRep planar face id
         - point3d on a planar face of a BRep
     - Returns the `sketch_name` and `sketch_id`.
+- `add_point(sketch_name, p1, transform)`: Add a point to create a new sequential line in the given sketch
+    - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
+    - `p1`: a point in sketch space 2D coords in a dict e.g. `{"x": 0, "y": 0}`
+    - `transform` (optional): the transform for the sketch, necessary if you are replaying json data exported from Fusion
+    - Returns the sketch `profiles` or an empty dict if there are no `profiles`. Note that profile uuid returned is only valid while the design does not change.
 - `add_line(sketch_name, p1, p2, transform)`: Adds a line to the given sketch. 
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
     - `p1` and `p2`: are sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}`
     - `transform` (optional): the transform for the sketch, necessary if you are replaying json data exported from Fusion
     - Returns the sketch profiles or an empty dict if there are no profiles. Note that profile uuid returned is only valid while the design does not change.
-- `add_extrude(sketch_name, profile_id, distance, operation)`: Add an extrude to the design.
+- `close_profile(sketch_name)`: Close the current set of lines to create one or more profiles by joining the first point to the last point
+    - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
+- `add_extrude(sketch_name, profile_id, distance, operation)`: Add an extrude to the design
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
     - `profile_id`: is the uuid of the profile returned by `add_line()`
     - `distance`: is the extrude distance perpendicular to the profile plane
@@ -113,7 +120,7 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
-- `commands(command_list, dir)`: Send a list of commands to run in sequence on the server.
+- `commands(command_list, dir)`: Send a list of commands to run in sequence on the server. Currently the export and reconstruction commands are supported.
     - `command_list`: a list of commands in the following format:
     ```
     [
