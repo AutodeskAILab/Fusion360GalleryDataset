@@ -6,12 +6,25 @@ import json
 import threading
 import shutil
 import os
+import sys
 import time
+import importlib
 from pathlib import Path
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
+
+# Add the common folder to sys.path
+COMMON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "common"))
+
+print(COMMON_DIR)
+if COMMON_DIR not in sys.path:
+    sys.path.append(COMMON_DIR)
+print(sys.path)
+import logging_util
+importlib.reload(logging_util)
+from logging_util import LoggingUtil
+
 from .command_runner import CommandRunner
-from .logging_util import LoggingUtil
 
 
 DEFAULT_HOST = "127.0.0.1"

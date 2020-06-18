@@ -10,10 +10,19 @@ import traceback
 import tempfile
 import shutil
 import os
+import sys
+import importlib
 from zipfile import ZipFile
 from pathlib import Path
 
-from .sketch_extrude_importer import SketchExtrudeImporter
+
+# Add the common folder to sys.path
+COMMON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "common"))
+if COMMON_DIR not in sys.path:
+    sys.path.append(COMMON_DIR)
+import sketch_extrude_importer
+importlib.reload(sketch_extrude_importer)
+from sketch_extrude_importer import SketchExtrudeImporter
 
 
 class CommandExport():

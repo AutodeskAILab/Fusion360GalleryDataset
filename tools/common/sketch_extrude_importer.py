@@ -9,8 +9,7 @@ import math
 from pathlib import Path
 from importlib import reload
 
-from . import deserialize
-reload(deserialize)
+import deserialize
 
 
 class SketchExtrudeImporter():

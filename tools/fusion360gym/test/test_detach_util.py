@@ -9,18 +9,13 @@ import sys
 import os
 import importlib
 
-
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(TEST_DIR)
-CLIENT_DIR = os.path.join(ROOT_DIR, "client")
-
 # Add the client folder to sys.path
+CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
 import fusion_360_client
 importlib.reload(fusion_360_client)
 from fusion_360_client import Fusion360Client
-sys.path.remove(CLIENT_DIR)
 
 HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
