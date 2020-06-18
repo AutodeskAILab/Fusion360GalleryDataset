@@ -1,3 +1,11 @@
+"""
+
+Import and reconstruction of sketch and extrude designs
+from the Reconstruction Subset
+
+"""
+
+
 import adsk.core
 import adsk.fusion
 import traceback
@@ -124,9 +132,9 @@ class SketchExtrudeImporter():
         #
         # p_world = T * p_sketch
         #
-        # Now we need to cope with the sketch plane having two different transforms when we 
-        # extract and when we import it.  
-        # 
+        # Now we need to cope with the sketch plane having two different transforms when we
+        # extract and when we import it.
+        #
         # We know the one thing which stays constant is the final point in world space, so
         # we have
         #
@@ -134,24 +142,24 @@ class SketchExtrudeImporter():
         #
         # hence
         #
-        # T_extract = T_import * T_correction 
+        # T_extract = T_import * T_correction
         #
         # Now premultiplying both sides by T_import^-1 gives us
         #
-        # T_correction = T_import^-1  * T_extract 
+        # T_correction = T_import^-1  * T_extract
         #
         # This function need to compute T_correction
-        
+
         # sketch_transform is T_import.    Here we find T_import^-1
         ok = sketch_transform.invert()
         assert ok
 
-        # Set xform = T_extract 
+        # Set xform = T_extract
         xform = deserialize.matrix3d(original_transform_json)
-        
+
         # The transformBy() function must be "premultiply"
         # so here we have
-        # xform = T_import^-1  * T_extract 
+        # xform = T_import^-1  * T_extract
         xform.transformBy(sketch_transform)
         return xform
 
@@ -164,13 +172,13 @@ class SketchExtrudeImporter():
         # Find the right sketch plane to use
         sketch_plane = self.get_sketch_plane(sketch_data["reference_plane"], sketch_profiles)
         sketch = sketches.addWithoutEdges(sketch_plane)
-        
+
         # Create an identity matrix
         transform_for_sketch_geom = adsk.core.Matrix3D.create()
         # We will need to apply some other transform to the sketch data
         sketch_transform = sketch.transform
         transform_for_sketch_geom = self.find_transform_for_sketch_geom(sketch_transform, sketch_data["transform"])
-            
+
         # Draw exactly what the user drew and then search for the profiles
         new_sketch_profiles = self.reconstruct_curves(sketch, sketch_data, transform_for_sketch_geom)
         adsk.doEvents()
@@ -200,7 +208,7 @@ class SketchExtrudeImporter():
                 # We could reference the original sketch plane like this:
                 # return profile.parentSketch.referencePlane
                 # But the sketch plane can differ from the profile plane
-                
+
                 # Note: The API doesn't support creating references to sketch profiles directly
                 # So instead we create a construction plane from the profile and use that
                 # This preserves the reference indirectly through the construction plane
@@ -236,7 +244,7 @@ class SketchExtrudeImporter():
                 del reconstructed_profiles[reconstructed_profile_index]
             else:
                 missing_profiles[profile_uuid] = profile_data
-        
+
         # Sometimes the exact match will fail, so we search for the most 'similar' profile,
         # with the most common curve uuids, remaining in the reconstructed profile set
         missing_profile_count = len(missing_profiles)
@@ -248,7 +256,7 @@ class SketchExtrudeImporter():
                 if best_match_profile is not None:
                     sketch_profiles[missing_profile_uuid] = best_match_profile
                     matched_profiles += 1
-            
+
             unmatched_profiles = missing_profile_count - matched_profiles
             if unmatched_profiles > 0:
                 print(f"{unmatched_profiles} left over unmatched profiles!")

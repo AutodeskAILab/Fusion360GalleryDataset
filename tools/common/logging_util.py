@@ -1,5 +1,8 @@
-# Author- J. G. Lambourne
-# Description- Utilities for logging information to avoid depending on the debug console
+"""
+
+Utilities for logging information to avoid depending on the debug console
+
+"""
 
 import adsk.core
 import adsk.fusion
