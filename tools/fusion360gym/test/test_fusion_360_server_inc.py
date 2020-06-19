@@ -17,14 +17,11 @@ import shutil
 import time
 
 # Add the client folder to sys.path
-DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
-import fusion_360_client
-importlib.reload(fusion_360_client)
-from fusion_360_client import Fusion360Client
 
+from fusion_360_client import Fusion360Client
 
 HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
@@ -37,11 +34,6 @@ class TestFusion360Server(unittest.TestCase):
         cls.client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
         # Clear all documents so we start with a clean slate
         cls.client.clear()
-        # ------------------------------------------
-        # TEST FILES
-        cls.data_dir = Path(DATA_DIR)
-        box_design = "SingleSketchExtrude_RootComponent"
-        hex_design = "Z0HexagonCutJoin_RootComponent"
 
     def test_add_sketch(self):
         self.client.clear()
