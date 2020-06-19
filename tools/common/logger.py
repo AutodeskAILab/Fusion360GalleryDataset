@@ -1,6 +1,6 @@
 """
 
-Utilities for logging information to avoid depending on the debug console
+Logger utility class to output log info to the Fusion TextCommands window
 
 """
 
@@ -9,7 +9,7 @@ import adsk.fusion
 import time
 
 
-class LoggingUtil:
+class Logger:
 
     def __init__(self):
         app = adsk.core.Application.get()
@@ -20,7 +20,7 @@ class LoggingUtil:
         if not self.text_palette.isVisible:
             self.text_palette.isVisible = True
 
-    def log_text(self, txt_str=""):
+    def log(self, txt_str=""):
         print(txt_str)
         self.text_palette.writeText(txt_str)
         adsk.doEvents()
