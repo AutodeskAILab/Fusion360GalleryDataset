@@ -54,7 +54,7 @@ class CommandExport():
         export_result = design.exportManager.execute(stl_export_options)
         file_exists = temp_file.exists()
         if export_result and file_exists:
-            self.logger.log_text(f"Mesh temp file written to: {temp_file}")
+            self.logger.log(f"Mesh temp file written to: {temp_file}")
             return self.runner.return_success(temp_file)
         else:
             return self.runner.return_failure(f"{suffix} export failure")
@@ -73,7 +73,7 @@ class CommandExport():
         export_result = design.exportManager.execute(export_options)
         file_exists = temp_file.exists()
         if export_result and file_exists:
-            self.logger.log_text(f"BRep temp file written to: {temp_file}")
+            self.logger.log(f"BRep temp file written to: {temp_file}")
             return self.runner.return_success(temp_file)
         else:
             return self.runner.return_failure(f"{suffix} export failure")
@@ -108,7 +108,7 @@ class CommandExport():
         # Execute the list of commands
         for command_set in command_list:
             command_string = command_set["command_string"]
-            self.logger.log_text(f"Executing {command_string} command")
+            self.logger.log(f"Executing {command_string} command")
             if command_string in ["ping", "refresh", "clear"]:
                 status, message, return_data = command_set["command"]()
                 if status == 500:
@@ -230,7 +230,7 @@ class CommandExport():
         # Save image
         png_file = dest_dir / f"{sketch.name}.png"
         self.app.activeViewport.saveAsImageFile(str(png_file.resolve()), 800, 600)
-        self.logger.log_text(f"Sketch png temp file written to: {png_file}")
+        self.logger.log(f"Sketch png temp file written to: {png_file}")
         # Hide the sketch ready for the next export
         sketch.isVisible = False
         adsk.doEvents()
@@ -267,7 +267,7 @@ class CommandExport():
                     file_path = os.path.join(folder_name, file)
                     # Add file to zip
                     zip_obj.write(file_path, file)
-            self.logger.log_text(f"Sketch zip temp file written to: {zip_file.name}")
+            self.logger.log(f"Sketch zip temp file written to: {zip_file.name}")
         if delete_src_dir:
             # Clean up the folder after outselves
             shutil.rmtree(src_dir)

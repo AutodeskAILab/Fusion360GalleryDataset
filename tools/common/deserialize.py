@@ -110,3 +110,24 @@ def face_by_point3d(point3d_data):
             # Ignore and keep looking
             pass
     return None
+
+
+def view_orientation(name):
+    """Return a camera view orientation given a name"""
+    view_orientations = {
+        "ArbitraryViewOrientation": adsk.core.ViewOrientations.ArbitraryViewOrientation,
+        "BackViewOrientation": adsk.core.ViewOrientations.BackViewOrientation,
+        "BottomViewOrientation": adsk.core.ViewOrientations.BottomViewOrientation,
+        "FrontViewOrientation": adsk.core.ViewOrientations.FrontViewOrientation,
+        "IsoBottomLeftViewOrientation": adsk.core.ViewOrientations.IsoBottomLeftViewOrientation,
+        "IsoBottomRightViewOrientation": adsk.core.ViewOrientations.IsoBottomRightViewOrientation,
+        "IsoTopLeftViewOrientation": adsk.core.ViewOrientations.IsoTopLeftViewOrientation,
+        "IsoTopRightViewOrientation": adsk.core.ViewOrientations.IsoTopRightViewOrientation,
+        "LeftViewOrientation": adsk.core.ViewOrientations.LeftViewOrientation,
+        "RightViewOrientation": adsk.core.ViewOrientations.RightViewOrientation,
+        "TopViewOrientation": adsk.core.ViewOrientations.TopViewOrientation,
+    }
+    name_lower = name.lower()
+    if name_lower in view_orientations:
+        return view_orientations[name_lower]
+    return None
