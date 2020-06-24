@@ -6,11 +6,26 @@ Incremental geometry construction commands
 
 import adsk.core
 import adsk.fusion
+import os
+import sys
+import importlib
 
-from . import name
-from . import match
-from . import deserialize
-from . import serialize
+# Add the common folder to sys.path
+COMMON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "common"))
+if COMMON_DIR not in sys.path:
+    sys.path.append(COMMON_DIR)
+import name
+import match
+import deserialize
+import serialize
+importlib.reload(name)
+importlib.reload(match)
+importlib.reload(deserialize)
+importlib.reload(serialize)
+# from . import name
+# from . import match
+# from . import deserialize
+# from . import serialize
 
 
 class CommandIncrement():

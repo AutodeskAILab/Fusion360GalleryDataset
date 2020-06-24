@@ -10,10 +10,21 @@ import traceback
 import tempfile
 import shutil
 import os
+import sys
+import importlib
 from zipfile import ZipFile
 from pathlib import Path
 
-from .sketch_extrude_importer import SketchExtrudeImporter
+
+# Add the common folder to sys.path
+COMMON_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "common")
+)
+if COMMON_DIR not in sys.path:
+    sys.path.append(COMMON_DIR)
+import exporter
+import view_control
+from sketch_extrude_importer import SketchExtrudeImporter
 
 
 class CommandExport():
@@ -33,44 +44,54 @@ class CommandExport():
         return self.runner.return_success()
 
     def mesh(self, data, dest_dir=None):
-        """Create a mesh in the given format (currently .stl) and send it back as a binary file"""
-        error, suffix = self.__check_file(data, [".stl"])
+        """Create a mesh in the given format (either .obj or .stl)
+            and send it back as a binary file"""
+        error, suffix = self.__check_file(data, [".obj", ".stl"])
         if error is not None:
             return self.runner.return_failure(error)
-
         temp_file = self.__get_temp_file(data["file"], dest_dir)
         design = adsk.fusion.Design.cast(self.app.activeProduct)
-        stl_export_options = design.exportManager.createSTLExportOptions(design.rootComponent, str(temp_file.resolve()))
-        stl_export_options.sendToPrintUtility = False
-        export_result = design.exportManager.execute(stl_export_options)
+        if suffix == ".obj":
+            export_result = exporter.export_obj(
+                temp_file, design.rootComponent
+            )
+        elif suffix == ".stl":
+            export_result = exporter.export_stl(
+                temp_file, design.rootComponent
+            )
         file_exists = temp_file.exists()
         if export_result and file_exists:
-            self.logger.log_text(f"Mesh temp file written to: {temp_file}")
+            self.logger.log(f"Mesh temp file written to: {temp_file}")
             return self.runner.return_success(temp_file)
         else:
             return self.runner.return_failure(f"{suffix} export failure")
 
     def brep(self, data, dest_dir=None):
-        """Create a brep in the given format (currently .step, smt) and send it back as a binary file"""
+        """Create a brep in the given format (.step, smt)
+            and send it back as a binary file"""
         error, suffix = self.__check_file(data, [".step", ".smt"])
         if error is not None:
             return self.runner.return_failure(error)
         temp_file = self.__get_temp_file(data["file"], dest_dir)
         design = adsk.fusion.Design.cast(self.app.activeProduct)
         if suffix == ".step":
-            export_options = design.exportManager.createSTEPExportOptions(str(temp_file.resolve()), design.rootComponent)
+            export_result = exporter.export_step_from_component(
+                temp_file, design.rootComponent
+            )
         elif suffix == ".smt":
-            export_options = design.exportManager.createSMTExportOptions(str(temp_file.resolve()), design.rootComponent)
-        export_result = design.exportManager.execute(export_options)
+            export_result = exporter.export_smt_from_component(
+                temp_file, design.rootComponent
+            )
         file_exists = temp_file.exists()
         if export_result and file_exists:
-            self.logger.log_text(f"BRep temp file written to: {temp_file}")
+            self.logger.log(f"BRep temp file written to: {temp_file}")
             return self.runner.return_success(temp_file)
         else:
             return self.runner.return_failure(f"{suffix} export failure")
 
     def sketches(self, data, dest_dir=None, use_zip=True):
-        """Generate sketches in a given format (e.g. .png) and return as a binary zip file"""
+        """Generate sketches in a given format (e.g. .png)
+            and return as a binary zip file"""
         design = adsk.fusion.Design.cast(self.app.activeProduct)
         if data is None or "format" not in data:
             return self.runner.return_failure("format not specified")
@@ -99,7 +120,7 @@ class CommandExport():
         # Execute the list of commands
         for command_set in command_list:
             command_string = command_set["command_string"]
-            self.logger.log_text(f"Executing {command_string} command")
+            self.logger.log(f"Executing {command_string} command")
             if command_string in ["ping", "refresh", "clear"]:
                 status, message, return_data = command_set["command"]()
                 if status == 500:
@@ -115,7 +136,9 @@ class CommandExport():
                 if "data" not in command_set:
                     return self.runner.return_failure("missing arguments")
                 data = command_set["data"]
-                status, message, return_data = command_set["command"](data, dest_dir=dest_dir)
+                status, message, return_data = command_set["command"](
+                    data, dest_dir=dest_dir
+                )
                 if status == 500:
                     return status, message, return_data
             # Commands creating a folder of output
@@ -123,7 +146,9 @@ class CommandExport():
                 if "data" not in command_set:
                     return self.runner.return_failure("missing arguments")
                 data = command_set["data"]
-                status, message, return_data = command_set["command"](data, dest_dir=dest_dir, use_zip=False)
+                status, message, return_data = command_set["command"](
+                    data, dest_dir=dest_dir, use_zip=False
+                )
                 if status == 500:
                     return status, message, return_data
         # Zip all the files we produced up and pass them back
@@ -166,66 +191,15 @@ class CommandExport():
         if dest_dir is None:
             dest_dir = Path(tempfile.mkdtemp())
         design = adsk.fusion.Design.cast(self.app.activeProduct)
-        # Lets hide all the bodies and sketches so we can export
-        for component in design.allComponents:
-            for body in component.bRepBodies:
-                body.isVisible = False
-            for sketch in component.sketches:
-                sketch.isVisible = False
-
-        # Then we loop over each sketch and export a PNG
+        # Loop over each sketch and export a PNG
         for component in design.allComponents:
             for sketch in component.sketches:
-                self.__export_sketch_png(sketch, dest_dir)
-
-        # Now lets show all the bodies and sketches again
-        for component in design.allComponents:
-            for body in component.bRepBodies:
-                body.isVisible = True
-            for sketch in component.sketches:
-                sketch.isVisible = True
-
+                png_file = dest_dir / f"{sketch.name}.png"
+                exporter.export_png_from_sketch(png_file, sketch)
         if use_zip:
             return self.__zip_dir(dest_dir)
         else:
             return dest_dir
-
-    def __export_sketch_png(self, sketch, dest_dir):
-        """Export a single sketch as png files"""
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
-        # Show the sketch
-        sketch.isVisible = True
-
-        # Get the existing camera and modify it
-        camera = self.app.activeViewport.camera
-        # Pull out the transform matrix pieces
-        (origin, xAxis, yAxis, zAxis) = sketch.transform.getAsCoordinateSystem()
-        # We will fit to the contents of the screen
-        # So we just need to point the camera in the right direction
-        camera.target = origin
-        camera.upVector = yAxis
-        eye_offset = zAxis.asPoint()
-        camera.eye = adsk.core.Point3D.create(
-            origin.x + eye_offset.x,
-            origin.y + eye_offset.y,
-            origin.z + eye_offset.z
-        )
-
-        # Set this once to fit to the camera view
-        # But fit() needs to also be called below
-        camera.isFitView = True
-        self.app.activeViewport.camera = camera  # Update the viewport
-        # Call fit to the screen after we have changed to top view
-        self.app.activeViewport.fit()
-
-        # Save image
-        png_file = dest_dir / f"{sketch.name}.png"
-        self.app.activeViewport.saveAsImageFile(str(png_file.resolve()), 800, 600)
-        self.logger.log_text(f"Sketch png temp file written to: {png_file}")
-        # Hide the sketch ready for the next export
-        sketch.isVisible = False
-        adsk.doEvents()
-        self.app.activeViewport.refresh()
 
     def __export_sketch_dxfs(self, dest_dir=None, use_zip=True):
         """Export all sketches as dxf files and return a zip file"""
@@ -258,7 +232,7 @@ class CommandExport():
                     file_path = os.path.join(folder_name, file)
                     # Add file to zip
                     zip_obj.write(file_path, file)
-            self.logger.log_text(f"Sketch zip temp file written to: {zip_file.name}")
+            self.logger.log(f"Zip temp file written to: {zip_file.name}")
         if delete_src_dir:
             # Clean up the folder after outselves
             shutil.rmtree(src_dir)

@@ -8,8 +8,8 @@ Match Fusion 360 entities to ids
 import adsk.core
 import adsk.fusion
 
-from . import deserialize
-from . import name
+import deserialize
+import name
 
 
 def sketch_by_name(sketch_name):

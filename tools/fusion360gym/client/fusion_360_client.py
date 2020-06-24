@@ -17,7 +17,11 @@ class Fusion360Client():
         }
         if data is not None:
             command_data["data"] = data
-        return requests.post(url=self.url, data=json.dumps(command_data), stream=stream)
+        return requests.post(
+            url=self.url,
+            data=json.dumps(command_data),
+            stream=stream
+        )
 
     def ping(self):
         """Ping for debugging"""
@@ -42,9 +46,10 @@ class Fusion360Client():
         return self.send_command("clear")
 
     def mesh(self, file):
-        """Retreive a mesh in .stl format and write it to a local file"""
+        """Retreive a mesh in .obj or .stl format
+            and write it to a local file"""
         suffix = file.suffix
-        valid_formats = [".stl"]
+        valid_formats = [".obj", ".stl"]
         if suffix not in valid_formats:
             return self.__return_error(f"Invalid file format: {suffix}")
         command_data = {
@@ -55,7 +60,8 @@ class Fusion360Client():
         return r
 
     def brep(self, file):
-        """Retreive a brep in a format (step/smt) and write it to a local file"""
+        """Retreive a brep in a .step or .smt format
+            and write it to a local file"""
         suffix = file.suffix
         valid_formats = [".step", ".smt"]
         if suffix not in valid_formats:
@@ -68,7 +74,8 @@ class Fusion360Client():
         return r
 
     def sketches(self, dir, format=".png"):
-        """Retreive each sketch in a given format (e.g. .png, .dxf) and save to a local directory"""
+        """Retreive each sketch in a given format (e.g. .png, .dxf)
+            and save to a local directory"""
         if not dir.is_dir():
             return self.__return_error(f"Not an existing directory")
         valid_formats = [".png", ".dxf"]
@@ -91,7 +98,8 @@ class Fusion360Client():
         return r
 
     def detach(self):
-        """Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again"""
+        """Detach the server from Fusion, taking it offline,
+            allowing the Fusion UI to become responsive again"""
         return self.send_command("detach")
 
     def commands(self, command_list, dir=None):
@@ -99,14 +107,17 @@ class Fusion360Client():
         if dir is not None:
             if not dir.is_dir():
                 return self.__return_error(f"Not an existing directory")
-        if command_list is None or not isinstance(command_list, list) or len(command_list) == 0:
-            return self.__return_error("Command list argument missing or not a populated list")
+        if (command_list is None or not isinstance(command_list, list) or
+           len(command_list) == 0):
+            return self.__return_error(
+                "Command list argument missing or not a populated list")
         # Flag to mark down if we will get a binary back
         binary_response = False
         # Check that each command_set has a command
         for command_set in command_list:
             if "command" not in command_set:
-                return self.__return_error("Command list command argument missing")
+                return self.__return_error(
+                    "Command list command argument missing")
             command = command_set["command"]
             if command in ["mesh", "brep", "sketches"]:
                 binary_response = True
@@ -192,7 +203,8 @@ class Fusion360Client():
         if not isinstance(sketch_name, str):
             return self.__return_error(f"Invalid sketch_name")
         command_data = {
-            "sketch_name": sketch_name        }
+            "sketch_name": sketch_name
+        }
         return self.send_command("close_profile", data=command_data)
 
     def add_extrude(self, sketch_name, profile_id, distance, operation):

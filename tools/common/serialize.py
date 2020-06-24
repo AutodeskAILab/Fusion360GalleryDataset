@@ -7,7 +7,7 @@ Serialize Fusion 360 entities to dictionary data for json
 import adsk.core
 import adsk.fusion
 
-from . import name
+import name
 
 
 def object_type(entity):

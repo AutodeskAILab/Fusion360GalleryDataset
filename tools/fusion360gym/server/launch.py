@@ -12,19 +12,16 @@ import json
 import time
 import importlib
 
-SERVER_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(SERVER_DIR)
-CLIENT_DIR = os.path.join(ROOT_DIR, "client")
-
 # Add the client folder to sys.path
+CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
 import fusion_360_client
 importlib.reload(fusion_360_client)
 from fusion_360_client import Fusion360Client
-sys.path.remove(CLIENT_DIR)
 
-LAUNCH_JSON_FILE = Path(SERVER_DIR) / "launch.json"
+
+LAUNCH_JSON_FILE = Path("launch.json")
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8080
 

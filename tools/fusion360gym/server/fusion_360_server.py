@@ -6,12 +6,22 @@ import json
 import threading
 import shutil
 import os
+import sys
 import time
+import importlib
 from pathlib import Path
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
+
+# Add the common folder to sys.path
+COMMON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "common"))
+if COMMON_DIR not in sys.path:
+    sys.path.append(COMMON_DIR)
+import logger
+importlib.reload(logger)
+from logger import Logger
+
 from .command_runner import CommandRunner
-from .logging_util import LoggingUtil
 
 
 DEFAULT_HOST = "127.0.0.1"
@@ -43,8 +53,8 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             post_data = self.get_post_data()
-            self.logger.log_text("\n")
-            # logger.log_text(json.dumps(post_data))
+            self.logger.log("\n")
+            # logger.log(json.dumps(post_data))
             if "command" not in post_data:
                 self.respond(400, "Command not present")
                 return
@@ -55,9 +65,9 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
                 return
 
             command = post_data["command"]
-            self.logger.log_text(f"Command: {command}")
+            self.logger.log(f"Command: {command}")
             if command == "detach":
-                self.logger.log_text("Shutting down...")
+                self.logger.log("Shutting down...")
                 self.detach()
 
             data = None
@@ -66,12 +76,12 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
 
             status_code, message, return_data = self.runner.run_command(command, data)
             if return_data is not None and isinstance(return_data, Path):
-                    self.logger.log_text(f"[{status_code}] {return_data}")
+                    self.logger.log(f"[{status_code}] {return_data}")
                     self.respond_binary_file(status_code, return_data)
             else:
-                self.logger.log_text(f"[{status_code}] {message}")
+                self.logger.log(f"[{status_code}] {message}")
                 if return_data is not None:
-                    self.logger.log_text(f"\t{return_data}")
+                    self.logger.log(f"\t{return_data}")
                 self.respond(status_code, message, return_data)
 
         except Exception as ex:
@@ -86,7 +96,7 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
     def get_post_data(self):
         content_len = int(self.headers.get('Content-Length'))
         post_body = self.rfile.read(content_len)
-        # self.logger.log_text(f"post_body: {post_body}")
+        # self.logger.log(f"post_body: {post_body}")
         post_body_json = json.loads(post_body)
         return post_body_json
 
@@ -147,8 +157,8 @@ def start_server():
     """Start the server"""
 
     # # Setup the logger globally after Fusion has started
-    logger = LoggingUtil()
-    logger.log_text("Started server...")
+    logger = Logger()
+    logger.log("Started server...")
     # # Set up the command runner we use to execute commands
     runner = CommandRunner()
     runner.set_logger(logger)
@@ -161,14 +171,14 @@ def start_server():
     host_name, port_number = get_launch_endpoint()
 
     # Launch the server which will block the UI thread
-    logger.log_text(f"Connecting on: {host_name}:{port_number}")
+    logger.log(f"Connecting on: {host_name}:{port_number}")
     server = HTTPServer((host_name, port_number), handler)
     try:
         server.serve_forever(poll_interval=1.0)
     except KeyboardInterrupt:
         pass
     except Exception as ex:
-        logger.log_text(str(ex))
+        logger.log(str(ex))
     finally:
         server.server_close()
 

@@ -15,17 +15,12 @@ import importlib
 import json
 import shutil
 
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(TEST_DIR)
-CLIENT_DIR = os.path.join(ROOT_DIR, "client")
-
 # Add the client folder to sys.path
+CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
-import fusion_360_client
-importlib.reload(fusion_360_client)
+
 from fusion_360_client import Fusion360Client
-sys.path.remove(CLIENT_DIR)
 
 HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
@@ -40,7 +35,7 @@ class TestFusion360Server(unittest.TestCase):
         cls.client.clear()
         # ------------------------------------------
         # TEST FILES
-        cls.data_dir = Path(ROOT_DIR) / "data"
+        cls.data_dir = Path(__file__).parent.parent / "data"
         box_design = "SingleSketchExtrude_RootComponent"
         hex_design = "Z0HexagonCutJoin_RootComponent"
         # Box json reconstruction file
@@ -52,7 +47,9 @@ class TestFusion360Server(unittest.TestCase):
         #
         # OUTPUT FILES
         # Mesh stl file
-        cls.test_mesh_file = cls.data_dir / f"{box_design}.stl"
+        cls.test_mesh_stl_file = cls.data_dir / f"{box_design}.stl"
+        # Mesh obj file
+        cls.test_mesh_obj_file = cls.data_dir / f"{box_design}.obj"
         # BRep step file
         cls.test_brep_step_file = cls.data_dir / f"{box_design}.step"
         # BRep smt file
@@ -102,23 +99,36 @@ class TestFusion360Server(unittest.TestCase):
         self.assertIsNone(r, msg="mesh response is None")
         r = self.client.clear()
 
-    def test_mesh(self):
+    def test_mesh_stl(self):
         # Reconstruct first
         r = self.client.reconstruct(self.box_design_json_file)
         # Save out the mesh
-        r = self.client.mesh(self.test_mesh_file)
+        r = self.client.mesh(self.test_mesh_stl_file)
         self.assertIsNotNone(r, msg="mesh response is not None")
         self.assertEqual(r.status_code, 200, msg="mesh status code")
-        self.__test_box_mesh(self.test_mesh_file)
+        self.assertTrue(self.test_mesh_stl_file.exists())
+        self.__test_box_mesh(self.test_mesh_stl_file)
         # Clear
         r = self.client.clear()
-        self.test_mesh_file.unlink()
+        self.test_mesh_stl_file.unlink()
+
+    def test_mesh_obj(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        # Save out the mesh
+        r = self.client.mesh(self.test_mesh_obj_file)
+        self.assertIsNotNone(r, msg="mesh response is not None")
+        self.assertEqual(r.status_code, 200, msg="mesh status code")
+        self.assertTrue(self.test_mesh_obj_file.exists())
+        # Clear
+        r = self.client.clear()
+        self.test_mesh_obj_file.unlink()
 
     def test_mesh_invalid_format(self):
         # Reconstruct first
         r = self.client.reconstruct(self.box_design_json_file)
         # Save out the mesh
-        test_invalid_file = self.data_dir / "file.obj"
+        test_invalid_file = self.data_dir / "file.off"
         r = self.client.mesh(test_invalid_file)
         self.assertIsNone(r, msg="mesh response is None")
         # Clear
@@ -286,7 +296,7 @@ class TestFusion360Server(unittest.TestCase):
             {
                 "command": "mesh",
                 "data": {
-                    "file": self.test_mesh_file.name
+                    "file": self.test_mesh_stl_file.name
                 }
             },
             {"command": "clear"}
@@ -301,7 +311,7 @@ class TestFusion360Server(unittest.TestCase):
             sketch_file = self.sketch_dir / f"Sketch{i+1}.png"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch png file size greater than 0")
-        output_model = self.sketch_dir / self.test_mesh_file.name
+        output_model = self.sketch_dir / self.test_mesh_stl_file.name
         self.assertTrue(output_model.exists())
         self.assertGreater(output_model.stat().st_size, 0, msg="stl file size greater than 0")
         self.__test_hex_mesh(output_model)
