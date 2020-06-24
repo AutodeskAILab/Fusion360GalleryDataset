@@ -110,8 +110,8 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
     - Returns BRep vertices of the resulting body, BRep face information
 
 #### Export
-- `mesh(file)`: Retreive a mesh in .stl format and write it to the local file provided.
-- `brep(file)`: Retreive a brep in a format (step/smt) and write it to a local file provided.
+- `mesh(file)`: Retreive a mesh in .obj or .stl format and write it to the local file provided.
+- `brep(file)`: Retreive a brep in .step or .smt format and write it to a local file provided.
 - `sketches(dir, format)`: Retreive each sketch in a given format.
     - `dir`: the local directory where the output will be saved
     - `format`: a string with the values `.png` or `.dxf`
