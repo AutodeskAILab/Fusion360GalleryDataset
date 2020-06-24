@@ -13,8 +13,8 @@ import os
 from zipfile import ZipFile
 from pathlib import Path
 
-from .command_export import CommandExport
-from .command_increment import CommandIncrement
+from command_export import CommandExport
+from command_increment import CommandIncrement
 
 
 class CommandRunner():

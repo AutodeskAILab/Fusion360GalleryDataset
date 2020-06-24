@@ -16,11 +16,20 @@ def point2d(point_data):
 
 
 def point3d(point_data):
-    return adsk.core.Point3D.create(
-        point_data["x"],
-        point_data["y"],
-        point_data["z"]
-    )
+
+    if('x' in point_data):
+        return adsk.core.Point3D.create(
+            point_data["x"],
+            point_data["y"],
+            point_data["z"]
+        )
+    else:
+        return adsk.core.Point3D.create(
+            point_data[0],
+            point_data[1],
+            point_data[2]
+        )
+ 
 
 
 def vector3d(vector_data):
