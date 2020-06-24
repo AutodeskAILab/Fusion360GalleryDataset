@@ -1,0 +1,440 @@
+{
+    "made_of": {
+        "geometry": {
+            "apply_to": {
+                "geometry": {
+                    "apply_to": {
+                        "geometry": {
+                            "apply_to": {},
+                            "made_of": {
+                                "geometry": {
+                                    "apply_to": {},
+                                    "distance": 2.0,
+                                    "made_of": {
+                                        "geometry": {
+                                            "made_of": {
+                                                "stroke_list": {
+                                                    "0": {
+                                                        "end": {
+                                                            "type": "Point3D",
+                                                            "x": 0.0,
+                                                            "y": 4.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "parent": "Extrude1_outlp_0_strokes",
+                                                        "start": {
+                                                            "type": "Point3D",
+                                                            "x": 2.0,
+                                                            "y": 4.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "type": "Line3D"
+                                                    },
+                                                    "1": {
+                                                        "end": {
+                                                            "type": "Point3D",
+                                                            "x": -1.0,
+                                                            "y": 3.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "parent": "Extrude1_outlp_0_strokes",
+                                                        "start": {
+                                                            "type": "Point3D",
+                                                            "x": 0.0,
+                                                            "y": 4.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "type": "Line3D"
+                                                    },
+                                                    "2": {
+                                                        "end": {
+                                                            "type": "Point3D",
+                                                            "x": -1.0,
+                                                            "y": 1.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "parent": "Extrude1_outlp_0_strokes",
+                                                        "start": {
+                                                            "type": "Point3D",
+                                                            "x": -1.0,
+                                                            "y": 3.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "type": "Line3D"
+                                                    },
+                                                    "3": {
+                                                        "end": {
+                                                            "type": "Point3D",
+                                                            "x": 0.0,
+                                                            "y": 0.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "parent": "Extrude1_outlp_0_strokes",
+                                                        "start": {
+                                                            "type": "Point3D",
+                                                            "x": -1.0,
+                                                            "y": 1.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "type": "Line3D"
+                                                    },
+                                                    "4": {
+                                                        "end": {
+                                                            "type": "Point3D",
+                                                            "x": 2.0,
+                                                            "y": 0.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "parent": "Extrude1_outlp_0_strokes",
+                                                        "start": {
+                                                            "type": "Point3D",
+                                                            "x": 0.0,
+                                                            "y": 0.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "type": "Line3D"
+                                                    },
+                                                    "5": {
+                                                        "end": {
+                                                            "type": "Point3D",
+                                                            "x": 3.0,
+                                                            "y": 1.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "parent": "Extrude1_outlp_0_strokes",
+                                                        "start": {
+                                                            "type": "Point3D",
+                                                            "x": 2.0,
+                                                            "y": 0.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "type": "Line3D"
+                                                    },
+                                                    "6": {
+                                                        "end": {
+                                                            "type": "Point3D",
+                                                            "x": 3.0,
+                                                            "y": 3.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "parent": "Extrude1_outlp_0_strokes",
+                                                        "start": {
+                                                            "type": "Point3D",
+                                                            "x": 3.0,
+                                                            "y": 1.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "type": "Line3D"
+                                                    },
+                                                    "7": {
+                                                        "end": {
+                                                            "type": "Point3D",
+                                                            "x": 2.0,
+                                                            "y": 4.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "parent": "Extrude1_outlp_0_strokes",
+                                                        "start": {
+                                                            "type": "Point3D",
+                                                            "x": 3.0,
+                                                            "y": 3.0,
+                                                            "z": 0.0
+                                                        },
+                                                        "type": "Line3D"
+                                                    }
+                                                }
+                                            },
+                                            "name": "Extrude1_outlp_0_sketch",
+                                            "parent": "Extrude1_outlp_0",
+                                            "ref": "XY",
+                                            "t_index": 0,
+                                            "transform": [
+                                                [
+                                                    1.0,
+                                                    0.0,
+                                                    0.0,
+                                                    0.0
+                                                ],
+                                                [
+                                                    0.0,
+                                                    1.0,
+                                                    0.0,
+                                                    0.0
+                                                ],
+                                                [
+                                                    0.0,
+                                                    0.0,
+                                                    1.0,
+                                                    0.0
+                                                ],
+                                                [
+                                                    0.0,
+                                                    0.0,
+                                                    0.0,
+                                                    1.0
+                                                ]
+                                            ],
+                                            "type": "sketch"
+                                        }
+                                    },
+                                    "name": "Extrude1_outlp_0",
+                                    "operation": "NewBodyFeatureOperation",
+                                    "t_index": 0,
+                                    "type": "body"
+                                }
+                            },
+                            "name": "Extrude1",
+                            "operation": "NewBodyFeatureOperation",
+                            "type": "body",
+                            "uuid": "83d9e7f4-91b1-11ea-b96b-acde48001122"
+                        }
+                    },
+                    "made_of": {
+                        "geometry": {
+                            "apply_to": {},
+                            "distance": -2.0,
+                            "made_of": {
+                                "geometry": {
+                                    "made_of": {
+                                        "stroke_list": {
+                                            "0": {
+                                                "end": {
+                                                    "type": "Point3D",
+                                                    "x": 0.0,
+                                                    "y": -1.0,
+                                                    "z": 0.0
+                                                },
+                                                "parent": "Extrude2_outlp_0_strokes",
+                                                "start": {
+                                                    "type": "Point3D",
+                                                    "x": -2.0,
+                                                    "y": -1.0,
+                                                    "z": 0.0
+                                                },
+                                                "type": "Line3D"
+                                            },
+                                            "1": {
+                                                "end": {
+                                                    "type": "Point3D",
+                                                    "x": -2.0,
+                                                    "y": -1.0,
+                                                    "z": 0.0
+                                                },
+                                                "parent": "Extrude2_outlp_0_strokes",
+                                                "start": {
+                                                    "type": "Point3D",
+                                                    "x": -2.0,
+                                                    "y": -3.0,
+                                                    "z": 0.0
+                                                },
+                                                "type": "Line3D"
+                                            },
+                                            "2": {
+                                                "end": {
+                                                    "type": "Point3D",
+                                                    "x": -2.0,
+                                                    "y": -3.0,
+                                                    "z": 0.0
+                                                },
+                                                "parent": "Extrude2_outlp_0_strokes",
+                                                "start": {
+                                                    "type": "Point3D",
+                                                    "x": 0.0,
+                                                    "y": -3.0,
+                                                    "z": 0.0
+                                                },
+                                                "type": "Line3D"
+                                            },
+                                            "3": {
+                                                "end": {
+                                                    "type": "Point3D",
+                                                    "x": 0.0,
+                                                    "y": -3.0,
+                                                    "z": 0.0
+                                                },
+                                                "parent": "Extrude2_outlp_0_strokes",
+                                                "start": {
+                                                    "type": "Point3D",
+                                                    "x": 0.0,
+                                                    "y": -1.0,
+                                                    "z": 0.0
+                                                },
+                                                "type": "Line3D"
+                                            }
+                                        }
+                                    },
+                                    "name": "Extrude2_outlp_0_sketch",
+                                    "parent": "Extrude2_outlp_0",
+                                    "ref": {
+                                        "type": "Point3D",
+                                        "x": 2.5,
+                                        "y": 2.0,
+                                        "z": 2.0
+                                    },
+                                    "t_index": 2,
+                                    "transform": [
+                                        [
+                                            -1.0,
+                                            0.0,
+                                            0.0,
+                                            0.0
+                                        ],
+                                        [
+                                            0.0,
+                                            -1.0,
+                                            0.0,
+                                            0.0
+                                        ],
+                                        [
+                                            0.0,
+                                            0.0,
+                                            1.0,
+                                            2.0
+                                        ],
+                                        [
+                                            0.0,
+                                            0.0,
+                                            0.0,
+                                            1.0
+                                        ]
+                                    ],
+                                    "type": "sketch"
+                                }
+                            },
+                            "name": "Extrude2_outlp_0",
+                            "operation": "NewBodyFeatureOperation",
+                            "t_index": 2,
+                            "type": "body"
+                        }
+                    },
+                    "name": "Extrude2",
+                    "operation": "CutFeatureOperation",
+                    "type": "body",
+                    "uuid": "83e1e8b4-91b1-11ea-b96b-acde48001122"
+                }
+            },
+            "made_of": {
+                "geometry": {
+                    "apply_to": {},
+                    "distance": 0.2,
+                    "made_of": {
+                        "geometry": {
+                            "made_of": {
+                                "stroke_list": {
+                                    "0": {
+                                        "end": {
+                                            "type": "Point3D",
+                                            "x": 1.1000000163912773,
+                                            "y": 0.10000000149011612,
+                                            "z": 0.0
+                                        },
+                                        "parent": "Extrude3_outlp_0_strokes",
+                                        "start": {
+                                            "type": "Point3D",
+                                            "x": 2.9000000432133675,
+                                            "y": 0.10000000149011612,
+                                            "z": 0.0
+                                        },
+                                        "type": "Line3D"
+                                    },
+                                    "1": {
+                                        "end": {
+                                            "type": "Point3D",
+                                            "x": 2.9000000432133675,
+                                            "y": 0.10000000149011612,
+                                            "z": 0.0
+                                        },
+                                        "parent": "Extrude3_outlp_0_strokes",
+                                        "start": {
+                                            "type": "Point3D",
+                                            "x": 2.9000000432133675,
+                                            "y": 1.9000000283122063,
+                                            "z": 0.0
+                                        },
+                                        "type": "Line3D"
+                                    },
+                                    "2": {
+                                        "end": {
+                                            "type": "Point3D",
+                                            "x": 2.9000000432133675,
+                                            "y": 1.9000000283122063,
+                                            "z": 0.0
+                                        },
+                                        "parent": "Extrude3_outlp_0_strokes",
+                                        "start": {
+                                            "type": "Point3D",
+                                            "x": 1.1000000163912773,
+                                            "y": 1.9000000283122063,
+                                            "z": 0.0
+                                        },
+                                        "type": "Line3D"
+                                    },
+                                    "3": {
+                                        "end": {
+                                            "type": "Point3D",
+                                            "x": 1.1000000163912773,
+                                            "y": 1.9000000283122063,
+                                            "z": 0.0
+                                        },
+                                        "parent": "Extrude3_outlp_0_strokes",
+                                        "start": {
+                                            "type": "Point3D",
+                                            "x": 1.1000000163912773,
+                                            "y": 0.10000000149011612,
+                                            "z": 0.0
+                                        },
+                                        "type": "Line3D"
+                                    }
+                                }
+                            },
+                            "name": "Extrude3_outlp_0_sketch",
+                            "parent": "Extrude3_outlp_0",
+                            "ref": {
+                                "type": "Point3D",
+                                "x": 3.0,
+                                "y": 1.0500000081956387,
+                                "z": 1.0
+                            },
+                            "t_index": 4,
+                            "transform": [
+                                [
+                                    0.0,
+                                    1.0,
+                                    0.0,
+                                    3.0
+                                ],
+                                [
+                                    0.0,
+                                    0.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                [
+                                    1.0,
+                                    0.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                [
+                                    0.0,
+                                    0.0,
+                                    0.0,
+                                    1.0
+                                ]
+                            ],
+                            "type": "sketch"
+                        }
+                    },
+                    "name": "Extrude3_outlp_0",
+                    "operation": "NewBodyFeatureOperation",
+                    "t_index": 4,
+                    "type": "body"
+                }
+            },
+            "name": "Extrude3",
+            "operation": "JoinFeatureOperation",
+            "type": "body",
+            "uuid": "83e8ba5e-91b1-11ea-b96b-acde48001122"
+        }
+    }
+}
