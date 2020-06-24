@@ -15,10 +15,10 @@ From the approximately 20,000 designs available we derive several data 'subsets'
 ## Download
 The following data subsets are available to download:
 
-| Data Subset | Download | Documentation |
+| Data Subset | Download |
 | - | - | - |
-| [Segmentation](docs/segmentation.md) | - | - |
-| [Reconstruction](docs/reconstruction.md) | - | - |
+| [Segmentation](docs/segmentation.md) | - |
+| [Reconstruction](docs/reconstruction.md) | [Version d4](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d4) |
 
 
 ## Documentation
