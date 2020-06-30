@@ -14,7 +14,7 @@ reload(json_action_compiler)
 
 
 from json_action_compiler import JsonActionCompiler
-from action_executor_freecad import ActionExecutorFreeCAD
+from action_excecutor_freecad import ActionExcecutorFreeCAD
 
 # Add the common folder to sys.path
 COMMON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "common"))

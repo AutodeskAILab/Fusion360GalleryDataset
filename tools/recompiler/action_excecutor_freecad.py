@@ -28,7 +28,7 @@ import Part
 from FreeCAD import Base
 import numpy as np
 
-class ActionExecutorFreeCAD():
+class ActionExcecutorFreeCAD():
     def __init__(self, actions, callBack = None):
 
         if isinstance(actions, list):
