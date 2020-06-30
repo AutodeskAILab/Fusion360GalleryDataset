@@ -3,7 +3,11 @@
 Load Fusion json data and output an actions sequence
 No Fusion API required for this class
 
+TODO: support more sketch data. now only supports Line3D
+
 """
+
+
 
 
 import traceback
@@ -15,14 +19,6 @@ import math
 from pathlib import Path
 
 from importlib import reload
-
-# Add the common folder to sys.path
-COMMON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "common"))
-if COMMON_DIR not in sys.path:
-    sys.path.append(COMMON_DIR)
-
-# import utils
-
 
 class JsonActionCompiler():
     def __init__(self, json_data):
@@ -49,11 +45,14 @@ class JsonActionCompiler():
         self.record_profile_loops()
 
         self.build_construction_tree()
-        self.saveDataAsJson(self.json, self.construction_tree)
-        actions = self.traverse_construction_tree(self.construction_tree)
-
-        return actions
     
+    def getTree(self):
+        # self.saveDataAsJson(self.json, self.construction_tree)
+        return self.construction_tree
+    
+    def getActions(self):
+        return self.traverse_construction_tree(self.construction_tree)
+
     def record_sketches(self):
         self.sketches = {}
 
@@ -68,12 +67,12 @@ class JsonActionCompiler():
                 self.sketches[entity_uuid] = {}
 
                 transform = entity["transform"] # geo_utils.transform_print(entity["transform"])
-                ref = None
+                ref = ref = entity["reference_plane"]
 
-                if entity["reference_plane"]['type'] == "ConstructionPlane":
-                    ref = entity["reference_plane"]['name']
-                elif entity["reference_plane"]['type'] == "BRepFace":
-                    ref = entity["reference_plane"]['point_on_face']
+                # if entity["reference_plane"]['type'] == "ConstructionPlane":
+                #     ref = entity["reference_plane"]['name']
+                # elif entity["reference_plane"]['type'] == "BRepFace":
+                #     ref = entity["reference_plane"]['point_on_face']
 
                 self.sketches[entity_uuid]['transform'] = transform
                 self.sketches[entity_uuid]['ref'] = ref
@@ -174,8 +173,6 @@ class JsonActionCompiler():
 
         message = {}
 
-        # print('lines', lines)
-
         for sketch in sketches:
             t = sketch['t_index']
 
@@ -192,9 +189,6 @@ class JsonActionCompiler():
                 't': t
             }
 
-
-            # print(f"Start Sketch: {sketch_info}")
-            # message[t]['sketch'] += f"Start Sketch: {sketch_info}\n"
             message[t]['sketch'].append({
                 'command': 'add_sketch',
                 'info': sketch_info
@@ -204,6 +198,9 @@ class JsonActionCompiler():
 
             for id in curves:
                 curve = curves[id]
+
+                print('curve', curve)
+
                 start = [curve['start']['x'], curve['start']['y'], curve['start']['z']]
                 end = [curve['end']['x'], curve['end']['y'], curve['end']['z']]
 
@@ -213,28 +210,21 @@ class JsonActionCompiler():
                     'sketch': sketch['name']
                 }
 
-                # print(f"Add {curve['type']}: {curve_info}")
-                # message[t]['sketch'] += f"Add {curve['type']}: {curve_info}\n"
                 message[t]['sketch'].append({
                     'command': 'add_line',
                     'info': curve_info
                 })
 
-            # print(f"End Sketch")
-            # message[t]['sketch'] += f"End Sketch\n"
-            # message[t]['sketch'] += f"\n"
-            # message[t]['sketch'].append({
-            #     'command': 'close_profile',
-            #     'info': sketch['name'],
-            # })
+            message[t]['sketch'].append({
+                'command': 'close_profile',
+                'info': sketch['name'],
+            })
 
 
         bodies = self.get_type_in_tree(self.construction_tree, 'body', [])
         bodies.reverse()
 
         for body in bodies:
-
-
 
             name = body['name']
             operation = body['operation']
@@ -266,16 +256,11 @@ class JsonActionCompiler():
             if made_of_type == 'sketch':
                 body_info['distance'] = body['distance']
 
-            # print(f"Add body: {body_info}")
-            # message[t]['body'] += f"Add body: {body_info}\n"
-            # message[t]['body'] += f"\n"
             message[t]['body'].append({
                 'command': 'add_extrude',
                 'info': body_info
             })
 
-        # print(f"Finishing body: {self.construction_tree['made_of']['geometry']['name']}")
-        # message[t]['body'] += f"Finishing body: {self.construction_tree['made_of']['geometry']['name']}\n"
         message[t]['body'].append({
             'command': 'Finish',
             'info': self.construction_tree['made_of']['geometry']['name']
@@ -292,29 +277,20 @@ class JsonActionCompiler():
         actions = []
 
         for t in message_ts:
-            # print('t', t)
             if(t in message):
                 if('sketch' in message[t]):
-                    # print(message[t]['sketch'], end='')
                     actions.extend(message[t]['sketch'])
                 if('body' in message[t]):
-                    # print(message[t]['body'], end='')
                     actions.extend(message[t]['body'])
 
             else:
                 if('sketch' in message[-1]):
-                    # print(message[-1]['sketch'], end='')
                     actions.extend(message[-1]['sketch'])
 
                 if('body' in message[-1]):
-                    # print(message[-1]['body'], end='')
                     actions.extend(message[-1]['body'])
         
         return actions
-
-
-
-
 
     def get_branch(self, tree, name):
         # get branch by uuid or name
@@ -361,16 +337,13 @@ class JsonActionCompiler():
                 # get the branch in the construction tree
                 current_branch = self.get_branch(self.construction_tree, name)
                 current_branch['made_of']['geometry'] = {}
-                current_branch = current_branch['made_of']
-                
+                # current_branch = current_branch['made_of']
+
+
                 profiles = entity['profiles']
 
                 # already a single loop sketch
                 if len(profiles) == 1 and len(self.profiles[profiles[0]['profile']]['out']) == 1 and len(self.profiles[profiles[0]['profile']]['in']) == 0:
-
-                    current_branch = self.get_branch(self.construction_tree, name)
-                    current_branch['made_of']['geometry'] = {}
-                    # current_branch = current_branch['made_of']
 
                     lp_name = f"{name}"
                     profile_id = profiles[0]['profile']
@@ -452,34 +425,70 @@ class JsonActionCompiler():
                         # outer loops creates new solid
                         for i, lp in enumerate(out_loops):
 
-                            lp_name = f"{name}_outlp_{j}_{i}"
+                            if('type' in current_branch):
+                                lp_name = f"{name}"
+                                profile_id = pr['profile']
+                                sketch_id = pr['sketch']
 
-                            made_of_data = {
-                                'geometry': {
-                                    'name': f"{lp_name}_sketch",
-                                    'type': 'sketch',
-                                    'ref': ref,
-                                    'transform': transform,
-                                    'parent': lp_name,
-                                    'made_of': {
-                                        'stroke_list': self.get_strokes_data(lp_name, lp)
-                                    },
-                                    't_index': t_index,
+                                out_loops = self.profiles[profile_id]['out']
+                                transform = (self.profiles[profile_id]['transform'])
+                                ref = self.sketches[sketch_id]['ref']  # ref-plane pointer
+                                t_index = self.sketches[sketch_id]['t_index']
+
+                                made_of_data = {
+                                    'geometry': {
+                                        'name': f"{lp_name}_sketch",
+                                        'type': 'sketch',
+                                        'ref': ref,
+                                        'transform': transform,
+                                        'parent': lp_name,
+                                        'made_of': {
+                                            'stroke_list': self.get_strokes_data(lp_name, out_loops[0])
+                                        },
+                                        't_index': t_index,
+                                        'apply_to': {}
+                                    }
                                 }
-                            }
 
-                            current_branch['geometry'] = {
-                                'name': lp_name,
-                                'type': 'body',
-                                'operation': "NewBodyFeatureOperation",
-                                'distance': distance,
-                                'apply_to': {},
-                                'made_of': made_of_data,
-                                't_index': t_index,
+                                current_branch['distance'] = distance
+                                current_branch['made_of'] = made_of_data
+                                # current_branch['t_index'] = t_index + 1
 
-                            }
+                                current_branch = current_branch["apply_to"]
 
-                            current_branch = current_branch["geometry"]['apply_to']
+
+                            else:
+
+                                lp_name = f"{name}_outlp_{j}_{i}"
+
+                                made_of_data = {
+                                    'geometry': {
+                                        'name': f"{lp_name}_sketch",
+                                        'type': 'sketch',
+                                        'ref': ref,
+                                        'transform': transform,
+                                        'parent': lp_name,
+                                        'made_of': {
+                                            'stroke_list': self.get_strokes_data(lp_name, lp)
+                                        },
+                                        't_index': t_index,
+                                    }
+                                }
+
+                                current_branch['geometry'] = {
+                                    'name': lp_name,
+                                    'type': 'body',
+                                    'operation': "NewBodyFeatureOperation",
+                                    'distance': distance,
+                                    'apply_to': {},
+                                    'made_of': made_of_data,
+                                    't_index': t_index,
+
+                                }
+
+                                current_branch = current_branch["geometry"]['apply_to']
+                            
+                            
 
     def get_strokes_data(self, lp_name, profile_curves):
 
@@ -488,15 +497,27 @@ class JsonActionCompiler():
         for i, profile_curve in enumerate(profile_curves):
 
             curve_type = profile_curve['type']
-            start = profile_curve['start_point']
-            end = profile_curve['end_point']
+            # TODO: add support to other types
 
-            out[str(i)] = {
-                'start': start,
-                'end': end,
-                'type': curve_type,
-                'parent': f"{lp_name}_strokes"
-            }
+            if(curve_type == "Line3D"):
+                start = profile_curve['start_point']
+                end = profile_curve['end_point']
+
+                out[str(i)] = {
+                    'start': start,
+                    'end': end,
+                    'type': curve_type,
+                    'parent': f"{lp_name}_strokes"
+                }
+            
+            # elif(curve_type == "Circle3D"):
+            #     out[str(i)] = {
+            #         'center': profile_curve['center_point'],
+            #         'radius': profile_curve['radius'],
+            #         'type': curve_type,
+            #         'parent': f"{lp_name}_strokes"
+            #     }
+
 
         return out
 
