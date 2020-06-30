@@ -16,7 +16,7 @@ The Reconstruction Compiler (aka recompiler) converts the raw data structure pro
 
 
 # Excecutor
-The excecutor takes as input a sequence of actions, and excecutes the modeling/sketching operations specified by it. 
+The excecutor takes as input a sequence of actions, and excecutes them to reconstruct the model.
 
 ## Fusion excecutor
 The fusion excecutor converts the actions to the format [Fusion Gym](../fusion360gym) can run with, and calls Fusion Gym commands to rebuild the model in Fusion. 
@@ -30,12 +30,12 @@ The code is expected to run inside of Fusion. Details of how to run the code can
 
 ## FreeCAD excecutor
 [FreeCAD](https://github.com/FreeCAD/FreeCAD) is an open source CAD software. It can be used as a python package as well for geometric computation.
-The FreeCAD excecutor converts the actions to the format freecad can run with, and calls FreeCAD API to rebuild the model in FreeCAD. 
+The FreeCAD excecutor converts the actions to the format FreeCAD can run with, and calls FreeCAD API to rebuild the model in FreeCAD. 
 Example code can be found [here](./test_recompiler/test_recompiler_freecad.py).
 
 #### Note:
 - To run FreeCAD as a python module, it has to run with the python version compatible with FreeCAD. (The python version used for its build)  
-- The path to FreeCAD.so or FreeCAD.dll file need to be added to `sys.path`
+- The path to `FreeCAD.so` or `FreeCAD.dll` file need to be added to `sys.path`
 
 #### Features to be implemented 
 - [ ] Expand support to other curve types other than Line3D
