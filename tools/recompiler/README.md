@@ -30,7 +30,7 @@ The code is expected to run inside of Fusion. Details of how to run the code can
 
 ## FreeCAD excecutor
 [FreeCAD](https://github.com/FreeCAD/FreeCAD) is an open source CAD software. It can be used as a python package as well for geometric computation.
-The FreeCAD excecutor converts the actions to the format FreeCAD can run with, and calls FreeCAD API to rebuild the model in FreeCAD. 
+The FreeCAD excecutor converts the actions to the format FreeCAD can run with, and use the FreeCAD module to rebuild the model. 
 Example code can be found [here](./test_recompiler/test_recompiler_freecad.py).
 
 #### Note:
