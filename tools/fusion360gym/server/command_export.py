@@ -52,11 +52,11 @@ class CommandExport():
         temp_file = self.__get_temp_file(data["file"], dest_dir)
         design = adsk.fusion.Design.cast(self.app.activeProduct)
         if suffix == ".obj":
-            export_result = exporter.export_obj(
+            export_result = exporter.export_obj_from_component(
                 temp_file, design.rootComponent
             )
         elif suffix == ".stl":
-            export_result = exporter.export_stl(
+            export_result = exporter.export_stl_from_component(
                 temp_file, design.rootComponent
             )
         file_exists = temp_file.exists()
