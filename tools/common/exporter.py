@@ -11,7 +11,7 @@ def get_design_product():
     return design
 
 
-def export_stl(file, component):
+def export_stl_from_component(file, component):
     """Export a component as an STL"""
     design = get_design_product()
     try:
@@ -23,7 +23,7 @@ def export_stl(file, component):
         return False
 
 
-def export_obj(file, component):
+def export_obj_from_component(file, component):
     """Export a component as an OBJ"""
     try:
         meshes = []
@@ -151,13 +151,11 @@ def export_png_from_sketch(file, sketch, reset_camera=True,
     app.activeViewport.refresh()
 
 
-def export_png_from_component(file, component=None, reset_camera=True,
+def export_png_from_component(file, component, reset_camera=True,
                               width=600, height=600):
     """Export a png of a component with a given size"""
     app = adsk.core.Application.get()
     design = app.activeProduct
-    if component is None:
-        component = design.rootComponent
     if component == design.rootComponent:
         design.activateRootComponent()
     else:
