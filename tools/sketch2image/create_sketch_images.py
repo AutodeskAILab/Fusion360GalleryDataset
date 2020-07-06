@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--input_folder", type=str, help="The input directory containing the json files")
 parser.add_argument("--output_folder", type=str, help="The output folder for the images")
 parser.add_argument("--linewidth", type=int, help="The linewidth to draw the geometry")
-parser.add_argument("--show_title", type=int, help="Add a title to the image")
+parser.add_argument("--show_title", type=int, default=0, help="Add a title to the image")
 parser.add_argument("--draw_annotation", type=int, help="Draw additional annotation")
 parser.add_argument("--draw_grid", type=int, help="Draw a grid with the image")
 args = parser.parse_args()
@@ -63,7 +63,7 @@ def create_sketch_image(sketch, file, output_path, opts):
         if image_exists(file, sketch_name, output_path):
             print(f"Image for {file} already exists.  Skiping")
             return
-        if opts.show_title is not None:
+        if opts.show_title:
             title = get_short_name(file) + " " + sketch_name
         else:
             title = None
