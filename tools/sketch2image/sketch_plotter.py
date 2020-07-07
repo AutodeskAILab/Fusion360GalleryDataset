@@ -24,7 +24,7 @@ class SketchPlotter:
                 self.draw_annotation = opts.draw_annotation
             if opts.draw_grid:
                 self.draw_grid = True
-            if self.linewidth is not None:
+            if opts.linewidth is not None:
                 self.linewidth = opts.linewidth
         
         # Add a title if one was given
