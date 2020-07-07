@@ -12,8 +12,8 @@ SketchPlotter(sketch, title=None, opts=None)
     - opts.draw_grid:  Draw a background grid
     - opts.linewidth:  Linewidth for the sketch curves
 
-## create_sketch_images.py
+## sketch2image.py
 A utility to create sketch images for every reconstruction json file in a folder
 ```
-python create_sketch_images.py --input_folder /path/to/json_files/ --output_folder /path/to/put/images
+python sketch2image.py --input_folder /path/to/json_files/ --output_folder /path/to/put/images
 ```
