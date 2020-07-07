@@ -7,10 +7,10 @@ from sketch_plotter import SketchPlotter
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_folder", type=str, help="The input directory containing the json files")
 parser.add_argument("--output_folder", type=str, help="The output folder for the images")
-parser.add_argument("--linewidth", type=int, help="The linewidth to draw the geometry")
-parser.add_argument("--show_title", type=int, default=0, help="Add a title to the image")
-parser.add_argument("--draw_annotation", type=int, help="Draw additional annotation")
-parser.add_argument("--draw_grid", type=int, help="Draw a grid with the image")
+parser.add_argument("--linewidth", type=int, default=1,help="The linewidth to draw the geometry")
+parser.add_argument("--show_title", type=int, default=1, help="Add a title to the image")
+parser.add_argument("--draw_annotation", type=int, default=0, help="Draw additional annotation")
+parser.add_argument("--draw_grid", type=int, default=0, help="Draw a grid with the image")
 args = parser.parse_args()
 
 if args.input_folder is None:
@@ -99,4 +99,4 @@ for file in files:
 
 print("")
 print("")
-print("Completed create_sketch_images.py")
+print("Completed sketch2image.py")
