@@ -162,14 +162,16 @@ class Fusion360Client():
         pt_is_dict = isinstance(pt, dict)
         if not pt_is_dict or "x" not in pt or "y" not in pt:
             return self.__return_error(f"Invalid pt value")
-        pt["z"] = 0.0
+        if "z" not in pt:
+            pt["z"] = 0.0
         pt["type"] = "Point3D"
         command_data = {
             "sketch_name": sketch_name,
             "pt": pt
         }
         if transform is not None:
-            if isinstance(transform, dict):
+            if (isinstance(transform, dict) or
+                    isinstance(transform, str)):
                 command_data["transform"] = transform
         return self.send_command("add_point", data=command_data)
 
@@ -183,9 +185,11 @@ class Fusion360Client():
         pt2_is_dict = isinstance(pt1, dict)
         if not pt2_is_dict or "x" not in pt2 or "y" not in pt2:
             return self.__return_error(f"Invalid pt2 value")
-        pt1["z"] = 0.0
+        if "z" not in pt1:
+            pt1["z"] = 0.0
+        if "z" not in pt2:
+            pt2["z"] = 0.0
         pt1["type"] = "Point3D"
-        pt2["z"] = 0.0
         pt2["type"] = "Point3D"
         command_data = {
             "sketch_name": sketch_name,
@@ -193,7 +197,8 @@ class Fusion360Client():
             "pt2": pt2
         }
         if transform is not None:
-            if isinstance(transform, dict):
+            if (isinstance(transform, dict) or
+                    isinstance(transform, str)):
                 command_data["transform"] = transform
         return self.send_command("add_line", data=command_data)
 

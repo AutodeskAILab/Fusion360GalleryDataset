@@ -22,10 +22,6 @@ importlib.reload(name)
 importlib.reload(match)
 importlib.reload(deserialize)
 importlib.reload(serialize)
-# from . import name
-# from . import match
-# from . import deserialize
-# from . import serialize
 
 
 class CommandIncrement():
@@ -110,7 +106,8 @@ class CommandIncrement():
             return self.runner.return_failure("sketch has too few points")
         if state["last_pt"] is None or state["first_pt"] is None:
             return self.runner.return_failure("sketch end points invalid")
-        return self.__add_line(sketch, sketch_uuid, state["last_pt"], state["first_pt"])
+        transform = state["transform"]
+        return self.__add_line(sketch, sketch_uuid, state["last_pt"], state["first_pt"], transform)
 
     def add_extrude(self, data):
         """Add an extrude feature from a sketch"""
@@ -144,22 +141,28 @@ class CommandIncrement():
         start_point = deserialize.point3d(pt1)
         end_point = deserialize.point3d(pt2)
         if transform is not None:
-            # For mapping Fusion exported data back correctly
-            xform = deserialize.matrix3d(transform)
-            sketch_transform = sketch.transform
-            sketch_transform.invert()
-            xform.transformBy(sketch_transform)
-            start_point.transformBy(xform)
-            end_point.transformBy(xform)
+            if isinstance(transform, str):
+                # Transform world coords to sketch coords
+                if transform.lower() == "world":
+                    start_point = sketch.modelToSketchSpace(start_point)
+                    end_point = sketch.modelToSketchSpace(end_point)
+            elif isinstance(transform, dict):
+                # For mapping Fusion exported data back correctly
+                xform = deserialize.matrix3d(transform)
+                sketch_transform = sketch.transform
+                sketch_transform.invert()
+                xform.transformBy(sketch_transform)
+                start_point.transformBy(xform)
+                end_point.transformBy(xform)
 
         line = sketch.sketchCurves.sketchLines.addByTwoPoints(start_point, end_point)
         curve_uuid = name.set_uuid(line)
         name.set_uuids_for_sketch(sketch)
         profile_data = serialize.sketch_profiles(sketch.profiles)
         if sketch.name not in self.sketch_state:
-            self.__init_sketch_state(sketch.name, pt1, pt2)
+            self.__init_sketch_state(sketch.name, pt1, pt2, transform=transform)
         else:
-            self.__inc_sketch_state(sketch.name, pt2)
+            self.__inc_sketch_state(sketch.name, pt2, transform=transform)
         return self.runner.return_success({
             "sketch_id": sketch_uuid,
             "sketch_name": sketch.name,
@@ -179,17 +182,20 @@ class CommandIncrement():
             operation = "NewBodyFeatureOperation"
         return deserialize.feature_operations(operation)
 
-    def __init_sketch_state(self, sketch_name, first_pt=None, last_pt=None, pt_count=0):
+    def __init_sketch_state(self, sketch_name, first_pt=None, last_pt=None,
+                            pt_count=0, transform=None):
         """Initialize the sketch state"""
         self.sketch_state[sketch_name] = {
             "first_pt": first_pt,
             "last_pt": last_pt,
-            "pt_count": pt_count
+            "pt_count": pt_count,
+            "transform": None
         }
 
-    def __inc_sketch_state(self, sketch_name, last_pt):
+    def __inc_sketch_state(self, sketch_name, last_pt, transform=None):
         """Increment the sketch state with the latest point"""
         state = self.sketch_state[sketch_name]
         state["last_pt"] = last_pt
         # Increment by 2 as we are adding a curve
         state["pt_count"] += 2
+        state["transform"] = transform
