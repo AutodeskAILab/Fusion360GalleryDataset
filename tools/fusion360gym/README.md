@@ -92,13 +92,13 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
     - Returns the `sketch_name` and `sketch_id`.
 - `add_point(sketch_name, p1, transform)`: Add a point to create a new sequential line in the given sketch
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
-    - `p1`: a point in sketch space 2D coords in a dict e.g. `{"x": 0, "y": 0}`
-    - `transform` (optional): the transform for the sketch, necessary if you are replaying json data exported from Fusion
+    - `p1`: a point in sketch space 2D coords in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords
+    - `transform` (optional): the transform for the sketch (necessary if you are replaying json data exported from Fusion) or a string `world` denoting use of world coordinates.
     - Returns the sketch `profiles` or an empty dict if there are no `profiles`. Note that profile uuid returned is only valid while the design does not change.
 - `add_line(sketch_name, p1, p2, transform)`: Adds a line to the given sketch. 
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
-    - `p1` and `p2`: are sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}`
-    - `transform` (optional): the transform for the sketch, necessary if you are replaying json data exported from Fusion
+    - `p1` and `p2`: are sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords
+    - `transform` (optional): the transform for the sketch (necessary if you are replaying json data exported from Fusion) or a string `world` denoting use of world coordinates.
     - Returns the sketch profiles or an empty dict if there are no profiles. Note that profile uuid returned is only valid while the design does not change.
 - `close_profile(sketch_name)`: Close the current set of lines to create one or more profiles by joining the first point to the last point
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
