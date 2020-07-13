@@ -1,146 +1,41 @@
-# Fusion 360 Gym
-A 'gym' environment for training ML models to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
+# Fusion 360 Gallery Dataset
 
-![Drawing a couch](https://i.gyazo.com/f667c274c2542ddd7ee5aef81af0614a.gif)
+The *Fusion 360 Gallery Dataset* contains rich 2D and 3D geometry data derived from parametric CAD models. The dataset is produced from designs submitted by users of the CAD package [Autodesk Fusion 360](https://www.autodesk.com/products/fusion-360/overview) to the [Autodesk Online Gallery](https://gallery.autodesk.com/fusion360). The dataset provides valuable data for learning how people design, including sequential CAD design data, designs segmented by modeling operation, engineering sketches with dimensions and constraints, and design hierarchy and connectivity data.
 
-## Server
-### Running
-1. Open Fusion 360
-2. Go to Tools tab > Add-ins > Scripts and Add-ins
-3. In the popup, select the Add-in panel, click the green '+' icon and select the [`server`](server) directory in this repo
-4. Click 'Run' to start the server
-5. Optionally select 'Run on startup' if you want the server to start when Fusion does
-
-### Launching Multiple Servers
-Multiple instances of the server can be launched and assigned a range of ports using [`launch.py`](server/launch.py). 
-1. Complete steps 1-5 in **Running** section above. Especially important is step 5, selecting 'Run on startup'.
-2. From the command line:
-    ```
-    cd path/to/Fusion360Server/server
-    python launch.py
-    Launching Fusion 360 instance: 127.0.0.1:8080
-    Launching Fusion 360 instance: 127.0.0.1:8081
-    ```
-3. This will launch 2 instances of Fusion 360 at the default endpoints: http://127.0.0.1:8080 and http://127.0.0.1:8081
-4. Observe that several instances of Fusion 360 will launch and become unresponsive as the server is running in the UI thread
-5. Verify that the servers are connected by running from the command line:
-    ```
-    python launch.py --ping
-    Ping response from http://127.0.0.1:8080: 200
-    Ping response from http://127.0.0.1:8081: 200
-    ```
-6. To detach the servers and make Fusion 360 responsive again:
-    ```
-    python launch.py --detach
-    Detaching http://127.0.0.1:8080...
-    Detaching http://127.0.0.1:8081...
-    ```
-
-#### Additional Arguments
-The following additional arguments can be passed to [`launch.py`](server/launch.py):
-- `--host`: Host name as an IP address [default: 127.0.0.1]
-- `--start_port`: The starting port for the first Fusion 360 instance [default: 8080]
-- `--instances`: The number of Fusion 360 instances to start [default: 2]
-
-Launching multiple servers has been tested on both Windows and Mac. 
+![Fusion 360 Gallery Dataset](docs/images/fusion_gallery_mosaic.jpg)
 
 
-### Debugging
-To run the server in debug mode you need to install [Visual Studio Code](https://code.visualstudio.com/). For a general overview of how to debug in Fusion 360 from Visual Studio Code, check out [this post](https://modthemachine.typepad.com/my_weblog/2019/09/debug-fusion-360-add-ins.html). Also note there is an [additional step](https://modthemachine.typepad.com/my_weblog/2019/10/problem-debugging-python-code.html) to make sure you are running the correct version of Python compatible with Fusion 360.
+## Data Subsets
+From the approximately 20,000 designs available we derive several data 'subsets' focused on specific areas of research. Currently the following data subsets are available to download, with more to be released on an ongoing basis.
 
- 
-## Client
-### Running
-For a simple example of how to interact with the server check out [client/client_example.py](client/client_example.py). You will need to have the `requests` module installed via pip and the server up and running.
-```
-cd /path/to/Fusion360Server/client
-python client_example.py
-```
-This script will output various files to the [data](data) directory and you will see the Fusion UI update as it processes requests.
-
-### Interface
-See [client/fusion_360_client.py](client/fusion_360_client.py) for the implementation of the calls below.
-
-#### Response Format
-All calls return a response object that can be accessed like so:
-
-```python
-# Create the client class to interact with the server
-client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
-# Make a call to the server to clear the design
-r = client.clear()
-# Example of how we read the response data
-response_data = r.json()
-print(f"[{r.status_code}] Response: {response_data['message']}")
-```
-The following keys can be expected inside the `response_data` returned by calling `r.json()`:
-- `status`: integer will be either `200` or `500`, see [here for more information](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status). This is a duplicate of the code in `r.status_code`.
-- `message`: message with the server response. When the server failed this will contain the error and stack trace to debug.
-- `data`: dict with data returned by the specific call.
-Note that when returning binary data (e.g. mesh, brep) the above keys will not be present.
+- [Segmentation Subset](docs/segmentation.md): A segmentation of design bodies based on the modeling operation used to create each face, e.g. Extrude, Fillet, Chamfer etc...
+-  [Reconstruction Subset](docs/reconstruction.md): Sequential design data from a subset of simple 'sketch and extrude' components that enables final geometry to be reconstructed.
 
 
-#### Reconstruction
-- `reconstruct(file)`: Reconstruct a design from the provided json file
-- `clear()`: Clear (i.e. close) all open designs in Fusion
-#### Incremental Construction
-- `add_sketch(sketch_plane)`: Adds a sketch to the design.
-    - `sketch_plane`: can be either one of:
-        - string value representing a construction plane: `XY`, `XZ`, or `YZ`
-        - BRep planar face id
-        - point3d on a planar face of a BRep
-    - Returns the `sketch_name` and `sketch_id`.
-- `add_line(sketch_name, p1, p2, transform)`: Adds a line to the given sketch. 
-    - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
-    - `p1` and `p2`: are sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}`
-    - `transform` (optional): the transform for the sketch, necessary if you are replaying json data exported from Fusion
-    - Returns the sketch profiles or an empty dict if there are no profiles. Note that profile uuid returned is only valid while the design does not change.
-- `add_extrude(sketch_name, profile_id, distance, operation)`: Add an extrude to the design.
-    - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
-    - `profile_id`: is the uuid of the profile returned by `add_line()`
-    - `distance`: is the extrude distance perpendicular to the profile plane
-    - `operation`: a string with the values: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
-    - Returns BRep vertices of the resulting body, BRep face information
+## Download
+The following data subsets are available to download:
 
-#### Export
-- `mesh(file)`: Retreive a mesh in .stl format and write it to the local file provided.
-- `brep(file)`: Retreive a brep in a format (step/smt) and write it to a local file provided.
-- `sketches(dir, format)`: Retreive each sketch in a given format.
-    - `dir`: the local directory where the output will be saved
-    - `format`: a string with the values `.png` or `.dxf`
-
-#### Utility
-- `refresh()`: Refresh the active viewport
-- `ping()`: Ping for debugging
-- `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
-- `commands(command_list, dir)`: Send a list of commands to run in sequence on the server.
-    - `command_list`: a list of commands in the following format:
-    ```
-    [
-        {
-            "command": "reconstruct",
-            "data": json_data
-        },
-        {
-            "command": "sketches",
-            "data": {
-                "format": ".png"
-            }
-        },
-        {
-            "command": "mesh",
-            "data": {
-                "file": "test.stl"
-            }
-        },
-        {
-            "command": "clear"
-        }
-    ]
-    ```
-    `dir`: is the (optional) local directory where files will be saved
-
-## Test
-See [test/test_fusion_360_server.py](test/test_fusion_360_server.py) for test coverage and additional usage examples.
+| Data Subset | Download |
+| - | - |
+| [Segmentation](docs/segmentation.md) | [Version d5](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d5) |
+| [Reconstruction](docs/reconstruction.md) | [Version d4](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d4) |
 
 
+## Documentation
+Documentation of the dataset is ongoing and will include details of the formats used in the dataset and statistics about the dataset as a whole. Documentation can be found in the [docs directory](docs).
+
+## Tools
+As part of the dataset we provide various tools for working with the data. These tools leverage the [Fusion 360 API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B5A90C8-E94C-48DA-B16B-430729B734DC) to perform operations such as geometry reconstruction, traversing B-Rep data structures, and conversion to other formats. More information can be found in the [tools directory](tools).
+
+## License
+The dataset to which this license is attached is trial data from the Autodesk Fusion 360 Dataset (the "Trial Dataset") provided by Autodesk, Inc. Its use is subject to the following terms and conditions:
+1.	You shall use the Trial Dataset only for non-commercial research and educational purposes.
+2.	You shall not redistribute the Trial Dataset outside your organization. You may share the Trial Dataset with other research teams within your organization provided that that a representative of such team first agrees to be bound by these terms and conditions.
+3.	Autodesk makes no representations or warranties regarding the Trial Dataset, including but not limited to warranties of non-infringement or fitness for a particular purpose.
+4.	You accept full responsibility for your use of the Trial Dataset and shall defend and indemnify Autodesk, Inc. including its employees, officers and agents, against any and all claims arising from your use of the Trial Dataset, including but not limited to your use of any copies of copyrighted images that he or she may create from the Trial Dataset.
+5.	Autodesk reserves the right to terminate this license at any time.
+6.	These terms and conditions shall apply to your use of any future release of the Trial Dataset unless Autodesk publishes the Trial Dataset with a publicly-facing license to the Trial Dataset with terms that are less restrictive on you, in which case such less restrictive terms shall apply to you. Provided for clarity that this license shall not be applicable to the anticipated non-trial version of the Fusion 360 Dataset.
+7.	The laws of the State of California shall apply to all disputes under this agreement.
+
+## Publications
+As we publish the data we benchmark tasks we will provide a list of research papers and citations here.
