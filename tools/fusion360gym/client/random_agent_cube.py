@@ -30,9 +30,6 @@ class RandomAgent():
         self.low_dist = -2
         self.high_dist = 2
 
-        # self.reset()
-
-
     def reset(self):
 
         # Create the client class to interact with the server
@@ -41,18 +38,15 @@ class RandomAgent():
         r = self.client.clear()
 
         # Create an empty sketch on a random plane
+        """
         planes = ["XY", "XZ", "YZ"]
-        random_plane = random.choice(planes)
+        random_plane = random.choice(planes) 
         r = self.client.add_sketch(random_plane)
-        
-        # Get the unique name of the sketch created
-        response_json = r.json()
-        sketch_name = response_json["data"]["sketch_name"]
-        
-        # use width and height as x & y constraint
-        # x & y could be defined separately if necessary
-        # pts = self._draw_rect([[self.low_width, self.high_width], [self.low_height, self.high_height]])
+        """
 
+        # let's have a fixed foundation for now
+        r = self.client.add_sketch("XY")
+        
         pts = [
             {"x": 5, "y": 5},
             {"x": 5, "y": -5},
@@ -60,83 +54,102 @@ class RandomAgent():
             {"x": -5, "y": 5}
         ]
 
-        # random draw points
-        # pts = []
-        # num_points = random.randint(self.min_points, self.max_points) 
-        # for _ in range(num_points):
-        #     x = random.uniform(self.low_x, self.high_x)
-        #     y = random.uniform(self.low_y, self.high_y)
-        #     pts.append({"x": x, "y": y})
+        distance = random.uniform(self.low_dist , self.high_dist)
 
-        return sketch_name, pts
+        # Get the unique name of the sketch created
+        response_json = r.json()
+        sketch_name = response_json["data"]["sketch_name"]
+
+        # draw the foundation rect 
+        for pt in pts:
+            self.client.add_point(sketch_name, pt)
+        r = self.client.close_profile(sketch_name)
+
+        # extrude 
+        response_json = r.json()
+        response_data = response_json["data"]
+        keys = list(response_data["profiles"].keys())
+        profile_id = random.choice(keys)
+        r = self.client.add_extrude(sketch_name, profile_id, distance, "NewBodyFeatureOperation")
+        print("New body is created")
+
+        return [r]
 
     def train(self):
 
         for _ in range(self.max_episodes):
 
-            sketch_name, pts = self.reset()
+            info = self.reset()
             done = False
             reward = 0.0
             steps = 0
+            action = 0
 
             while steps < self.max_steps and done is False:
 
-                if steps == 0:
-                    for pt in pts:
-                        self.client.add_point(sketch_name, pt)
-                else:
-                    for pt in pts:
-                        self.client.add_point(sketch_name, pt, transform="world")
-                r = self.client.close_profile(sketch_name)
-
-                response_json = r.json()
-                response_data = response_json["data"]
-
-                keys = list(response_data["profiles"].keys())
-                profile_id = random.choice(keys)
-                distance = random.uniform(self.low_dist , self.high_dist)
-                
-                if steps == 0:
-                    r = self.client.add_extrude(sketch_name, profile_id, distance, "NewBodyFeatureOperation")
-                    print("New body is created")
-
-                else:
-                    if distance >= 0:
-                       r = self.client.add_extrude(sketch_name, profile_id, distance, "JoinFeatureOperation") 
-                    else: 
-                       r = self.client.add_extrude(sketch_name, profile_id, distance, "CutFeatureOperation")  
-
-                # Pick a random face for the next sketch
-                response_json = r.json()
-                
                 try:
-                    response_data = response_json["data"]
+                    # will be activated once the action spaces is defined                     
+                    # action = self.sample_action()
 
-                    faces = response_data["faces"]
-                    random_face = random.choice(faces)
-                    # print(random_face)
+                    # have dummy states, reward for now 
+                    states, reward, done, info = self.step(action%3, info)
 
-                    # Create a second sketch on a random face
-                    r = self.client.add_sketch(random_face["face_id"])
-                    response_json = r.json()
-                    
-                    sketch_name = response_json["data"]["sketch_name"]
-
-                    vertices = random_face["vertices"]
-                    constraint = self._cal_constraint(vertices) 
-                    pts = self._draw_rect(constraint)
-
-                    # num_points = random.randint(self.min_points, self.max_points)
-                    # pts = []
-                    # for _ in range(num_points):
-                    #     x = random.uniform(self.low_x, self.high_x)
-                    #     y = random.uniform(self.low_y, self.high_y)
-                    #     pts.append({"x": x, "y": y})
-
-                    steps += 1
-                
                 except KeyError:
                     done = True
+
+                steps += 1
+                action += 1
+
+    def step(self, action, info):
+        if action == 0:
+            return [], [], False, self._select_face(info)
+        elif action == 1:
+            return [], [], False, self._draw_sketch(info)
+        elif action == 2:
+            return [], [], False, self._add_extrude(info)
+
+    def _select_face(self, info):
+        
+        r = info[0]
+        response_json = r.json()
+        response_data = response_json["data"]
+        faces = response_data["faces"]
+        random_face = random.choice(faces)
+
+        return [self.client.add_sketch(random_face["face_id"]), random_face["vertices"]]
+
+    def _draw_sketch(self, info):
+
+        r = info[0]
+        vertices = info[1]
+
+        response_json = r.json()
+        sketch_name = response_json["data"]["sketch_name"]
+
+        constraint = self._cal_constraint(vertices) 
+        pts = self._draw_rect(constraint)
+
+        for pt in pts:
+            self.client.add_point(sketch_name, pt, transform="world")
+        
+        return [self.client.close_profile(sketch_name), sketch_name]
+
+    def _add_extrude(self, info):
+        
+        r = info[0]
+        sketch_name = info[1]
+
+        response_json = r.json()
+        response_data = response_json["data"]
+        keys = list(response_data["profiles"].keys())
+        profile_id = random.choice(keys)
+        distance = random.uniform(self.low_dist , self.high_dist)
+        if distance >= 0:
+           r = self.client.add_extrude(sketch_name, profile_id, distance, "JoinFeatureOperation") 
+        else: 
+           r = self.client.add_extrude(sketch_name, profile_id, distance, "CutFeatureOperation")  
+
+        return [r]
 
     def _draw_rect(self, constraint):
 
@@ -213,7 +226,7 @@ if __name__ == "__main__":
 
     config = {
         "max_episodes": 10,
-        "max_steps": 10,
+        "max_steps": 20,
     }
 
     trainer = RandomAgent(config)    
