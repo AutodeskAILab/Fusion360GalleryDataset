@@ -14,7 +14,6 @@ import sys
 import time
 import math
 from pathlib import Path
-from importlib import reload
 from collections import OrderedDict
 
 import deserialize
@@ -52,12 +51,12 @@ class SketchExtrudeImporter():
             if entity["type"] == "Sketch":
                 # Only reconstruct this sketch if it is used with an extrude
                 if entity_uuid in profiles_used["sketches"]:
-                    sketch_profile_set = self.reconstruct_sketch(entity, entity_uuid, sketch_profiles)
+                    sketch_profile_set = self.reconstruct_sketch(entity, entity_uuid, entity_index, sketch_profiles)
                     if sketch_profile_set:
                         sketch_profiles.update(**sketch_profile_set)
 
             elif entity["type"] == "ExtrudeFeature":
-                self.reconstruct_extrude_feature(entity, entity_uuid, sketch_profiles)
+                self.reconstruct_extrude_feature(entity, entity_uuid, entity_index, sketch_profiles)
 
     def get_extrude_profiles(self, timeline, entities):
         """Get the profiles used with extrude operations"""
@@ -193,7 +192,7 @@ class SketchExtrudeImporter():
         xform.transformBy(sketch_transform)
         return xform
 
-    def reconstruct_sketch(self, sketch_data, sketch_uuid, sketch_profiles):
+    def reconstruct_sketch(self, sketch_data, sketch_uuid, sketch_index, sketch_profiles):
         # Skip empty sketches
         if "curves" not in sketch_data or "profiles" not in sketch_data or "points" not in sketch_data:
             return None
@@ -218,7 +217,7 @@ class SketchExtrudeImporter():
             })
 
         # Draw exactly what the user drew and then search for the profiles
-        new_sketch_profiles = self.reconstruct_curves(sketch, sketch_data, sketch_uuid, transform_for_sketch_geom)
+        new_sketch_profiles = self.reconstruct_curves(sketch, sketch_data, sketch_uuid, sketch_index, transform_for_sketch_geom)
         adsk.doEvents()
         return new_sketch_profiles
 
@@ -262,10 +261,10 @@ class SketchExtrudeImporter():
 
         return self.design.rootComponent.xYConstructionPlane
 
-    def reconstruct_curves(self, sketch, sketch_data, sketch_uuid, xform):
+    def reconstruct_curves(self, sketch, sketch_data, sketch_uuid, sketch_index, xform):
         # Turn off sketch compute until we add all the curves
         sketch.isComputeDeferred = True
-        self.reconstruct_sketch_curves(sketch, sketch_data, sketch_uuid, xform)
+        self.reconstruct_sketch_curves(sketch, sketch_data, sketch_uuid, sketch_index, xform)
         sketch.isComputeDeferred = False
 
         # If we draw the user curves
@@ -337,7 +336,7 @@ class SketchExtrudeImporter():
         intersection = set(original) & set(reconstructed)
         return len(intersection)
 
-    def reconstruct_sketch_curves(self, sketch, sketch_data, sketch_uuid, xform):
+    def reconstruct_sketch_curves(self, sketch, sketch_data, sketch_uuid, sketch_index, xform):
         """Reconstruct the sketch curves in profile order"""
         curves_data = sketch_data["curves"]
         points_data = sketch_data["points"]
@@ -356,9 +355,11 @@ class SketchExtrudeImporter():
                             sketch,
                             sketch_data,
                             sketch_uuid,
+                            sketch_index,
                             curve,
                             curve_uuid,
-                            points_data, xform
+                            points_data,
+                            xform
                         )
                         # Remove the curve from list of curves to draw
                         del current_curves_data[curve_uuid]
@@ -368,6 +369,7 @@ class SketchExtrudeImporter():
                 sketch,
                 sketch_data,
                 sketch_uuid,
+                sketch_index,
                 curve,
                 curve_uuid,
                 points_data,
@@ -389,7 +391,7 @@ class SketchExtrudeImporter():
         sketch_profile = sketch.profiles[sketch_profile_index]
         return sketch_profile
 
-    def reconstruct_sketch_curve(self, sketch, sketch_data, sketch_uuid, curve, curve_uuid, points_data, xform):
+    def reconstruct_sketch_curve(self, sketch, sketch_data, sketch_uuid, sketch_index, curve, curve_uuid, points_data, xform):
         """Reconstruct a sketch curve"""
         if curve["construction_geom"]:
             return
@@ -411,6 +413,7 @@ class SketchExtrudeImporter():
                 "sketch": sketch,
                 "sketch_name": sketch_data["name"],
                 "sketch_uuid": sketch_uuid,
+                "sketch_index": sketch_index,
                 "curve": curve_obj,
                 "curve_uuid": curve_uuid
             })
@@ -517,7 +520,7 @@ class SketchExtrudeImporter():
             )
         return nurbs_curve
 
-    def reconstruct_extrude_feature(self, extrude_data, extrude_uuid, sketch_profiles):
+    def reconstruct_extrude_feature(self, extrude_data, extrude_uuid, extrude_index, sketch_profiles):
         extrudes = self.design.rootComponent.features.extrudeFeatures
 
         # There can be more than one profile, so we create an object collection
@@ -552,7 +555,8 @@ class SketchExtrudeImporter():
             self.reconstruct_cb({
                 "extrude": extrude,
                 "extrude_name": extrude_data["name"],
-                "extrude_uuid": extrude_uuid
+                "extrude_uuid": extrude_uuid,
+                "extrude_index": extrude_index
             })
         return extrude
 

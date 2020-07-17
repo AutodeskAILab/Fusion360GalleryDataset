@@ -9,15 +9,14 @@ A 'gym' environment for training ML models to design using Fusion 360. Consists 
 2. Go to Tools tab > Add-ins > Scripts and Add-ins
 3. In the popup, select the Add-in panel, click the green '+' icon and select the [`server`](server) directory in this repo
 4. Click 'Run' to start the server
-5. Optionally select 'Run on startup' if you want the server to start when Fusion does
 
 ### Launching Multiple Servers
 Multiple instances of the server can be launched and assigned a range of ports using [`launch.py`](server/launch.py). 
-1. Complete steps 1-5 in **Running** section above. Especially important is step 5, selecting 'Run on startup'.
+1. Complete steps 1-3 in **Running** section above. Then select 'Run on startup' and close Fusion.
 2. From the command line:
     ```
     cd path/to/Fusion360Server/server
-    python launch.py
+    python launch.py --instances 2
     Launching Fusion 360 instance: 127.0.0.1:8080
     Launching Fusion 360 instance: 127.0.0.1:8081
     ```
