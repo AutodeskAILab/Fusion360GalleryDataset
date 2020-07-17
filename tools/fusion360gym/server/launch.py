@@ -30,7 +30,7 @@ parser.add_argument("--detach", dest="detach", default=False, action="store_true
 parser.add_argument("--ping", dest="ping", default=False, action="store_true", help="Ping the launched Fusion 360 instances [default: False]")
 parser.add_argument("--host", type=str, default=DEFAULT_HOST, help="Host name as an IP address [default: 127.0.0.1]")
 parser.add_argument("--start_port", type=int, default=DEFAULT_PORT, help="The starting port for the first Fusion 360 instance [default: 8080]")
-parser.add_argument("--instances", type=int, default=2, help="The number of Fusion 360 instances to start [default: 2]")
+parser.add_argument("--instances", type=int, default=1, help="The number of Fusion 360 instances to start [default: 1]")
 args = parser.parse_args()
 
 
@@ -49,23 +49,67 @@ def create_launch_json(host, start_port, instances):
 def start_fusion():
     """Opens a new instance of Fusion 360"""
     if sys.platform == "darwin":
-        # Shortcut location that links to the latest version
-        # /Users/username/Library/Application Support/Autodesk/webdeploy/production/Autodesk Fusion 360.app
-        user_path = Path(os.path.expanduser("~"))
-        fusion_app = user_path / "Library/Application Support/Autodesk/webdeploy/production/Autodesk Fusion 360.app"
+        fusion_app = find_fusion_app_mac()
         fusion_path = str(fusion_app.resolve())
         args = ["open", "-n", fusion_path]
-        subprocess.call(args)
 
     elif sys.platform == "win32":
-        # Shortcut location that links to the latest version
-        # C:\Users\username\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Autodesk
-        # Actual location
-        # C:\Users\username\AppData\Local\Autodesk\webdeploy\production\6a0c9611291d45bb9226980209917c3d\FusionLauncher.exe
-        fusion_path = os.path.join(os.environ["APPDATA"], "Microsoft", "Windows", "Start Menu", "Programs", "Autodesk", "Autodesk Fusion 360.lnk")
-        os.startfile(fusion_path)
+        fusion_app = find_fusion_app_windows()
+        fusion_path = str(fusion_app.resolve())
+        args = [fusion_path]
 
-    print("Fusion launched from:", fusion_path)
+    if not fusion_app.exists():
+        print(f"Error: Fusion not found at {fusion_path}")
+        exit()
+
+    print("Fusion launching from:", fusion_path)
+    # Turn off output from Fusion
+    return subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def find_fusion_app_mac():
+    """Find the Fusion app on mac"""
+    # Shortcut location that links to the latest version
+    user_path = Path(os.path.expanduser("~"))
+    fusion_app = user_path / "Library/Application Support/Autodesk/webdeploy/production/Autodesk Fusion 360.app"
+    return fusion_app
+
+
+def find_fusion_app_windows():
+    """Find the Fusion app by looking in a windows FusionLauncher.exe.ini file"""
+    fusion_launcher = find_fusion_launcher()
+    if fusion_launcher is None:
+        return None
+    # FusionLauncher.exe.ini looks like this (encoding is UTF-16):
+    # [Launcher]
+    # stream = production
+    # auid = AutodeskInc.Fusion360
+    # cmd = ""C:\path\to\Fusion360.exe""
+    # global = False
+    with open(fusion_launcher, "r", encoding="utf16") as f:
+        lines = f.readlines()
+    lines = [x.strip() for x in lines]
+
+    for line in lines:
+        if line.startswith("cmd") and "Fusion360.exe" in line:
+            pieces = line.split("\"")
+            for piece in pieces:
+                if "Fusion360.exe" in piece:
+                    return Path(piece)
+    return None
+
+
+def find_fusion_launcher():
+    """Find the FusionLauncher.exe.ini file on windows"""
+    user_dir = Path(os.environ["LOCALAPPDATA"])
+    production_dir = user_dir / "Autodesk/webdeploy/production/"
+    production_contents = Path(production_dir).iterdir()
+    for item in production_contents:
+        if item.is_dir():
+            fusion_launcher = item / "FusionLauncher.exe.ini"
+            if fusion_launcher.exists():
+                return fusion_launcher
+    return None
 
 
 def launch_instances(host, start_port, instances):
