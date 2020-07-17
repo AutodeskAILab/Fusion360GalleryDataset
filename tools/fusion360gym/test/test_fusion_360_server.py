@@ -35,7 +35,7 @@ class TestFusion360Server(unittest.TestCase):
         cls.client.clear()
         # ------------------------------------------
         # TEST FILES
-        cls.data_dir = Path(__file__).parent.parent / "data"
+        cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
         box_design = "SingleSketchExtrude_RootComponent"
         hex_design = "Z0HexagonCutJoin_RootComponent"
         # Box json reconstruction file

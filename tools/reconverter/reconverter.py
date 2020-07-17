@@ -23,13 +23,12 @@ from sketch_extrude_importer import SketchExtrudeImporter
 class Reconverter():
     """Reconstruction Converter
         Takes a reconstruction json file and converts it
-        to different format"""
+        to different formats"""
 
     def __init__(self, json_file):
         self.json_file = json_file
         # Export data to this directory
-        self.output_dir = Path(os.path.join(
-            os.path.dirname(__file__), "output"))
+        self.output_dir = json_file.parent / "output"
         if not self.output_dir.exists():
             self.output_dir.mkdir(parents=True)
         # References to the Fusion design
@@ -122,8 +121,8 @@ def run(context):
         # Logger to print to the text commands window in Fusion
         logger = Logger()
         # Fusion requires an absolute path
-        data_dir = Path(os.path.join(
-            os.path.dirname(__file__), "..", "fusion360gym", "data"))
+        current_dir = Path(__file__).resolve().parent
+        data_dir = current_dir.parent / "testdata"
 
         # Get all the files in the data folder
         json_files = [f for f in data_dir.glob("**/*.json")]

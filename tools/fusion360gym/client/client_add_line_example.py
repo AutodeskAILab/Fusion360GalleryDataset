@@ -19,8 +19,7 @@ PORT_NUMBER = 8080
 
 def main():
     current_dir = Path(__file__).resolve().parent
-    root_dir = current_dir.parent
-    data_dir = root_dir / "data"
+    data_dir = current_dir.parent.parent / "testdata"
     output_dir = data_dir / "output"
     if not output_dir.exists():
         output_dir.mkdir()
