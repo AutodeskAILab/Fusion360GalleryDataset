@@ -34,6 +34,25 @@ def surface_type(surface):
     return None
 
 
+def curve_type(curve3d):
+    curve_type = curve3d.curveType
+    if curve_type == adsk.core.Curve3DTypes.Line3DCurveType:
+        return "Line3DCurveType"
+    elif curve_type == adsk.core.Curve3DTypes.Arc3DCurveType:
+        return "Arc3DCurveType"
+    elif curve_type == adsk.core.Curve3DTypes.Circle3DCurveType:
+        return "Circle3DCurveType"
+    elif curve_type == adsk.core.Curve3DTypes.Ellipse3DCurveType:
+        return "Ellipse3DCurveType"
+    elif curve_type == adsk.core.Curve3DTypes.EllipticalArc3DCurveType:
+        return "EllipticalArc3DCurveType"
+    elif curve_type == adsk.core.Curve3DTypes.InfiniteLine3DCurveType:
+        return "InfiniteLine3DCurveType"
+    elif curve_type == adsk.core.Curve3DTypes.NurbsCurve3DCurveType:
+        return "NurbsCurve3DCurveType"
+    return None
+
+
 def point2d(point):
     data = {}
     data["type"] = object_type(point)
