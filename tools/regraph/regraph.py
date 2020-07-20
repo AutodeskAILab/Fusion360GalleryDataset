@@ -92,22 +92,25 @@ class Regraph():
             assert operation_short != "NewComponent"
             if operation_short == "NewBody" or operation_short == "Join":
                 operation_short = "Extrude"
-
             self.extrude_face_cache[face_uuid] = {
-                "timeline_label": self.current_extrude_index / self.extrude_count,
+                # "timeline_label": self.current_extrude_index / self.extrude_count,
                 "operation_label": f"{operation_short}{extrude_face_location}",
+                "last_operation_label": True,
                 "operation": operation
             }
 
     def add_extrude_to_cache(self, extrude_data):
         """Add the data from the latest extrude to the cache"""
+        # First toggle the previous extrude last_operation label
+        for face_data in self.extrude_face_cache.values():
+            face_data["last_operation_label"] = False
         extrude = extrude_data["extrude"]
         self.add_extrude_faces_to_cache(extrude.startFaces, extrude.operation, "Start")
         self.add_extrude_faces_to_cache(extrude.endFaces, extrude.operation, "End")
         self.add_extrude_faces_to_cache(extrude.sideFaces, extrude.operation, "Side")
 
     def get_edge_cache(self, body):
-        # name.set_uuids_for_collection(body.edges)
+        name.set_uuids_for_collection(body.edges)
         edge_cache = {}
         edge_cache["concave_edges"] = self.get_temp_ids_from_collection(body.concaveEdges)
         edge_cache["convex_edges"] = self.get_temp_ids_from_collection(body.convexEdges)
@@ -119,6 +122,12 @@ class Regraph():
 
     def is_convex_edge(self, temp_id, edge_cache):
         return temp_id in edge_cache["convex_edges"]
+
+    def are_faces_tangentially_connected(self, face1, face2):
+        for tc_face in face1.tangentiallyConnectedFaces:
+            if tc_face.tempId == face2.tempId:
+                return True
+        return False
 
     def get_json_graphs(self):
         graphs = []
@@ -150,7 +159,7 @@ class Regraph():
                     face_data["normal_x"] = normal.x
                     face_data["normal_y"] = normal.y
                     face_data["normal_z"] = normal.z
-                    face_data["normal_length"] = normal.length
+                    # face_data["normal_length"] = normal.length
                     parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_face)
                     assert parameter_result
                     curvature_result, max_tangent, max_curvature, min_curvature = evaluator.getCurvature(parameter_at_point)
@@ -158,11 +167,12 @@ class Regraph():
                     face_data["max_tangent_x"] = max_tangent.x
                     face_data["max_tangent_y"] = max_tangent.y
                     face_data["max_tangent_z"] = max_tangent.z
-                    face_data["max_tangent_length"] = max_tangent.length
+                    # face_data["max_tangent_length"] = max_tangent.length
                     face_data["max_curvature"] = max_curvature
                     face_data["min_curvature"] = min_curvature
-                    face_data["timeline_label"] = face_labels["timeline_label"]
+                    # face_data["timeline_label"] = face_labels["timeline_label"]
                     face_data["operation_label"] = face_labels["operation_label"]
+                    face_data["last_operation_label"] = face_labels["last_operation_label"]
                     graph["nodes"].append(face_data)
 
             edge_cache = self.get_edge_cache(body)
@@ -176,8 +186,16 @@ class Regraph():
                     edge_data["curve_type"] = serialize.curve_type(edge.geometry)
                     # edge_data["curve_type_id"] = edge.geometry.curveType
                     edge_data["length"] = edge.length
-                    edge_data["concave"] = self.is_concave_edge(edge.tempId, edge_cache)
+                    # Create a feature for the edge convexity
+                    is_concave = self.is_concave_edge(edge.tempId, edge_cache)
+                    is_tc = self.are_faces_tangentially_connected(edge.faces[0], edge.faces[1])
+                    convexity = "Convex"
                     # edge_data["convex"] = self.is_convex_edge(edge.tempId, edge_cache)
+                    if is_concave:
+                        convexity = "Concave"
+                    elif is_tc:
+                        convexity = "Smooth"
+                    edge_data["convexity"] = convexity
                     point_on_edge = edge.pointOnEdge
                     evaluator = edge.evaluator
                     parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
@@ -186,7 +204,7 @@ class Regraph():
                     edge_data["direction_x"] = direction.x
                     edge_data["direction_y"] = direction.y
                     edge_data["direction_z"] = direction.z
-                    edge_data["direction_length"] = direction.length
+                    # edge_data["direction_length"] = direction.length
                     edge_data["curvature"] = curvature
                     graph["links"].append(edge_data)
             graphs.append(graph)
@@ -206,9 +224,12 @@ def run(context):
             output_dir.mkdir(parents=True)
 
         # Get all the files in the data folder
-        # json_files = [f for f in data_dir.glob("**/*.json")]
-        # json_files = [data_dir / "Couch.json"]
-        json_files = [data_dir / "Z0HexagonCutJoin_RootComponent.json"]
+        json_files = [f for f in data_dir.glob("**/*.json")]
+        json_files = [
+            data_dir / "Couch.json",
+            data_dir / "Z0HexagonCutJoin_RootComponent.json",
+            data_dir / "Z0Convexity_12a12060_0000.json"
+        ]
 
         json_count = len(json_files)
         for i, json_file in enumerate(json_files, start=1):

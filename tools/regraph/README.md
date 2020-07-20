@@ -1,5 +1,5 @@
 # Reconstruction Graph
-'Regraph' demonstrates how to batch convert the raw data structure provided with the [Reconstruction Subset](../../docs/reconstruction.md) into a series of graphs representing the B-Rep topology with features on faces and edges.
+'Regraph' demonstrates how to batch convert the raw data structure provided with the [Reconstruction Subset](../../docs/reconstruction.md) into a series of graphs representing the B-Rep topology with features on faces and edges. A graph is created for each body after each extrude operation in the timeline.
 
 ## Running
 Regraph runs in Fusion 360 as a script with the following steps.
@@ -10,8 +10,9 @@ Regraph runs in Fusion 360 as a script with the following steps.
 
 ## Face Labels
 The following labels are given for each face:
-- `timeline_label`: A normalized index of the extrude feature in the timeline. If there is only 1 extrude operation, this value will be `1.0`. If there are 3 extrude operations the values will be `0.33`, `0.66`, `1.0`.
 - `operation_label`: The type of extrude operation combined with the location of the extrude operation. Can be one of: `ExtrudeSide`, `ExtrudeStart`, `ExtrudeEnd`, `CutSide`, `CutStart`, `CutEnd`.
+- `last_operation_label`: The true/false flag to indicate if this face was created with the last extrude operation.
+
 
 ## Face Features
 The following features are given for each face:
@@ -26,7 +27,7 @@ The following features are given for each face:
 The following features are given for each edge:
 - `curve_type`: The type of curve, see [API reference](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Curve3DTypes.htm).
 - `length`: The length of the curve.
-- `concave`: Flag indicating if the edge connects concave faces.
+- `convexity`: The convexity of the edge in relation to the two faces it connects. Can be one of: "Convex", "Concave", or "Smooth".
 - `direction_*`: The output direction of the curvature at a point at or near the center of the edge.
 - `curvature`: The output magnitude of the curvature at a point at or near the center of the edge.
 
