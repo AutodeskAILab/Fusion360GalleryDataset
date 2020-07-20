@@ -30,7 +30,7 @@ The following features are given for each face:
 The following features are given for each edge:
 - `curve_type`: The type of curve, see [API reference](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Curve3DTypes.htm).
 - `length`: The length of the curve.
-- `convexity`: The convexity of the edge in relation to the two faces it connects. Can be one of: "Convex", "Concave", or "Smooth".
+- `convexity`: The convexity of the edge in relation to the two faces it connects. Can be one of: `Convex`, `Concave`, or `Smooth`.
 - `direction_*`: The output direction of the curvature at a point at or near the center of the edge.
 - `curvature`: The output magnitude of the curvature at a point at or near the center of the edge.
 
