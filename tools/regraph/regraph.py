@@ -16,6 +16,7 @@ if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
 
 import name
+import exporter
 import serialize
 from logger import Logger
 from sketch_extrude_importer import SketchExtrudeImporter
@@ -30,19 +31,19 @@ class Regraph():
 
     def __init__(self, json_file):
         self.json_file = json_file
-        # Export data to this directory
-        self.output_dir = json_file.parent / "output"
-        if not self.output_dir.exists():
-            self.output_dir.mkdir(parents=True)
         # References to the Fusion design
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        # Counter for the number of design actions that have taken place
-        self.inc_action_index = 0
+        # Cache of the extrude face label information
+        self.extrude_face_cache = {}
+        # Current extrude index
+        self.current_extrude_index = 1
 
-    def reconstruct(self):
+    def export(self, output_dir):
         """Reconstruct the design from the json file"""
+        self.output_dir = output_dir
         importer = SketchExtrudeImporter(self.json_file)
+        self.extrude_count = self.get_extrude_count(importer.data)
         importer.reconstruct(self.inc_export)
 
     def inc_export(self, data):
@@ -51,14 +52,25 @@ class Regraph():
             This enables us to save out incremental data"""
         if "extrude" in data:
             self.inc_export_extrude(data)
-        self.inc_action_index += 1
 
     def inc_export_extrude(self, data):
         """Save out a graph after each extrude as reconstruction takes place"""
-        extrude_face_cache = self.get_extrude_face_cache(data["extrude"])
-        graphs = self.get_json_graphs(extrude_face_cache)
-        graph_json_string = json.dumps(graphs, indent=4)  
-        # print(graph_json_string)
+        self.add_extrude_to_cache(data)
+        graphs = self.get_json_graphs()
+        for body_count, graph in enumerate(graphs):
+            json_file = self.output_dir / f"{self.json_file.stem}_{self.current_extrude_index-1:04}_{body_count:04}.json"
+            print(f"Exporting {json_file}")
+            exporter.export_json(json_file, graph)
+        self.current_extrude_index += 1
+
+    def get_extrude_count(self, data):
+        """Get the number of extrudes in a design"""
+        extrude_count = 0
+        entities = data["entities"]
+        for entity in entities.values():
+            if entity["type"] == "ExtrudeFeature":
+                extrude_count += 1
+        return extrude_count
 
     def get_temp_ids_from_collection(self, collection):
         """From a collection, make a set of the tempids"""
@@ -69,32 +81,37 @@ class Regraph():
                 id_set.add(temp_id)
         return id_set
 
-    def get_extrude_face_cache(self, extrude):
-        extrude_face_cache = {}
-        extrude_face_cache["start_faces"] = self.get_temp_ids_from_collection(extrude.startFaces)
-        extrude_face_cache["end_faces"] = self.get_temp_ids_from_collection(extrude.endFaces)
-        extrude_face_cache["side_faces"] = self.get_temp_ids_from_collection(extrude.sideFaces)
-        return extrude_face_cache
+    def add_extrude_faces_to_cache(self, extrude_faces, extrude_operation, extrude_face_location):
+        """Update the extrude face cache with the recently added faces"""
+        for face in extrude_faces:
+            face_uuid = name.set_uuid(face)
+            assert face_uuid is not None
+            assert face_uuid not in self.extrude_face_cache
+            operation = serialize.feature_operation(extrude_operation)
+            operation_short = operation.replace("FeatureOperation", "")
+            assert operation_short != "NewComponent"
+            if operation_short == "NewBody" or operation_short == "Join":
+                operation_short = "Extrude"
 
-    def get_extrude_face_label(self, temp_id, extrude_face_cache):
-        """Find where in the extrude this face came from
-            Was it the start, end or side of an extrude"""
-        if "start_faces" in extrude_face_cache:
-            if temp_id in extrude_face_cache["start_faces"]:
-                return "StartFace"
-        if "end_faces" in extrude_face_cache:
-            if temp_id in extrude_face_cache["end_faces"]:
-                return "EndFace"
-        if "side_faces" in extrude_face_cache:
-            if temp_id in extrude_face_cache["side_faces"]:
-                return "SideFace"
-        return None
+            self.extrude_face_cache[face_uuid] = {
+                "timeline_label": self.current_extrude_index / self.extrude_count,
+                "operation_label": f"{operation_short}{extrude_face_location}",
+                "operation": operation
+            }
+
+    def add_extrude_to_cache(self, extrude_data):
+        """Add the data from the latest extrude to the cache"""
+        extrude = extrude_data["extrude"]
+        self.add_extrude_faces_to_cache(extrude.startFaces, extrude.operation, "Start")
+        self.add_extrude_faces_to_cache(extrude.endFaces, extrude.operation, "End")
+        self.add_extrude_faces_to_cache(extrude.sideFaces, extrude.operation, "Side")
 
     def get_edge_cache(self, body):
+        # name.set_uuids_for_collection(body.edges)
         edge_cache = {}
         edge_cache["concave_edges"] = self.get_temp_ids_from_collection(body.concaveEdges)
         edge_cache["convex_edges"] = self.get_temp_ids_from_collection(body.convexEdges)
-        print(edge_cache)
+        # print(edge_cache)
         return edge_cache
 
     def is_concave_edge(self, temp_id, edge_cache):
@@ -103,7 +120,7 @@ class Regraph():
     def is_convex_edge(self, temp_id, edge_cache):
         return temp_id in edge_cache["convex_edges"]
 
-    def get_json_graphs(self, extrude_face_cache):
+    def get_json_graphs(self):
         graphs = []
         for body in self.design.rootComponent.bRepBodies:
             graph = {
@@ -116,17 +133,23 @@ class Regraph():
             for face in body.faces:
                 if face is not None:
                     face_data = {}
+                    face_uuid = name.get_uuid(face)
+                    assert face_uuid is not None
+                    face_labels = self.extrude_face_cache[face_uuid]
+                    # Abort if we hit an intersect operation
+                    if face_labels["operation"] == "IntersectFeatureOperation":
+                        return graphs
                     face_data["id"] = face.tempId
                     face_data["surface_type"] = serialize.surface_type(face.geometry)
-                    face_data["surface_type_id"] = face.geometry.surfaceType
+                    # face_data["surface_type_id"] = face.geometry.surfaceType
                     face_data["area"] = face.area
                     point_on_face = face.pointOnFace
                     evaluator = face.evaluator
                     normal_result, normal = evaluator.getNormalAtPoint(point_on_face)
                     assert normal_result
                     face_data["normal_x"] = normal.x
-                    face_data["normal_y"] = normal.x
-                    face_data["normal_z"] = normal.x
+                    face_data["normal_y"] = normal.y
+                    face_data["normal_z"] = normal.z
                     face_data["normal_length"] = normal.length
                     parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_face)
                     assert parameter_result
@@ -138,8 +161,8 @@ class Regraph():
                     face_data["max_tangent_length"] = max_tangent.length
                     face_data["max_curvature"] = max_curvature
                     face_data["min_curvature"] = min_curvature
-                    face_data["label"] = self.get_extrude_face_label(face.tempId, extrude_face_cache)
-                    assert face_data["label"] is not None
+                    face_data["timeline_label"] = face_labels["timeline_label"]
+                    face_data["operation_label"] = face_labels["operation_label"]
                     graph["nodes"].append(face_data)
 
             edge_cache = self.get_edge_cache(body)
@@ -151,10 +174,10 @@ class Regraph():
                     edge_data["source"] = edge.faces[0].tempId
                     edge_data["target"] = edge.faces[1].tempId
                     edge_data["curve_type"] = serialize.curve_type(edge.geometry)
-                    edge_data["curve_type_id"] = edge.geometry.curveType
+                    # edge_data["curve_type_id"] = edge.geometry.curveType
                     edge_data["length"] = edge.length
                     edge_data["concave"] = self.is_concave_edge(edge.tempId, edge_cache)
-                    edge_data["convex"] = self.is_convex_edge(edge.tempId, edge_cache)
+                    # edge_data["convex"] = self.is_convex_edge(edge.tempId, edge_cache)
                     point_on_edge = edge.pointOnEdge
                     evaluator = edge.evaluator
                     parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
@@ -178,17 +201,21 @@ def run(context):
         # Fusion requires an absolute path
         current_dir = Path(__file__).resolve().parent
         data_dir = current_dir.parent / "testdata"
+        output_dir = current_dir / "output"
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True)
 
         # Get all the files in the data folder
         # json_files = [f for f in data_dir.glob("**/*.json")]
-        json_files = [data_dir / "Couch.json"]
+        # json_files = [data_dir / "Couch.json"]
+        json_files = [data_dir / "Z0HexagonCutJoin_RootComponent.json"]
 
         json_count = len(json_files)
         for i, json_file in enumerate(json_files, start=1):
             try:
                 logger.log(f"[{i}/{json_count}] Processing {json_file}")
                 reconverter = Regraph(json_file)
-                reconverter.reconstruct()
+                reconverter.export(output_dir)
 
             except Exception as ex:
                 logger.log(f"Error reconstructing: {ex}")

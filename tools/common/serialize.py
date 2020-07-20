@@ -53,6 +53,20 @@ def curve_type(curve3d):
     return None
 
 
+def feature_operation(operation):
+    if operation == adsk.fusion.FeatureOperations.JoinFeatureOperation:
+        return "JoinFeatureOperation"
+    elif operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
+        return "CutFeatureOperation"
+    elif operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
+        return "IntersectFeatureOperation"
+    elif operation == adsk.fusion.FeatureOperations.NewBodyFeatureOperation:
+        return "NewBodyFeatureOperation"
+    elif operation == adsk.fusion.FeatureOperations.NewComponentFeatureOperation:
+        return "NewComponentFeatureOperation"
+    return None
+
+
 def point2d(point):
     data = {}
     data["type"] = object_type(point)
