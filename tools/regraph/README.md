@@ -6,7 +6,7 @@ Regraph runs in Fusion 360 as a script with the following steps.
 1. Follow the [general instructions here](../) to get setup with Fusion 360.
 2. Optionally change the `data_dir` in [`regraph.py`](regraph.py) to point towards a folder of json data from the reconstruction subset. By default it reconstructs the json files found in [this folder](../testdata).
 3. Run the [`regraph.py`](regraph.py) script from within Fusion 360
-4. Check the contents of the `output` folder for the exported files
+4. Check the contents of the [`output`](output) folder for the exported files
 
 ## Output Format
 Data is exported in json that can be read using networkx. See [regraph_viewer.ipynb](regraph_viewer.ipynb) for an example of how to load the data into networkx. From there it can be [loaded into pytorch geometric for example](https://pytorch-geometric.readthedocs.io/en/latest/modules/utils.html#torch_geometric.utils.from_networkx).
