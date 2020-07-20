@@ -29,8 +29,9 @@ class Regraph():
         Takes a reconstruction json file and converts it
         into a graph representing B-Rep topology"""
 
-    def __init__(self, json_file):
+    def __init__(self, json_file, logger):
         self.json_file = json_file
+        self.logger = logger
         # References to the Fusion design
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
@@ -59,7 +60,7 @@ class Regraph():
         graphs = self.get_json_graphs()
         for body_count, graph in enumerate(graphs):
             json_file = self.output_dir / f"{self.json_file.stem}_{self.current_extrude_index-1:04}_{body_count:04}.json"
-            print(f"Exporting {json_file}")
+            self.logger.log(f"Exporting {json_file}")
             exporter.export_json(json_file, graph)
         self.current_extrude_index += 1
 
@@ -81,22 +82,24 @@ class Regraph():
                 id_set.add(temp_id)
         return id_set
 
-    def add_extrude_faces_to_cache(self, extrude_faces, extrude_operation, extrude_face_location):
+    def add_extrude_faces_to_cache(self, extrude_faces, extrude_operation, extrude_face_location, extrude_taper):
         """Update the extrude face cache with the recently added faces"""
+        operation = serialize.feature_operation(extrude_operation)
+        operation_short = operation.replace("FeatureOperation", "")
+        assert operation_short != "NewComponent"
+        if operation_short == "NewBody" or operation_short == "Join":
+            operation_short = "Extrude"
+
         for face in extrude_faces:
             face_uuid = name.set_uuid(face)
             assert face_uuid is not None
             assert face_uuid not in self.extrude_face_cache
-            operation = serialize.feature_operation(extrude_operation)
-            operation_short = operation.replace("FeatureOperation", "")
-            assert operation_short != "NewComponent"
-            if operation_short == "NewBody" or operation_short == "Join":
-                operation_short = "Extrude"
             self.extrude_face_cache[face_uuid] = {
                 # "timeline_label": self.current_extrude_index / self.extrude_count,
                 "operation_label": f"{operation_short}{extrude_face_location}",
                 "last_operation_label": True,
-                "operation": operation
+                "operation": operation,
+                "extrude_taper": extrude_taper
             }
 
     def add_extrude_to_cache(self, extrude_data):
@@ -105,16 +108,16 @@ class Regraph():
         for face_data in self.extrude_face_cache.values():
             face_data["last_operation_label"] = False
         extrude = extrude_data["extrude"]
-        self.add_extrude_faces_to_cache(extrude.startFaces, extrude.operation, "Start")
-        self.add_extrude_faces_to_cache(extrude.endFaces, extrude.operation, "End")
-        self.add_extrude_faces_to_cache(extrude.sideFaces, extrude.operation, "Side")
+        extrude_taper = self.is_extrude_tapered(extrude)
+        self.add_extrude_faces_to_cache(extrude.startFaces, extrude.operation, "Start", extrude_taper)
+        self.add_extrude_faces_to_cache(extrude.endFaces, extrude.operation, "End", extrude_taper)
+        self.add_extrude_faces_to_cache(extrude.sideFaces, extrude.operation, "Side", extrude_taper)
 
     def get_edge_cache(self, body):
         name.set_uuids_for_collection(body.edges)
         edge_cache = {}
         edge_cache["concave_edges"] = self.get_temp_ids_from_collection(body.concaveEdges)
         edge_cache["convex_edges"] = self.get_temp_ids_from_collection(body.convexEdges)
-        # print(edge_cache)
         return edge_cache
 
     def is_concave_edge(self, temp_id, edge_cache):
@@ -127,6 +130,24 @@ class Regraph():
         for tc_face in face1.tangentiallyConnectedFaces:
             if tc_face.tempId == face2.tempId:
                 return True
+        return False
+
+    def is_extrude_tapered(self, extrude):
+        if extrude.extentOne is not None:
+            if isinstance(extrude.extentOne, adsk.fusion.DistanceExtentDefinition):
+                if extrude.taperAngleOne is not None:
+                    if extrude.taperAngleOne.value is not None and extrude.taperAngleOne.value != "":
+                        if extrude.taperAngleOne.value != 0:
+                            return True
+        # Check the second extent if needed
+        if (extrude.extentType ==
+                adsk.fusion.FeatureExtentTypes.TwoSidesFeatureExtentType):
+            if extrude.extentTwo is not None:
+                if isinstance(extrude.extentTwo, adsk.fusion.DistanceExtentDefinition):
+                    if extrude.taperAngleTwo is not None:
+                        if extrude.taperAngleTwo.value is not None and extrude.taperAngleTwo.value != "":
+                            if extrude.taperAngleTwo.value != 0:
+                                return True
         return False
 
     def get_json_graphs(self):
@@ -147,6 +168,11 @@ class Regraph():
                     face_labels = self.extrude_face_cache[face_uuid]
                     # Abort if we hit an intersect operation
                     if face_labels["operation"] == "IntersectFeatureOperation":
+                        self.logger.log("Skipping: Extrude uses intersection")
+                        return graphs
+                    # Abort if we hit a taper
+                    if face_labels["extrude_taper"]:
+                        self.logger.log("Skipping: Extrude has taper")
                         return graphs
                     face_data["id"] = face.tempId
                     face_data["surface_type"] = serialize.surface_type(face.geometry)
@@ -235,7 +261,7 @@ def run(context):
         for i, json_file in enumerate(json_files, start=1):
             try:
                 logger.log(f"[{i}/{json_count}] Processing {json_file}")
-                reconverter = Regraph(json_file)
+                reconverter = Regraph(json_file, logger)
                 reconverter.export(output_dir)
 
             except Exception as ex:
