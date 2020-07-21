@@ -143,9 +143,46 @@ The overall structure for a profile is as follows.
 
 
 #### Transform
+[To be added]
 
 #### Reference Plane
-
-
+[To be added]
 
 ### Extrude Entities
+[To be added]
+
+
+### Sequence
+The sequence data structure contains a list of files and data references that are using during reconstruction. A new sequence item is added when a curve or an extrude is added to the design.
+```js
+"sequence": [
+    {
+        "index": 1,
+        "type": "Sketch",
+        "entity": "7bb3de62-cad8-11ea-a448-acde48001122",
+        "curve": "7bb7cd38-cad8-11ea-a448-acde48001122",
+        "timeline": 0,
+        "png": "File_12a12060_0000_0001.png"
+    },
+    ...
+    {
+        "index": 9,
+        "type": "ExtrudeFeature",
+        "entity": "7bbbdbb2-cad8-11ea-a448-acde48001122",
+        "timeline": 1,
+        "png": "File_12a12060_0000_0009.png",
+        "smt": "File_12a12060_0000_0009.smt",
+        "obj": "File_12a12060_0000_0009.obj"
+    }
+]
+```
+Each sequence item has:
+- `index`: The index in the sequence
+- `type`: Either `Sketch` or `ExtrudeFeature`, indicating the modeling operation used.
+- `entity`: The `uuid` key to access the entity in the `entities` data structure.
+- `timeline`: The index in the timeline of the modeling operation.
+- `png`: A png screen capture of the design at this point in the sequence.
+
+Additionally extrude features have the following:
+- `smt`: A B-Rep file in smt format of the design at this point in the sequence.
+- `obj`: A mesh file in obj format of the design at this point in the sequence.
