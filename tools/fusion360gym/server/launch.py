@@ -24,8 +24,6 @@ COMMON_DIR = os.path.abspath(os.path.join(
     os.path.dirname(__file__), "..", "..", "common"))
 if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
-import launcher
-importlib.reload(launcher)
 from launcher import Launcher
 
 LAUNCH_JSON_FILE = Path("launch.json")

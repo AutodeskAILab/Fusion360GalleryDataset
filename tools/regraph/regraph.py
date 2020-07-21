@@ -20,8 +20,20 @@ import exporter
 import serialize
 from logger import Logger
 from sketch_extrude_importer import SketchExtrudeImporter
-
 reload(serialize)
+
+
+# Event handlers
+handlers = []
+
+
+class OnlineStatusChangedHandler(adsk.core.ApplicationEventHandler):
+    def __init__(self):
+        super().__init__()
+
+    def notify(self, args):
+        # Start the server when onlineStatusChanged handler returns
+        start()
 
 
 class Regraph():
@@ -40,9 +52,14 @@ class Regraph():
         # Current extrude index
         self.current_extrude_index = 1
 
-    def export(self, output_dir):
+    def export(self, output_dir, results_file, results):
         """Reconstruct the design from the json file"""
         self.output_dir = output_dir
+        self.results = results
+        self.results_file = results_file
+        # Immediately log this in case we crash
+        self.results[self.json_file.name] = []
+        self.save_results()
         importer = SketchExtrudeImporter(self.json_file)
         self.extrude_count = self.get_extrude_count(importer.data)
         importer.reconstruct(self.inc_export)
@@ -59,10 +76,19 @@ class Regraph():
         self.add_extrude_to_cache(data)
         graphs = self.get_json_graphs()
         for body_count, graph in enumerate(graphs):
-            json_file = self.output_dir / f"{self.json_file.stem}_{self.current_extrude_index-1:04}_{body_count:04}.json"
-            self.logger.log(f"Exporting {json_file}")
-            exporter.export_json(json_file, graph)
+            graph_file = self.output_dir / f"{self.json_file.stem}_{self.current_extrude_index-1:04}_{body_count:04}.json"
+            self.logger.log(f"Exporting {graph_file}")
+            exporter.export_json(graph_file, graph)
+            if graph_file.exists():
+                self.results[self.json_file.name].append(graph_file.name)
+                self.save_results()
+            else:
+                self.logger.log(f"Error exporting {graph_file}")
         self.current_extrude_index += 1
+
+    def save_results(self):
+        with open(self.results_file, "w", encoding="utf8") as f:
+            json.dump(self.results, f, indent=4)
 
     def get_extrude_count(self, data):
         """Get the number of extrudes in a design"""
@@ -245,41 +271,70 @@ class Regraph():
         return graphs
 
 
+def load_results(results_file):
+    if results_file.exists():
+        with open(results_file, "r", encoding="utf8") as f:
+            return json.load(f)
+    return {}
+
+
+def start():
+    app = adsk.core.Application.get()
+    # Logger to print to the text commands window in Fusion
+    logger = Logger()
+    # Fusion requires an absolute path
+    current_dir = Path(__file__).resolve().parent
+    data_dir = current_dir.parent / "testdata"
+    output_dir = current_dir / "output"
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True)
+
+    results_file = output_dir / "regraph_results.json"
+    results = load_results(results_file)
+
+    # Get all the files in the data folder
+    # json_files = [f for f in data_dir.glob("**/*.json")]
+    json_files = [
+        data_dir / "Couch.json",
+        data_dir / "Z0HexagonCutJoin_RootComponent.json",
+        data_dir / "Z0Convexity_12a12060_0000.json"
+    ]
+
+    json_count = len(json_files)
+    for i, json_file in enumerate(json_files, start=1):
+        try:
+            if json_file.name in results:
+                logger.log(f"[{i}/{json_count}] Skipping {json_file}")
+            else:
+                logger.log(f"[{i}/{json_count}] Processing {json_file}")
+                reconverter = Regraph(json_file, logger)
+                reconverter.export(output_dir, results_file, results)
+
+        except Exception as ex:
+            logger.log(f"Error reconstructing: {ex}")
+            logger.log(traceback.format_exc())
+        finally:
+            # Close the document
+            # Fusion automatically opens a new window
+            # after the last one is closed
+            app.activeDocument.close(False)
+
+
 def run(context):
     try:
         app = adsk.core.Application.get()
-        # Logger to print to the text commands window in Fusion
-        logger = Logger()
-        # Fusion requires an absolute path
-        current_dir = Path(__file__).resolve().parent
-        data_dir = current_dir.parent / "testdata"
-        output_dir = current_dir / "output"
-        if not output_dir.exists():
-            output_dir.mkdir(parents=True)
-
-        # Get all the files in the data folder
-        # json_files = [f for f in data_dir.glob("**/*.json")]
-        json_files = [
-            data_dir / "Couch.json",
-            data_dir / "Z0HexagonCutJoin_RootComponent.json",
-            data_dir / "Z0Convexity_12a12060_0000.json"
-        ]
-
-        json_count = len(json_files)
-        for i, json_file in enumerate(json_files, start=1):
-            try:
-                logger.log(f"[{i}/{json_count}] Processing {json_file}")
-                reconverter = Regraph(json_file, logger)
-                reconverter.export(output_dir)
-
-            except Exception as ex:
-                logger.log(f"Error reconstructing: {ex}")
-                print(traceback.format_exc())
-            finally:
-                # Close the document
-                # Fusion automatically opens a new window
-                # after the last one is closed
-                app.activeDocument.close(False)
+        # If we have started manually
+        # we go ahead and startup
+        if app.isStartupComplete:
+            start()
+        else:
+            # If we are being started on startup
+            # then we subscribe to ‘onlineStatusChanged’ event
+            # This event is triggered on Fusion startup
+            print("Setting up online status changed handler...")
+            on_online_status_changed = OnlineStatusChangedHandler()
+            app.onlineStatusChanged.add(on_online_status_changed)
+            handlers.append(on_online_status_changed)
 
     except:
         print(traceback.format_exc())
