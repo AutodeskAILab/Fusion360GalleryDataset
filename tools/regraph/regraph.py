@@ -146,6 +146,13 @@ class Regraph():
         edge_cache["convex_edges"] = self.get_temp_ids_from_collection(body.convexEdges)
         return edge_cache
 
+    def get_face_normal(self, face):
+        point_on_face = face.pointOnFace
+        evaluator = face.evaluator
+        normal_result, normal = evaluator.getNormalAtPoint(point_on_face)
+        assert normal_result
+        return normal
+
     def is_concave_edge(self, temp_id, edge_cache):
         return temp_id in edge_cache["concave_edges"]
 
@@ -159,11 +166,14 @@ class Regraph():
         return False
 
     def are_faces_perpendicular(self, face1, face2):
-        if (face1.geometry.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType and
-                face2.geometry.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType):
-            return face1.geometry.isPerpendicularToPlane(face2.geometry)
-        else:
-            return False
+        normal1 = self.get_face_normal(face1)
+        normal2 = self.get_face_normal(face2)
+        return normal1.isPerpendicularTo(normal2)
+        # if (face1.geometry.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType and
+        #         face2.geometry.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType):
+        #     return face1.geometry.isPerpendicularToPlane(face2.geometry)
+        # else:
+        #     return False
 
     def is_extrude_tapered(self, extrude):
         if extrude.extentOne is not None:
@@ -211,17 +221,14 @@ class Regraph():
                     face_data["surface_type"] = serialize.surface_type(face.geometry)
                     # face_data["surface_type_id"] = face.geometry.surfaceType
                     face_data["area"] = face.area
-                    point_on_face = face.pointOnFace
-                    evaluator = face.evaluator
-                    normal_result, normal = evaluator.getNormalAtPoint(point_on_face)
-                    assert normal_result
+                    normal = self.get_face_normal(face)
                     face_data["normal_x"] = normal.x
                     face_data["normal_y"] = normal.y
                     face_data["normal_z"] = normal.z
                     # face_data["normal_length"] = normal.length
-                    parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_face)
+                    parameter_result, parameter_at_point = face.evaluator.getParameterAtPoint(face.pointOnFace)
                     assert parameter_result
-                    curvature_result, max_tangent, max_curvature, min_curvature = evaluator.getCurvature(parameter_at_point)
+                    curvature_result, max_tangent, max_curvature, min_curvature = face.evaluator.getCurvature(parameter_at_point)
                     assert curvature_result
                     face_data["max_tangent_x"] = max_tangent.x
                     face_data["max_tangent_y"] = max_tangent.y

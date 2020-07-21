@@ -4,7 +4,7 @@
     "graph": {},
     "nodes": [
         {
-            "id": 8,
+            "id": 6,
             "surface_type": "PlaneSurfaceType",
             "area": 7.0710678118654755,
             "normal_x": 0.7071067811865476,
@@ -19,7 +19,7 @@
             "last_operation_label": true
         },
         {
-            "id": 5,
+            "id": 2,
             "surface_type": "PlaneSurfaceType",
             "area": 7.810249675906654,
             "normal_x": -0.6401843996644799,
@@ -34,7 +34,7 @@
             "last_operation_label": true
         },
         {
-            "id": 7,
+            "id": 3,
             "surface_type": "PlaneSurfaceType",
             "area": 5.099019513592785,
             "normal_x": 0.9805806756909202,
@@ -49,7 +49,7 @@
             "last_operation_label": true
         },
         {
-            "id": 4,
+            "id": 5,
             "surface_type": "PlaneSurfaceType",
             "area": 5.0,
             "normal_x": 0.0,
@@ -64,7 +64,7 @@
             "last_operation_label": true
         },
         {
-            "id": 2,
+            "id": 4,
             "surface_type": "CylinderSurfaceType",
             "area": 7.853981633974483,
             "normal_x": -0.7071067811865477,
@@ -79,7 +79,7 @@
             "last_operation_label": true
         },
         {
-            "id": 6,
+            "id": 8,
             "surface_type": "PlaneSurfaceType",
             "area": 5.0,
             "normal_x": -1.0,
@@ -94,7 +94,7 @@
             "last_operation_label": true
         },
         {
-            "id": 9,
+            "id": 7,
             "surface_type": "PlaneSurfaceType",
             "area": 19.0,
             "normal_x": 0.0,
@@ -109,7 +109,7 @@
             "last_operation_label": true
         },
         {
-            "id": 3,
+            "id": 9,
             "surface_type": "PlaneSurfaceType",
             "area": 5.099019513592785,
             "normal_x": 0.9805806756909202,
@@ -156,8 +156,8 @@
     ],
     "links": [
         {
-            "id": 11,
-            "source": 8,
+            "id": 10,
+            "source": 6,
             "target": 0,
             "curve_type": "Line3DCurveType",
             "length": 3.5355339059327373,
@@ -169,9 +169,9 @@
             "curvature": 0.0
         },
         {
-            "id": 12,
-            "source": 3,
-            "target": 8,
+            "id": 11,
+            "source": 9,
+            "target": 6,
             "curve_type": "Line3DCurveType",
             "length": 2.0,
             "convexity": "Convex",
@@ -182,8 +182,8 @@
             "curvature": 0.0
         },
         {
-            "id": 13,
-            "source": 8,
+            "id": 12,
+            "source": 6,
             "target": 1,
             "curve_type": "Line3DCurveType",
             "length": 3.5355339059327373,
@@ -195,9 +195,9 @@
             "curvature": 0.0
         },
         {
-            "id": 14,
-            "source": 5,
-            "target": 8,
+            "id": 13,
+            "source": 2,
+            "target": 6,
             "curve_type": "Line3DCurveType",
             "length": 2.0,
             "convexity": "Convex",
@@ -208,9 +208,22 @@
             "curvature": 0.0
         },
         {
-            "id": 15,
-            "source": 5,
+            "id": 14,
+            "source": 2,
             "target": 0,
+            "curve_type": "Line3DCurveType",
+            "length": 3.905124837953327,
+            "convexity": "Convex",
+            "perpendicular": true,
+            "direction_x": 0.0,
+            "direction_y": 0.0,
+            "direction_z": 0.0,
+            "curvature": 0.0
+        },
+        {
+            "id": 15,
+            "source": 2,
+            "target": 1,
             "curve_type": "Line3DCurveType",
             "length": 3.905124837953327,
             "convexity": "Convex",
@@ -222,21 +235,8 @@
         },
         {
             "id": 16,
-            "source": 5,
-            "target": 1,
-            "curve_type": "Line3DCurveType",
-            "length": 3.905124837953327,
-            "convexity": "Convex",
-            "perpendicular": true,
-            "direction_x": 0.0,
-            "direction_y": 0.0,
-            "direction_z": 0.0,
-            "curvature": 0.0
-        },
-        {
-            "id": 10,
-            "source": 7,
-            "target": 5,
+            "source": 3,
+            "target": 2,
             "curve_type": "Line3DCurveType",
             "length": 2.0,
             "convexity": "Concave",
@@ -248,7 +248,7 @@
         },
         {
             "id": 17,
-            "source": 7,
+            "source": 3,
             "target": 0,
             "curve_type": "Line3DCurveType",
             "length": 2.5495097567963922,
@@ -261,7 +261,7 @@
         },
         {
             "id": 18,
-            "source": 7,
+            "source": 3,
             "target": 1,
             "curve_type": "Line3DCurveType",
             "length": 2.5495097567963922,
@@ -274,8 +274,8 @@
         },
         {
             "id": 19,
-            "source": 4,
-            "target": 7,
+            "source": 5,
+            "target": 3,
             "curve_type": "Line3DCurveType",
             "length": 2.0,
             "convexity": "Convex",
@@ -287,7 +287,7 @@
         },
         {
             "id": 20,
-            "source": 4,
+            "source": 5,
             "target": 0,
             "curve_type": "Line3DCurveType",
             "length": 2.5,
@@ -300,7 +300,7 @@
         },
         {
             "id": 21,
-            "source": 4,
+            "source": 5,
             "target": 1,
             "curve_type": "Line3DCurveType",
             "length": 2.5,
@@ -313,8 +313,8 @@
         },
         {
             "id": 22,
-            "source": 2,
-            "target": 4,
+            "source": 4,
+            "target": 5,
             "curve_type": "Line3DCurveType",
             "length": 2.0,
             "convexity": "Smooth",
@@ -326,12 +326,12 @@
         },
         {
             "id": 23,
-            "source": 2,
+            "source": 4,
             "target": 0,
             "curve_type": "Arc3DCurveType",
             "length": 3.9269908169872414,
             "convexity": "Convex",
-            "perpendicular": false,
+            "perpendicular": true,
             "direction_x": 0.7071067811865477,
             "direction_y": 0.7071067811865474,
             "direction_z": -0.0,
@@ -339,12 +339,12 @@
         },
         {
             "id": 24,
-            "source": 2,
+            "source": 4,
             "target": 1,
             "curve_type": "Arc3DCurveType",
             "length": 3.9269908169872414,
             "convexity": "Convex",
-            "perpendicular": false,
+            "perpendicular": true,
             "direction_x": 0.7071067811865477,
             "direction_y": 0.7071067811865474,
             "direction_z": -0.0,
@@ -352,8 +352,8 @@
         },
         {
             "id": 25,
-            "source": 6,
-            "target": 2,
+            "source": 8,
+            "target": 4,
             "curve_type": "Line3DCurveType",
             "length": 2.0,
             "convexity": "Smooth",
@@ -365,7 +365,7 @@
         },
         {
             "id": 26,
-            "source": 6,
+            "source": 8,
             "target": 0,
             "curve_type": "Line3DCurveType",
             "length": 2.5,
@@ -378,7 +378,7 @@
         },
         {
             "id": 27,
-            "source": 6,
+            "source": 8,
             "target": 1,
             "curve_type": "Line3DCurveType",
             "length": 2.5,
@@ -391,8 +391,8 @@
         },
         {
             "id": 28,
-            "source": 9,
-            "target": 6,
+            "source": 7,
+            "target": 8,
             "curve_type": "Line3DCurveType",
             "length": 2.0,
             "convexity": "Convex",
@@ -404,7 +404,7 @@
         },
         {
             "id": 29,
-            "source": 9,
+            "source": 7,
             "target": 0,
             "curve_type": "Line3DCurveType",
             "length": 9.5,
@@ -417,7 +417,7 @@
         },
         {
             "id": 30,
-            "source": 9,
+            "source": 7,
             "target": 1,
             "curve_type": "Line3DCurveType",
             "length": 9.5,
@@ -430,8 +430,8 @@
         },
         {
             "id": 31,
-            "source": 3,
-            "target": 9,
+            "source": 9,
+            "target": 7,
             "curve_type": "Line3DCurveType",
             "length": 2.0,
             "convexity": "Convex",
@@ -443,7 +443,7 @@
         },
         {
             "id": 32,
-            "source": 3,
+            "source": 9,
             "target": 0,
             "curve_type": "Line3DCurveType",
             "length": 2.5495097567963922,
@@ -456,7 +456,7 @@
         },
         {
             "id": 33,
-            "source": 3,
+            "source": 9,
             "target": 1,
             "curve_type": "Line3DCurveType",
             "length": 2.5495097567963922,
