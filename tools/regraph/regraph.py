@@ -119,7 +119,9 @@ class Regraph():
         for face in extrude_faces:
             face_uuid = name.set_uuid(face)
             assert face_uuid is not None
-            assert face_uuid not in self.extrude_face_cache
+            # We will have split faces with the same uuid
+            # So we need to update them
+            # assert face_uuid not in self.extrude_face_cache
             self.extrude_face_cache[face_uuid] = {
                 # "timeline_label": self.current_extrude_index / self.extrude_count,
                 "operation_label": f"{operation_short}{extrude_face_location}",
@@ -304,27 +306,27 @@ def start():
     json_files = [
         data_dir / "Couch.json",
         data_dir / "Z0HexagonCutJoin_RootComponent.json",
-        data_dir / "Z0Convexity_12a12060_0000.json"
+        data_dir / "Z0Convexity_12a12060_0000.json",
     ]
 
     json_count = len(json_files)
     for i, json_file in enumerate(json_files, start=1):
-        try:
-            if json_file.name in results:
-                logger.log(f"[{i}/{json_count}] Skipping {json_file}")
-            else:
+        if json_file.name in results:
+            logger.log(f"[{i}/{json_count}] Skipping {json_file}")
+        else:
+            try:
                 logger.log(f"[{i}/{json_count}] Processing {json_file}")
                 reconverter = Regraph(json_file, logger)
                 reconverter.export(output_dir, results_file, results)
 
-        except Exception as ex:
-            logger.log(f"Error reconstructing: {ex}")
-            logger.log(traceback.format_exc())
-        finally:
-            # Close the document
-            # Fusion automatically opens a new window
-            # after the last one is closed
-            app.activeDocument.close(False)
+            except Exception as ex:
+                logger.log(f"Error reconstructing: {ex}")
+                logger.log(traceback.format_exc())
+            finally:
+                # Close the document
+                # Fusion automatically opens a new window
+                # after the last one is closed
+                app.activeDocument.close(False)
 
 
 def run(context):
