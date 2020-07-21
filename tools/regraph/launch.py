@@ -1,3 +1,10 @@
+"""
+
+Run Fusion in a loop
+Windows only
+
+"""
+
 import os
 import sys
 from pathlib import Path

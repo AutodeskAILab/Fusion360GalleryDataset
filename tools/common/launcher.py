@@ -60,7 +60,7 @@ class Launcher():
     def find_fusion_windows(self):
         """Find the Fusion app
             by looking in a windows FusionLauncher.exe.ini file"""
-        fusion_launcher = find_fusion_launcher()
+        fusion_launcher = self.find_fusion_launcher()
         if fusion_launcher is None:
             return None
         # FusionLauncher.exe.ini looks like this (encoding is UTF-16):
