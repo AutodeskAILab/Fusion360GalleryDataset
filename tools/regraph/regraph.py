@@ -114,7 +114,7 @@ class Regraph():
         self.add_extrude_faces_to_cache(extrude.sideFaces, extrude.operation, "Side", extrude_taper)
 
     def get_edge_cache(self, body):
-        name.set_uuids_for_collection(body.edges)
+        # name.set_uuids_for_collection(body.edges)
         edge_cache = {}
         edge_cache["concave_edges"] = self.get_temp_ids_from_collection(body.concaveEdges)
         edge_cache["convex_edges"] = self.get_temp_ids_from_collection(body.convexEdges)
@@ -131,6 +131,13 @@ class Regraph():
             if tc_face.tempId == face2.tempId:
                 return True
         return False
+
+    def are_faces_perpendicular(self, face1, face2):
+        if (face1.geometry.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType and
+                face2.geometry.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType):
+            return face1.geometry.isPerpendicularToPlane(face2.geometry)
+        else:
+            return False
 
     def is_extrude_tapered(self, extrude):
         if extrude.extentOne is not None:
@@ -222,6 +229,7 @@ class Regraph():
                     elif is_tc:
                         convexity = "Smooth"
                     edge_data["convexity"] = convexity
+                    edge_data["perpendicular"] = self.are_faces_perpendicular(edge.faces[0], edge.faces[1])
                     point_on_edge = edge.pointOnEdge
                     evaluator = edge.evaluator
                     parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
@@ -250,7 +258,7 @@ def run(context):
             output_dir.mkdir(parents=True)
 
         # Get all the files in the data folder
-        json_files = [f for f in data_dir.glob("**/*.json")]
+        # json_files = [f for f in data_dir.glob("**/*.json")]
         json_files = [
             data_dir / "Couch.json",
             data_dir / "Z0HexagonCutJoin_RootComponent.json",
