@@ -48,9 +48,19 @@ class Regraph():
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         # Cache of the extrude face label information
-        self.extrude_face_cache = {}
+        self.face_cache = {}
+        # Cache of the edge information
+        self.edge_cache = {}
         # Current extrude index
         self.current_extrude_index = 1
+        # The type of features we want
+        # self.feature_type = "PerExtrude"
+        self.feature_type = "PerCurve"
+        
+
+    # -------------------------------------------------------------------------
+    # EXPORT
+    # -------------------------------------------------------------------------
 
     def export(self, output_dir, results_file, results):
         """Reconstruct the design from the json file"""
@@ -74,19 +84,26 @@ class Regraph():
     def inc_export_extrude(self, data):
         """Save out a graph after each extrude as reconstruction takes place"""
         self.add_extrude_to_cache(data)
-        graphs = self.get_json_graphs()
-        for body_count, graph in enumerate(graphs):
-            graph_file = self.output_dir / f"{self.json_file.stem}_{self.current_extrude_index-1:04}_{body_count:04}.json"
-            self.logger.log(f"Exporting {graph_file}")
-            exporter.export_json(graph_file, graph)
-            if graph_file.exists():
-                self.results[self.json_file.name].append(graph_file.name)
-                self.save_results()
-            else:
-                self.logger.log(f"Error exporting {graph_file}")
+        # If we are exporting per curve
+        # if self.feature_type == "PerCurve":
+        graphs = self.get_body_graphs()
+        for body_index, graph in enumerate(graphs.values()):
+            self.export_body_graph(body_index, graph)
         self.current_extrude_index += 1
 
+    def export_body_graph(self, body_index, graph):
+        """Export a single boody as a graph"""
+        graph_file = self.output_dir / f"{self.json_file.stem}_{self.current_extrude_index-1:04}_{body_index:04}.json"
+        self.logger.log(f"Exporting {graph_file}")
+        exporter.export_json(graph_file, graph)
+        if graph_file.exists():
+            self.results[self.json_file.name].append(graph_file.name)
+            self.save_results()
+        else:
+            self.logger.log(f"Error exporting {graph_file}")
+
     def save_results(self):
+        """Save out the results of conversion"""
         with open(self.results_file, "w", encoding="utf8") as f:
             json.dump(self.results, f, indent=4)
 
@@ -98,6 +115,10 @@ class Regraph():
             if entity["type"] == "ExtrudeFeature":
                 extrude_count += 1
         return extrude_count
+
+    # -------------------------------------------------------------------------
+    # DATA CACHING
+    # -------------------------------------------------------------------------
 
     def get_temp_ids_from_collection(self, collection):
         """From a collection, make a set of the tempids"""
@@ -121,8 +142,8 @@ class Regraph():
             assert face_uuid is not None
             # We will have split faces with the same uuid
             # So we need to update them
-            # assert face_uuid not in self.extrude_face_cache
-            self.extrude_face_cache[face_uuid] = {
+            # assert face_uuid not in self.face_cache
+            self.face_cache[face_uuid] = {
                 # "timeline_label": self.current_extrude_index / self.extrude_count,
                 "operation_label": f"{operation_short}{extrude_face_location}",
                 "last_operation_label": True,
@@ -130,23 +151,46 @@ class Regraph():
                 "extrude_taper": extrude_taper
             }
 
+    def add_extrude_edges_to_cache(self, extrude_faces, extrude_bodies):
+        """Update the edge cache with the latest extrude"""
+        temp_edge_cache = {
+            "concave_edges": set()
+            # "convex_edges": set()
+        }
+        for body in extrude_bodies:
+            temp_edge_cache["concave_edges"].update(
+                self.get_temp_ids_from_collection(body.concaveEdges))
+            # temp_edge_cache["convex_edges"].update(
+            #     self.get_temp_ids_from_collection(body.convexEdges))
+
+        for face in extrude_faces:
+            for edge in face.edges:
+                assert edge.faces.count == 2
+                edge_uuid = name.set_uuid(edge)
+                edge_concave = edge.tempId in temp_edge_cache["concave_edges"]
+                assert edge_uuid is not None
+                self.edge_cache[edge_uuid] = {
+                    "temp_id": edge.tempId,
+                    "convexity": self.get_edge_convexity(edge, edge_concave),
+                    "source": name.get_uuid(edge.faces[0]),
+                    "target": name.get_uuid(edge.faces[1])
+                }
+
     def add_extrude_to_cache(self, extrude_data):
         """Add the data from the latest extrude to the cache"""
         # First toggle the previous extrude last_operation label
-        for face_data in self.extrude_face_cache.values():
+        for face_data in self.face_cache.values():
             face_data["last_operation_label"] = False
         extrude = extrude_data["extrude"]
         extrude_taper = self.is_extrude_tapered(extrude)
         self.add_extrude_faces_to_cache(extrude.startFaces, extrude.operation, "Start", extrude_taper)
         self.add_extrude_faces_to_cache(extrude.endFaces, extrude.operation, "End", extrude_taper)
         self.add_extrude_faces_to_cache(extrude.sideFaces, extrude.operation, "Side", extrude_taper)
+        self.add_extrude_edges_to_cache(extrude.faces, extrude.bodies)
 
-    def get_edge_cache(self, body):
-        # name.set_uuids_for_collection(body.edges)
-        edge_cache = {}
-        edge_cache["concave_edges"] = self.get_temp_ids_from_collection(body.concaveEdges)
-        edge_cache["convex_edges"] = self.get_temp_ids_from_collection(body.convexEdges)
-        return edge_cache
+    # -------------------------------------------------------------------------
+    # FEATURES
+    # -------------------------------------------------------------------------
 
     def get_face_normal(self, face):
         point_on_face = face.pointOnFace
@@ -154,12 +198,6 @@ class Regraph():
         normal_result, normal = evaluator.getNormalAtPoint(point_on_face)
         assert normal_result
         return normal
-
-    def is_concave_edge(self, temp_id, edge_cache):
-        return temp_id in edge_cache["concave_edges"]
-
-    def is_convex_edge(self, temp_id, edge_cache):
-        return temp_id in edge_cache["convex_edges"]
 
     def are_faces_tangentially_connected(self, face1, face2):
         for tc_face in face1.tangentiallyConnectedFaces:
@@ -171,11 +209,45 @@ class Regraph():
         normal1 = self.get_face_normal(face1)
         normal2 = self.get_face_normal(face2)
         return normal1.isPerpendicularTo(normal2)
-        # if (face1.geometry.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType and
-        #         face2.geometry.surfaceType == adsk.core.SurfaceTypes.PlaneSurfaceType):
-        #     return face1.geometry.isPerpendicularToPlane(face2.geometry)
-        # else:
-        #     return False
+
+    def get_edge_convexity(self, edge, is_concave):
+        # is_concave = self.is_concave_edge(edge.tempId)
+        is_tc = self.are_faces_tangentially_connected(edge.faces[0], edge.faces[1])
+        convexity = "Convex"
+        # edge_data["convex"] = self.is_convex_edge(edge.tempId)
+        if is_concave:
+            convexity = "Concave"
+        elif is_tc:
+            convexity = "Smooth"
+        return convexity
+
+    def linspace(self, start, stop, n):
+        if n == 1:
+            yield stop
+            return
+        h = (stop - start) / (n - 1)
+        for i in range(n):
+            yield start + h * i
+
+    def get_edge_parameter_features(self, edge):
+        param_features = {}
+        samples = 10
+        evaluator = edge.evaluator
+        result, start_param, end_param = evaluator.getParameterExtents()
+        assert result
+        parameters = list(self.linspace(start_param, end_param, samples))
+        result, points = evaluator.getPointsAtParameters(parameters)
+        assert result
+        param_features["param_points"] = []
+        for pt in points:
+            param_features["param_points"].append(pt.x)
+            param_features["param_points"].append(pt.y)
+            param_features["param_points"].append(pt.z)
+        return param_features
+
+    # -------------------------------------------------------------------------
+    # FILTER
+    # -------------------------------------------------------------------------
 
     def is_extrude_tapered(self, extrude):
         if extrude.extentOne is not None:
@@ -195,9 +267,15 @@ class Regraph():
                                 return True
         return False
 
-    def get_json_graphs(self):
-        graphs = []
+    # -------------------------------------------------------------------------
+    # GRAPH CONSTRUCTION
+    # -------------------------------------------------------------------------
+
+    def get_body_graphs(self):
+        """Get a graph data structure for each body"""
+        graphs = {}
         for body in self.design.rootComponent.bRepBodies:
+            body_uuid = name.get_uuid(body)
             graph = {
                 "directed": False,
                 "multigraph": False,
@@ -207,80 +285,127 @@ class Regraph():
             }
             for face in body.faces:
                 if face is not None:
-                    face_data = {}
-                    face_uuid = name.get_uuid(face)
-                    assert face_uuid is not None
-                    face_labels = self.extrude_face_cache[face_uuid]
-                    # Abort if we hit an intersect operation
-                    if face_labels["operation"] == "IntersectFeatureOperation":
-                        self.logger.log("Skipping: Extrude uses intersection")
+                    face_data = self.get_face_data(face)
+                    if face_data is None:
+                        # We want to skip this graph as it is invalid
                         return graphs
-                    # Abort if we hit a taper
-                    if face_labels["extrude_taper"]:
-                        self.logger.log("Skipping: Extrude has taper")
-                        return graphs
-                    face_data["id"] = face.tempId
-                    face_data["surface_type"] = serialize.surface_type(face.geometry)
-                    # face_data["surface_type_id"] = face.geometry.surfaceType
-                    face_data["area"] = face.area
-                    normal = self.get_face_normal(face)
-                    face_data["normal_x"] = normal.x
-                    face_data["normal_y"] = normal.y
-                    face_data["normal_z"] = normal.z
-                    # face_data["normal_length"] = normal.length
-                    parameter_result, parameter_at_point = face.evaluator.getParameterAtPoint(face.pointOnFace)
-                    assert parameter_result
-                    curvature_result, max_tangent, max_curvature, min_curvature = face.evaluator.getCurvature(parameter_at_point)
-                    assert curvature_result
-                    face_data["max_tangent_x"] = max_tangent.x
-                    face_data["max_tangent_y"] = max_tangent.y
-                    face_data["max_tangent_z"] = max_tangent.z
-                    # face_data["max_tangent_length"] = max_tangent.length
-                    face_data["max_curvature"] = max_curvature
-                    face_data["min_curvature"] = min_curvature
-                    # face_data["timeline_label"] = face_labels["timeline_label"]
-                    face_data["operation_label"] = face_labels["operation_label"]
-                    face_data["last_operation_label"] = face_labels["last_operation_label"]
                     graph["nodes"].append(face_data)
 
-            edge_cache = self.get_edge_cache(body)
             for edge in body.edges:
                 if edge is not None:
-                    edge_data = {}
-                    edge_data["id"] = edge.tempId
-                    assert edge.faces.count == 2
-                    edge_data["source"] = edge.faces[0].tempId
-                    edge_data["target"] = edge.faces[1].tempId
-                    edge_data["curve_type"] = serialize.curve_type(edge.geometry)
-                    # edge_data["curve_type_id"] = edge.geometry.curveType
-                    edge_data["length"] = edge.length
-                    # Create a feature for the edge convexity
-                    is_concave = self.is_concave_edge(edge.tempId, edge_cache)
-                    is_tc = self.are_faces_tangentially_connected(edge.faces[0], edge.faces[1])
-                    convexity = "Convex"
-                    # edge_data["convex"] = self.is_convex_edge(edge.tempId, edge_cache)
-                    if is_concave:
-                        convexity = "Concave"
-                    elif is_tc:
-                        convexity = "Smooth"
-                    edge_data["convexity"] = convexity
-                    edge_data["perpendicular"] = self.are_faces_perpendicular(edge.faces[0], edge.faces[1])
-                    point_on_edge = edge.pointOnEdge
-                    evaluator = edge.evaluator
-                    parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
-                    assert parameter_result
-                    curvature_result, direction, curvature = evaluator.getCurvature(parameter_at_point)
-                    edge_data["direction_x"] = direction.x
-                    edge_data["direction_y"] = direction.y
-                    edge_data["direction_z"] = direction.z
-                    # edge_data["direction_length"] = direction.length
-                    edge_data["curvature"] = curvature
+                    edge_data = self.get_edge_data(edge)
                     graph["links"].append(edge_data)
-            graphs.append(graph)
+            graphs[body_uuid] = graph
         return graphs
 
+    def get_face_data(self, face):
+        """Get the features for a face"""
+        face_uuid = name.get_uuid(face)
+        assert face_uuid is not None
+        face_metadata = self.face_cache[face_uuid]
+        if self.feature_type == "PerExtrude":
+            return self.get_face_data_per_extrude(face, face_uuid, face_metadata)
+        elif self.feature_type == "PerCurve":
+            return self.get_face_data_per_curve(face, face_uuid, face_metadata)
+
+    def get_common_face_data(self, face, face_uuid):
+        """Get common edge data"""
+        face_data = {}
+        face_data["id"] = face_uuid
+        return face_data
+
+    def get_face_data_per_extrude(self, face, face_uuid, face_metadata):
+        """Get the features for a face for a per extrude graph"""
+        face_data = self.get_common_face_data(face, face_uuid)
+        # Abort if we hit an intersect operation
+        if face_metadata["operation"] == "IntersectFeatureOperation":
+            self.logger.log("Skipping: Extrude uses intersection")
+            return None
+        # Abort if we hit a taper
+        if face_metadata["extrude_taper"]:
+            self.logger.log("Skipping: Extrude has taper")
+            return None
+        face_data["surface_type"] = serialize.surface_type(face.geometry)
+        # face_data["surface_type_id"] = face.geometry.surfaceType
+        face_data["area"] = face.area
+        normal = self.get_face_normal(face)
+        face_data["normal_x"] = normal.x
+        face_data["normal_y"] = normal.y
+        face_data["normal_z"] = normal.z
+        # face_data["normal_length"] = normal.length
+        parameter_result, parameter_at_point = face.evaluator.getParameterAtPoint(face.pointOnFace)
+        assert parameter_result
+        curvature_result, max_tangent, max_curvature, min_curvature = face.evaluator.getCurvature(parameter_at_point)
+        assert curvature_result
+        face_data["max_tangent_x"] = max_tangent.x
+        face_data["max_tangent_y"] = max_tangent.y
+        face_data["max_tangent_z"] = max_tangent.z
+        # face_data["max_tangent_length"] = max_tangent.length
+        face_data["max_curvature"] = max_curvature
+        face_data["min_curvature"] = min_curvature
+        # face_data["timeline_label"] = face_metadata["timeline_label"]
+        face_data["operation_label"] = face_metadata["operation_label"]
+        face_data["last_operation_label"] = face_metadata["last_operation_label"]
+        return face_data
+
+    def get_face_data_per_curve(self, face, face_uuid, face_metadata):
+        """Get the features for a face for a per curve graph"""
+        face_data = self.get_common_face_data(face, face_uuid)
+        return face_data
+
+    def get_edge_data(self, edge):
+        """Get the features for an edge"""
+        edge_uuid = name.get_uuid(edge)
+        assert edge_uuid is not None
+        edge_metadata = self.edge_cache[edge_uuid]
+        if self.feature_type == "PerExtrude":
+            return self.get_edge_data_per_extrude(edge, edge_uuid, edge_metadata)
+        elif self.feature_type == "PerCurve":
+            return self.get_edge_data_per_curve(edge, edge_uuid, edge_metadata)
+
+    def get_common_edge_data(self, edge, edge_uuid, edge_metadata):
+        """Get common edge data"""
+        edge_data = {}
+        edge_data["id"] = edge_uuid
+        edge_data["source"] = edge_metadata["source"]
+        edge_data["target"] = edge_metadata["target"]
+        return edge_data
+
+    def get_edge_data_per_extrude(self, edge, edge_uuid, edge_metadata):
+        """Get the features for an edge for a per extrude graph"""
+        edge_data = self.get_common_edge_data()
+        edge_data["curve_type"] = serialize.curve_type(edge.geometry)
+        # edge_data["curve_type_id"] = edge.geometry.curveType
+        edge_data["length"] = edge.length
+        # Create a feature for the edge convexity
+        edge_data["convexity"] = edge_metadata["convexity"]
+        edge_data["perpendicular"] = self.are_faces_perpendicular(edge.faces[0], edge.faces[1])
+        point_on_edge = edge.pointOnEdge
+        evaluator = edge.evaluator
+        parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
+        assert parameter_result
+        curvature_result, direction, curvature = evaluator.getCurvature(parameter_at_point)
+        edge_data["direction_x"] = direction.x
+        edge_data["direction_y"] = direction.y
+        edge_data["direction_z"] = direction.z
+        # edge_data["direction_length"] = direction.length
+        edge_data["curvature"] = curvature
+        return edge_data
+
+    def get_edge_data_per_curve(self, edge, edge_uuid, edge_metadata):
+        """Get the features for an edge for a per curve graph"""
+        edge_data = self.get_common_edge_data(edge, edge_uuid, edge_metadata)
+        edge_param_feat = self.get_edge_parameter_features(edge)
+        edge_data.update(edge_param_feat)
+        return edge_data
+
+
+# -------------------------------------------------------------------------
+# RUNNING
+# -------------------------------------------------------------------------
 
 def load_results(results_file):
+    """Load the results of conversion"""
     if results_file.exists():
         with open(results_file, "r", encoding="utf8") as f:
             return json.load(f)
@@ -304,29 +429,30 @@ def start():
     # Get all the files in the data folder
     # json_files = [f for f in data_dir.glob("**/*.json")]
     json_files = [
-        data_dir / "Couch.json",
-        data_dir / "Z0HexagonCutJoin_RootComponent.json",
-        data_dir / "Z0Convexity_12a12060_0000.json",
+        # data_dir / "Couch.json",
+        data_dir / "SingleSketchExtrude_RootComponent.json"
+        # data_dir / "Z0HexagonCutJoin_RootComponent.json",
+        # data_dir / "Z0Convexity_12a12060_0000.json",
     ]
 
     json_count = len(json_files)
     for i, json_file in enumerate(json_files, start=1):
-        if json_file.name in results:
-            logger.log(f"[{i}/{json_count}] Skipping {json_file}")
-        else:
-            try:
-                logger.log(f"[{i}/{json_count}] Processing {json_file}")
-                reconverter = Regraph(json_file, logger)
-                reconverter.export(output_dir, results_file, results)
+        # if json_file.name in results:
+        #     logger.log(f"[{i}/{json_count}] Skipping {json_file}")
+        # else:
+        try:
+            logger.log(f"[{i}/{json_count}] Processing {json_file}")
+            reconverter = Regraph(json_file, logger)
+            reconverter.export(output_dir, results_file, results)
 
-            except Exception as ex:
-                logger.log(f"Error reconstructing: {ex}")
-                logger.log(traceback.format_exc())
-            finally:
-                # Close the document
-                # Fusion automatically opens a new window
-                # after the last one is closed
-                app.activeDocument.close(False)
+        except Exception as ex:
+            logger.log(f"Error reconstructing: {ex}")
+            logger.log(traceback.format_exc())
+        finally:
+            # Close the document
+            # Fusion automatically opens a new window
+            # after the last one is closed
+            app.activeDocument.close(False)
 
 
 def run(context):
