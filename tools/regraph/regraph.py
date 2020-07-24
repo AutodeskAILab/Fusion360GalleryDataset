@@ -52,11 +52,12 @@ class Regraph():
         # Cache of the edge information
         self.edge_cache = {}
         # Current extrude index
-        self.current_extrude_index = 1
+        self.current_extrude_index = 0
         # The type of features we want
         # self.feature_type = "PerExtrude"
         self.feature_type = "PerCurve"
-        
+        # Current graph
+        self.graph = None
 
     # -------------------------------------------------------------------------
     # EXPORT
@@ -86,14 +87,13 @@ class Regraph():
         self.add_extrude_to_cache(data)
         # If we are exporting per curve
         # if self.feature_type == "PerCurve":
-        graphs = self.get_body_graphs()
-        for body_index, graph in enumerate(graphs.values()):
-            self.export_body_graph(body_index, graph)
+        self.graph = self.get_body_graph()
+        self.export_body_graph(self.graph)
         self.current_extrude_index += 1
 
-    def export_body_graph(self, body_index, graph):
+    def export_body_graph(self, graph):
         """Export a single boody as a graph"""
-        graph_file = self.output_dir / f"{self.json_file.stem}_{self.current_extrude_index-1:04}_{body_index:04}.json"
+        graph_file = self.output_dir / f"{self.json_file.stem}_{self.current_extrude_index:04}.json"
         self.logger.log(f"Exporting {graph_file}")
         exporter.export_json(graph_file, graph)
         if graph_file.exists():
@@ -271,32 +271,30 @@ class Regraph():
     # GRAPH CONSTRUCTION
     # -------------------------------------------------------------------------
 
-    def get_body_graphs(self):
+    def get_body_graph(self):
         """Get a graph data structure for each body"""
-        graphs = {}
+        graph = {
+            "directed": False,
+            "multigraph": False,
+            "graph": {},
+            "nodes": [],
+            "links": []
+        }
         for body in self.design.rootComponent.bRepBodies:
             body_uuid = name.get_uuid(body)
-            graph = {
-                "directed": False,
-                "multigraph": False,
-                "graph": {},
-                "nodes": [],
-                "links": []
-            }
             for face in body.faces:
                 if face is not None:
                     face_data = self.get_face_data(face)
                     if face_data is None:
                         # We want to skip this graph as it is invalid
-                        return graphs
+                        return None
                     graph["nodes"].append(face_data)
 
             for edge in body.edges:
                 if edge is not None:
                     edge_data = self.get_edge_data(edge)
                     graph["links"].append(edge_data)
-            graphs[body_uuid] = graph
-        return graphs
+        return graph
 
     def get_face_data(self, face):
         """Get the features for a face"""
@@ -430,7 +428,8 @@ def start():
     # json_files = [f for f in data_dir.glob("**/*.json")]
     json_files = [
         # data_dir / "Couch.json",
-        data_dir / "SingleSketchExtrude_RootComponent.json"
+        # data_dir / "SingleSketchExtrude_RootComponent.json",
+        data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
         # data_dir / "Z0HexagonCutJoin_RootComponent.json",
         # data_dir / "Z0Convexity_12a12060_0000.json",
     ]
