@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+import copy
 from pathlib import Path
 from importlib import reload
 
@@ -53,6 +54,8 @@ class Regraph():
         self.edge_cache = {}
         # Current extrude index
         self.current_extrude_index = 0
+        # Current overall action index
+        self.current_action_index = 0
         # The type of features we want
         # self.feature_type = "PerExtrude"
         self.feature_type = "PerCurve"
@@ -86,14 +89,62 @@ class Regraph():
         """Save out a graph after each extrude as reconstruction takes place"""
         self.add_extrude_to_cache(data)
         # If we are exporting per curve
-        # if self.feature_type == "PerCurve":
-        self.graph = self.get_body_graph()
-        self.export_body_graph(self.graph)
+        if self.feature_type == "PerCurve":
+            self.export_curve_graphs(data["extrude"])
+        self.export_extrude_graph(data["extrude"])
         self.current_extrude_index += 1
+        if self.extrude_count == self.current_extrude_index:
+            target_file = self.get_export_path("target")
+            self.export_graph(target_file, self.graph)
 
-    def export_body_graph(self, graph):
-        """Export a single boody as a graph"""
-        graph_file = self.output_dir / f"{self.json_file.stem}_{self.current_extrude_index:04}.json"
+    def export_curve_graphs(self, extrude):
+        """Export a series of graphs adding incremental curves"""
+        if self.graph is not None:
+            base_graph = copy.deepcopy(self.graph)
+        else:
+            base_graph = self.get_empty_graph()
+        assert extrude.startFaces.count != 0
+        # Export a graph for each action of adding a line
+        for face in extrude.startFaces:
+            for loop in face.loops:
+                # TODO: Check this is the right order
+                # or do we need to traverse coedges
+                for edge in loop.edges:
+                    edge_data = self.get_edge_data(edge)
+                    # Remove references to unknown faces
+                    del edge_data["source"]
+                    del edge_data["target"]
+                    base_graph["action"] = "add_edge"
+                    base_graph["action_edge"] = edge_data["id"]
+                    base_graph["links"].append(edge_data)
+                    graph_file = self.get_export_path(f"{self.current_action_index:04}")
+                    self.export_graph(graph_file, base_graph)
+                    self.current_action_index += 1
+
+    def get_export_path(self, name):
+        """Get the export path from a name"""
+        return self.output_dir / f"{self.json_file.stem}_{name}.json"
+
+    def export_extrude_graph(self, extrude):
+        """Export a graph from an extrude operation"""
+        self.graph = self.get_graph(extrude)
+        if self.feature_type == "PerCurve":
+            graph_file = self.get_export_path(f"{self.current_action_index:04}")
+        else:
+            graph_file = self.get_export_path(f"{self.current_extrude_index:04}")
+        self.export_graph(graph_file, self.graph)
+
+        if self.feature_type == "PerCurve":
+            # Clean the actions from the graph
+            if "action" in self.graph:
+                del self.graph["action"]
+            if "action_edge" in self.graph:
+                del self.graph["action_edge"]
+            if "action_operation" in self.graph:
+                del self.graph["action_operation"]
+
+    def export_graph(self, graph_file, graph):
+        """Export a graph as json"""
         self.logger.log(f"Exporting {graph_file}")
         exporter.export_json(graph_file, graph)
         if graph_file.exists():
@@ -129,14 +180,30 @@ class Regraph():
                 id_set.add(temp_id)
         return id_set
 
-    def add_extrude_faces_to_cache(self, extrude_faces, extrude_operation, extrude_face_location, extrude_taper):
-        """Update the extrude face cache with the recently added faces"""
+    def get_extrude_operation(self, extrude_operation):
+        """Get the extrude operation as short string and regular string"""
         operation = serialize.feature_operation(extrude_operation)
         operation_short = operation.replace("FeatureOperation", "")
         assert operation_short != "NewComponent"
         if operation_short == "NewBody" or operation_short == "Join":
             operation_short = "Extrude"
+        return operation, operation_short
 
+    def add_extrude_to_cache(self, extrude_data):
+        """Add the data from the latest extrude to the cache"""
+        # First toggle the previous extrude last_operation label
+        for face_data in self.face_cache.values():
+            face_data["last_operation_label"] = False
+        extrude = extrude_data["extrude"]
+        extrude_taper = self.is_extrude_tapered(extrude)
+        self.add_extrude_faces_to_cache(extrude.startFaces, extrude.operation, "Start", extrude_taper)
+        self.add_extrude_faces_to_cache(extrude.endFaces, extrude.operation, "End", extrude_taper)
+        self.add_extrude_faces_to_cache(extrude.sideFaces, extrude.operation, "Side", extrude_taper)
+        self.add_extrude_edges_to_cache(extrude.faces, extrude.bodies)
+
+    def add_extrude_faces_to_cache(self, extrude_faces, extrude_operation, extrude_face_location, extrude_taper):
+        """Update the extrude face cache with the recently added faces"""
+        operation, operation_short = self.get_extrude_operation(extrude_operation)
         for face in extrude_faces:
             face_uuid = name.set_uuid(face)
             assert face_uuid is not None
@@ -175,18 +242,6 @@ class Regraph():
                     "source": name.get_uuid(edge.faces[0]),
                     "target": name.get_uuid(edge.faces[1])
                 }
-
-    def add_extrude_to_cache(self, extrude_data):
-        """Add the data from the latest extrude to the cache"""
-        # First toggle the previous extrude last_operation label
-        for face_data in self.face_cache.values():
-            face_data["last_operation_label"] = False
-        extrude = extrude_data["extrude"]
-        extrude_taper = self.is_extrude_tapered(extrude)
-        self.add_extrude_faces_to_cache(extrude.startFaces, extrude.operation, "Start", extrude_taper)
-        self.add_extrude_faces_to_cache(extrude.endFaces, extrude.operation, "End", extrude_taper)
-        self.add_extrude_faces_to_cache(extrude.sideFaces, extrude.operation, "Side", extrude_taper)
-        self.add_extrude_edges_to_cache(extrude.faces, extrude.bodies)
 
     # -------------------------------------------------------------------------
     # FEATURES
@@ -271,15 +326,19 @@ class Regraph():
     # GRAPH CONSTRUCTION
     # -------------------------------------------------------------------------
 
-    def get_body_graph(self):
-        """Get a graph data structure for each body"""
-        graph = {
+    def get_empty_graph(self):
+        """Get an empty graph to start"""
+        return {
             "directed": False,
             "multigraph": False,
             "graph": {},
             "nodes": [],
             "links": []
         }
+
+    def get_graph(self, extrude):
+        """Get a graph data structure for bodies"""
+        graph = self.get_empty_graph()
         for body in self.design.rootComponent.bRepBodies:
             body_uuid = name.get_uuid(body)
             for face in body.faces:
@@ -294,6 +353,13 @@ class Regraph():
                 if edge is not None:
                     edge_data = self.get_edge_data(edge)
                     graph["links"].append(edge_data)
+        if self.feature_type == "PerCurve":
+            first_end_edge = extrude.endFaces[0].edges[0]
+            first_end_edge_uuid = name.get_uuid(first_end_edge)
+            operation, operation_short = self.get_extrude_operation(extrude.operation)
+            graph["action"] = "add_extrude"
+            graph["action_edge"] = first_end_edge_uuid
+            graph["action_operation"] = operation_short
         return graph
 
     def get_face_data(self, face):
@@ -428,8 +494,8 @@ def start():
     # json_files = [f for f in data_dir.glob("**/*.json")]
     json_files = [
         # data_dir / "Couch.json",
-        # data_dir / "SingleSketchExtrude_RootComponent.json",
-        data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
+        data_dir / "SingleSketchExtrude_RootComponent.json",
+        # data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
         # data_dir / "Z0HexagonCutJoin_RootComponent.json",
         # data_dir / "Z0Convexity_12a12060_0000.json",
     ]
