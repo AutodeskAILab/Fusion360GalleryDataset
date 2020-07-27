@@ -52,15 +52,20 @@ class Regraph():
         self.face_cache = {}
         # Cache of the edge information
         self.edge_cache = {}
+        # The sequence of nodes and edges that become explained
+        self.sequence = []
+        # The cache of the faces and edges seen so far
+        self.sequence_cache = {
+            "faces": set(),
+            "edges": set()
+        }
         # Current extrude index
         self.current_extrude_index = 0
         # Current overall action index
         self.current_action_index = 0
         # The type of features we want
-        # self.feature_type = "PerExtrude"
-        self.feature_type = "PerCurve"
-        # Current graph
-        self.graph = None
+        self.feature_type = "PerExtrude"
+        # self.feature_type = "PerCurve"
 
     # -------------------------------------------------------------------------
     # EXPORT
@@ -77,6 +82,7 @@ class Regraph():
         importer = SketchExtrudeImporter(self.json_file)
         self.extrude_count = self.get_extrude_count(importer.data)
         importer.reconstruct(self.inc_export)
+        self.last_export()
 
     def inc_export(self, data):
         """Callback function called whenever a the design changes
@@ -90,58 +96,31 @@ class Regraph():
         self.add_extrude_to_cache(data)
         # If we are exporting per curve
         if self.feature_type == "PerCurve":
-            self.export_curve_graphs(data["extrude"])
-        self.export_extrude_graph(data["extrude"])
+            self.add_curves_to_sequence(data["extrude"])
+            self.add_extrude_to_sequence(data["extrude"])
+        elif self.feature_type == "PerExtrude":
+            self.export_extrude_graph()
         self.current_extrude_index += 1
-        if self.extrude_count == self.current_extrude_index:
-            target_file = self.get_export_path("target")
-            self.export_graph(target_file, self.graph)
 
-    def export_curve_graphs(self, extrude):
-        """Export a series of graphs adding incremental curves"""
-        if self.graph is not None:
-            base_graph = copy.deepcopy(self.graph)
-        else:
-            base_graph = self.get_empty_graph()
-        assert extrude.startFaces.count != 0
-        # Export a graph for each action of adding a line
-        for face in extrude.startFaces:
-            for loop in face.loops:
-                # TODO: Check this is the right order
-                # or do we need to traverse coedges
-                for edge in loop.edges:
-                    edge_data = self.get_edge_data(edge)
-                    # Remove references to unknown faces
-                    del edge_data["source"]
-                    del edge_data["target"]
-                    base_graph["action"] = "add_edge"
-                    base_graph["action_edge"] = edge_data["id"]
-                    base_graph["links"].append(edge_data)
-                    graph_file = self.get_export_path(f"{self.current_action_index:04}")
-                    self.export_graph(graph_file, base_graph)
-                    self.current_action_index += 1
+    def last_export(self):
+        """Export after the full reconstruction"""
+        # The last extrude
+        if self.feature_type == "PerCurve":
+            self.export_extrude_graph()
+            self.export_sequence()
 
     def get_export_path(self, name):
         """Get the export path from a name"""
         return self.output_dir / f"{self.json_file.stem}_{name}.json"
 
-    def export_extrude_graph(self, extrude):
+    def export_extrude_graph(self):
         """Export a graph from an extrude operation"""
-        self.graph = self.get_graph(extrude)
+        graph = self.get_graph()
         if self.feature_type == "PerCurve":
-            graph_file = self.get_export_path(f"{self.current_action_index:04}")
+            graph_file = self.get_export_path("target")
         else:
             graph_file = self.get_export_path(f"{self.current_extrude_index:04}")
-        self.export_graph(graph_file, self.graph)
-
-        if self.feature_type == "PerCurve":
-            # Clean the actions from the graph
-            if "action" in self.graph:
-                del self.graph["action"]
-            if "action_edge" in self.graph:
-                del self.graph["action_edge"]
-            if "action_operation" in self.graph:
-                del self.graph["action_operation"]
+        self.export_graph(graph_file, graph)
 
     def export_graph(self, graph_file, graph):
         """Export a graph as json"""
@@ -152,6 +131,19 @@ class Regraph():
             self.save_results()
         else:
             self.logger.log(f"Error exporting {graph_file}")
+
+    def export_sequence(self):
+        """Export the sequence data"""
+        seq_file = self.output_dir / f"{self.json_file.stem}_sequence.json"
+        seq_data = {
+            "sequence": self.sequence,
+            "properties": {
+                "bounding_box": serialize.bounding_box3d(
+                    self.design.rootComponent.boundingBox)
+            }
+        }
+        with open(seq_file, "w", encoding="utf8") as f:
+            json.dump(seq_data, f, indent=4)
 
     def save_results(self):
         """Save out the results of conversion"""
@@ -196,14 +188,14 @@ class Regraph():
             face_data["last_operation_label"] = False
         extrude = extrude_data["extrude"]
         extrude_taper = self.is_extrude_tapered(extrude)
-        self.add_extrude_faces_to_cache(extrude.startFaces, extrude.operation, "Start", extrude_taper)
-        self.add_extrude_faces_to_cache(extrude.endFaces, extrude.operation, "End", extrude_taper)
-        self.add_extrude_faces_to_cache(extrude.sideFaces, extrude.operation, "Side", extrude_taper)
+        operation, operation_short = self.get_extrude_operation(extrude.operation)
+        self.add_extrude_faces_to_cache(extrude.startFaces, operation, operation_short, "Start", extrude_taper)
+        self.add_extrude_faces_to_cache(extrude.endFaces, operation, operation_short, "End", extrude_taper)
+        self.add_extrude_faces_to_cache(extrude.sideFaces, operation, operation_short, "Side", extrude_taper)
         self.add_extrude_edges_to_cache(extrude.faces, extrude.bodies)
 
-    def add_extrude_faces_to_cache(self, extrude_faces, extrude_operation, extrude_face_location, extrude_taper):
+    def add_extrude_faces_to_cache(self, extrude_faces, operation, operation_short, extrude_face_location, extrude_taper):
         """Update the extrude face cache with the recently added faces"""
-        operation, operation_short = self.get_extrude_operation(extrude_operation)
         for face in extrude_faces:
             face_uuid = name.set_uuid(face)
             assert face_uuid is not None
@@ -242,6 +234,63 @@ class Regraph():
                     "source": name.get_uuid(edge.faces[0]),
                     "target": name.get_uuid(edge.faces[1])
                 }
+
+    def add_curves_to_sequence(self, extrude):
+        """Add the curves incrementally to the sequence"""
+        # We draw from the end faces, as they are more likely to exist
+        # TODO: We really need to find the edges from the side faces
+        for face in extrude.endFaces:
+            # Find the total number of edges in all loops first
+            edge_total = 0
+            for loop in face.loops:
+                edge_total += loop.edges.count
+
+            edge_count = 0
+            for loop in face.loops:
+                # TODO: Check this is the right order
+                # or do we need to traverse coedges
+                for edge in loop.edges:
+                    edge_uuid = name.get_uuid(edge)
+                    assert edge_uuid is not None
+                    self.sequence_cache["edges"].add(edge_uuid)
+                    edge_count += 1
+                    # We are on the last edge, so lets add the face too
+                    if edge_total == edge_count:
+                        face_uuid = name.get_uuid(face)
+                        assert face_uuid is not None
+                        self.sequence_cache["faces"].add(face_uuid)
+                    sequence_entry = {
+                        "action": "add_edge",
+                        "action_edge":  edge_uuid,
+                        "faces": list(self.sequence_cache["faces"]),
+                        "edges": list(self.sequence_cache["edges"])
+                    }
+                    self.sequence.append(sequence_entry)
+
+    def add_extrude_to_sequence(self, extrude):
+        """Add the extrude operation to the sequence"""
+        # Add all the new faces and edges
+        for face in extrude.faces:
+            face_uuid = name.get_uuid(face)
+            assert face_uuid is not None
+            self.sequence_cache["faces"].add(face_uuid)
+            for edge in face.edges:
+                edge_uuid = name.get_uuid(edge)
+                assert edge_uuid is not None
+                self.sequence_cache["edges"].add(edge_uuid)
+
+        # TODO: We really need to find the extrude edge from the side faces
+        extrude_edge = extrude.startFaces[0].edges[0]
+        extrude_edge_uuid = name.get_uuid(extrude_edge)
+        operation, operation_short = self.get_extrude_operation(extrude.operation)
+        sequence_entry = {
+            "action": "add_extrude",
+            "action_edge": extrude_edge_uuid,
+            "action_operation": operation_short,
+            "faces": list(self.sequence_cache["faces"]),
+            "edges": list(self.sequence_cache["edges"])
+        }
+        self.sequence.append(sequence_entry)
 
     # -------------------------------------------------------------------------
     # FEATURES
@@ -336,11 +385,10 @@ class Regraph():
             "links": []
         }
 
-    def get_graph(self, extrude):
+    def get_graph(self):
         """Get a graph data structure for bodies"""
         graph = self.get_empty_graph()
         for body in self.design.rootComponent.bRepBodies:
-            body_uuid = name.get_uuid(body)
             for face in body.faces:
                 if face is not None:
                     face_data = self.get_face_data(face)
@@ -353,13 +401,6 @@ class Regraph():
                 if edge is not None:
                     edge_data = self.get_edge_data(edge)
                     graph["links"].append(edge_data)
-        if self.feature_type == "PerCurve":
-            first_end_edge = extrude.endFaces[0].edges[0]
-            first_end_edge_uuid = name.get_uuid(first_end_edge)
-            operation, operation_short = self.get_extrude_operation(extrude.operation)
-            graph["action"] = "add_extrude"
-            graph["action_edge"] = first_end_edge_uuid
-            graph["action_operation"] = operation_short
         return graph
 
     def get_face_data(self, face):
@@ -427,7 +468,7 @@ class Regraph():
         elif self.feature_type == "PerCurve":
             return self.get_edge_data_per_curve(edge, edge_uuid, edge_metadata)
 
-    def get_common_edge_data(self, edge, edge_uuid, edge_metadata):
+    def get_common_edge_data(self, edge_uuid, edge_metadata):
         """Get common edge data"""
         edge_data = {}
         edge_data["id"] = edge_uuid
@@ -437,7 +478,7 @@ class Regraph():
 
     def get_edge_data_per_extrude(self, edge, edge_uuid, edge_metadata):
         """Get the features for an edge for a per extrude graph"""
-        edge_data = self.get_common_edge_data()
+        edge_data = self.get_common_edge_data(edge_uuid, edge_metadata)
         edge_data["curve_type"] = serialize.curve_type(edge.geometry)
         # edge_data["curve_type_id"] = edge.geometry.curveType
         edge_data["length"] = edge.length
@@ -458,11 +499,16 @@ class Regraph():
 
     def get_edge_data_per_curve(self, edge, edge_uuid, edge_metadata):
         """Get the features for an edge for a per curve graph"""
-        edge_data = self.get_common_edge_data(edge, edge_uuid, edge_metadata)
+        edge_data = self.get_common_edge_data(edge_uuid, edge_metadata)
         edge_param_feat = self.get_edge_parameter_features(edge)
         edge_data.update(edge_param_feat)
         return edge_data
 
+    # def get_extrude_start_edges(self, extrude):
+    #     """Get the edges that make up the start face profile"""
+    #     # adsk.fusion.ProfilePlaneStartDefinition
+    #     # adsk.fusion.OffsetStartDefinition
+    #     start_plane = extrude.startExtent.profilePlane
 
 # -------------------------------------------------------------------------
 # RUNNING
@@ -494,9 +540,9 @@ def start():
     # json_files = [f for f in data_dir.glob("**/*.json")]
     json_files = [
         # data_dir / "Couch.json",
-        data_dir / "SingleSketchExtrude_RootComponent.json",
+        # data_dir / "SingleSketchExtrude_RootComponent.json",
         # data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
-        # data_dir / "Z0HexagonCutJoin_RootComponent.json",
+        data_dir / "Z0HexagonCutJoin_RootComponent.json",
         # data_dir / "Z0Convexity_12a12060_0000.json",
     ]
 
