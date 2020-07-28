@@ -48,6 +48,8 @@ class Regraph():
         # References to the Fusion design
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
+        self.product = self.app.activeProduct
+        self.timeline = self.app.activeProduct.timeline
         # Cache of the extrude face label information
         self.face_cache = {}
         # Cache of the edge information
@@ -81,23 +83,29 @@ class Regraph():
         self.save_results()
         importer = SketchExtrudeImporter(self.json_file)
         self.extrude_count = self.get_extrude_count(importer.data)
-        importer.reconstruct(self.inc_export)
+        importer.reconstruct()
+        # After reconstruction, iterate over the timeline and populate the cache
+        for timeline_object in self.timeline:
+            if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
+                self.add_extrude_to_cache(timeline_object.entity)
+        # Check that all faces have uuids
+        for body in self.design.rootComponent.bRepBodies:
+            for face in body.faces:
+                face_uuid = name.get_uuid(face)
+                assert face_uuid is not None
+        # Next move the marker to after each extrude and export
+        for timeline_object in self.timeline:
+            if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
+                self.timeline.markerPosition = timeline_object.index + 1
+                self.inc_export_extrude(timeline_object.entity)
         self.last_export()
 
-    def inc_export(self, data):
-        """Callback function called whenever a the design changes
-            i.e. when a curve is added or an extrude
-            This enables us to save out incremental data"""
-        if "extrude" in data:
-            self.inc_export_extrude(data)
-
-    def inc_export_extrude(self, data):
+    def inc_export_extrude(self, extrude):
         """Save out a graph after each extrude as reconstruction takes place"""
-        self.add_extrude_to_cache(data)
         # If we are exporting per curve
         if self.feature_type == "PerCurve":
-            self.add_curves_to_sequence(data["extrude"])
-            self.add_extrude_to_sequence(data["extrude"])
+            self.add_curves_to_sequence(extrude)
+            self.add_extrude_to_sequence(extrude)
         elif self.feature_type == "PerExtrude":
             self.export_extrude_graph()
         self.current_extrude_index += 1
@@ -181,12 +189,11 @@ class Regraph():
             operation_short = "Extrude"
         return operation, operation_short
 
-    def add_extrude_to_cache(self, extrude_data):
+    def add_extrude_to_cache(self, extrude):
         """Add the data from the latest extrude to the cache"""
         # First toggle the previous extrude last_operation label
         for face_data in self.face_cache.values():
             face_data["last_operation_label"] = False
-        extrude = extrude_data["extrude"]
         extrude_taper = self.is_extrude_tapered(extrude)
         operation, operation_short = self.get_extrude_operation(extrude.operation)
         self.add_extrude_faces_to_cache(extrude.startFaces, operation, operation_short, "Start", extrude_taper)
@@ -392,9 +399,6 @@ class Regraph():
             for face in body.faces:
                 if face is not None:
                     face_data = self.get_face_data(face)
-                    if face_data is None:
-                        # We want to skip this graph as it is invalid
-                        return None
                     graph["nodes"].append(face_data)
 
             for edge in body.edges:
@@ -514,6 +518,7 @@ class Regraph():
 # RUNNING
 # -------------------------------------------------------------------------
 
+
 def load_results(results_file):
     """Load the results of conversion"""
     if results_file.exists():
@@ -542,8 +547,8 @@ def start():
         # data_dir / "Couch.json",
         # data_dir / "SingleSketchExtrude_RootComponent.json",
         # data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
-        data_dir / "Z0HexagonCutJoin_RootComponent.json",
-        # data_dir / "Z0Convexity_12a12060_0000.json",
+        # data_dir / "Z0HexagonCutJoin_RootComponent.json",
+        data_dir / "0_b6589fc6_0000.json",
     ]
 
     json_count = len(json_files)
