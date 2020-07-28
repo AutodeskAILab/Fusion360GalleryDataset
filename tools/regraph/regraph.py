@@ -84,7 +84,7 @@ class Regraph():
         importer = SketchExtrudeImporter(self.json_file)
         self.extrude_count = self.get_extrude_count(importer.data)
         importer.reconstruct()
-        # After reconstruction, iterate over the timeline and populate the cache
+        # After reconstruction, iterate over the timeline and populate the face cache
         for timeline_object in self.timeline:
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.add_extrude_to_cache(timeline_object.entity)
@@ -97,6 +97,8 @@ class Regraph():
         for timeline_object in self.timeline:
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.timeline.markerPosition = timeline_object.index + 1
+                # We add the edges to the cache as we traverse
+                self.add_extrude_edges_to_cache()
                 self.inc_export_extrude(timeline_object.entity)
         self.last_export()
 
@@ -199,7 +201,6 @@ class Regraph():
         self.add_extrude_faces_to_cache(extrude.startFaces, operation, operation_short, "Start", extrude_taper)
         self.add_extrude_faces_to_cache(extrude.endFaces, operation, operation_short, "End", extrude_taper)
         self.add_extrude_faces_to_cache(extrude.sideFaces, operation, operation_short, "Side", extrude_taper)
-        self.add_extrude_edges_to_cache(extrude.faces, extrude.bodies)
 
     def add_extrude_faces_to_cache(self, extrude_faces, operation, operation_short, extrude_face_location, extrude_taper):
         """Update the extrude face cache with the recently added faces"""
@@ -217,30 +218,31 @@ class Regraph():
                 "extrude_taper": extrude_taper
             }
 
-    def add_extrude_edges_to_cache(self, extrude_faces, extrude_bodies):
+    def add_extrude_edges_to_cache(self):
         """Update the edge cache with the latest extrude"""
         temp_edge_cache = {
             "concave_edges": set()
             # "convex_edges": set()
         }
-        for body in extrude_bodies:
+        for body in self.design.rootComponent.bRepBodies:
             temp_edge_cache["concave_edges"].update(
                 self.get_temp_ids_from_collection(body.concaveEdges))
             # temp_edge_cache["convex_edges"].update(
             #     self.get_temp_ids_from_collection(body.convexEdges))
 
-        for face in extrude_faces:
-            for edge in face.edges:
-                assert edge.faces.count == 2
-                edge_uuid = name.set_uuid(edge)
-                edge_concave = edge.tempId in temp_edge_cache["concave_edges"]
-                assert edge_uuid is not None
-                self.edge_cache[edge_uuid] = {
-                    "temp_id": edge.tempId,
-                    "convexity": self.get_edge_convexity(edge, edge_concave),
-                    "source": name.get_uuid(edge.faces[0]),
-                    "target": name.get_uuid(edge.faces[1])
-                }
+        for body in self.design.rootComponent.bRepBodies:
+            for face in body.faces:
+                for edge in face.edges:
+                    assert edge.faces.count == 2
+                    edge_uuid = name.set_uuid(edge)
+                    edge_concave = edge.tempId in temp_edge_cache["concave_edges"]
+                    assert edge_uuid is not None
+                    self.edge_cache[edge_uuid] = {
+                        "temp_id": edge.tempId,
+                        "convexity": self.get_edge_convexity(edge, edge_concave),
+                        "source": name.get_uuid(edge.faces[0]),
+                        "target": name.get_uuid(edge.faces[1])
+                    }
 
     def add_curves_to_sequence(self, extrude):
         """Add the curves incrementally to the sequence"""
