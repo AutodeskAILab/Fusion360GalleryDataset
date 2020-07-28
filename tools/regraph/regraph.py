@@ -99,6 +99,7 @@ class Regraph():
                 self.timeline.markerPosition = timeline_object.index + 1
                 # Populate the cache again
                 self.add_extrude_to_cache(timeline_object.entity)
+                self.add_extrude_edges_to_cache()
                 self.inc_export_extrude(timeline_object.entity)
         self.last_export()
 
@@ -201,7 +202,6 @@ class Regraph():
         self.add_extrude_faces_to_cache(extrude.startFaces, operation, operation_short, "Start", extrude_taper)
         self.add_extrude_faces_to_cache(extrude.endFaces, operation, operation_short, "End", extrude_taper)
         self.add_extrude_faces_to_cache(extrude.sideFaces, operation, operation_short, "Side", extrude_taper)
-        self.add_extrude_edges_to_cache()
 
     def add_extrude_faces_to_cache(self, extrude_faces, operation, operation_short, extrude_face_location, extrude_taper):
         """Update the extrude face cache with the recently added faces"""
@@ -538,6 +538,8 @@ def start():
     current_dir = Path(__file__).resolve().parent
     data_dir = current_dir.parent / "testdata"
     output_dir = current_dir / "output"
+    data_dir = Path("E:/Autodesk/RegraphDataAugmentation/CutAugmentation/output")
+    output_dir = Path("E:/Autodesk/RegraphDataAugmentation/CutAugmentation/output_graph")
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
@@ -545,14 +547,14 @@ def start():
     results = load_results(results_file)
 
     # Get all the files in the data folder
-    # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    json_files = [
-        # data_dir / "Couch.json",
-        # data_dir / "SingleSketchExtrude_RootComponent.json",
-        # data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
-        # data_dir / "Z0HexagonCutJoin_RootComponent.json",
-        data_dir / "103_934385f5_0000.json",
-    ]
+    json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
+    # json_files = [
+    #     # data_dir / "Couch.json",
+    #     # data_dir / "SingleSketchExtrude_RootComponent.json",
+    #     # data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
+    #     # data_dir / "Z0HexagonCutJoin_RootComponent.json",
+    #     data_dir / "103_934385f5_0000.json",
+    # ]
 
     json_count = len(json_files)
     for i, json_file in enumerate(json_files, start=1):
