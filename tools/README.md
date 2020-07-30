@@ -18,5 +18,6 @@ For a general overview of how to run scripts in Fusion 360 from Visual Studio Co
 - [`Fusion 360 Gym`](fusion360gym): A 'gym' environment for training ML models to design using Fusion 360. 
 - [`Reconverter`](reconverter): Demonstrates how to batch convert the raw data structure provided with the Reconstruction Subset into other representations using Fusion 360.
 - [`sketch2image`](sketch2image): Convert sketches provided in json format to images using matplotlib.
+- [`Regraph`](regraph): Demonstrates how to create a B-Rep graph data structure from data provided with the Reconstruction Subset using Fusion 360.
 
 
