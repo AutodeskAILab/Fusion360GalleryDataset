@@ -20,6 +20,11 @@ import fusion_360_client
 importlib.reload(fusion_360_client)
 from fusion_360_client import Fusion360Client
 
+COMMON_DIR = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), "..", "..", "common"))
+if COMMON_DIR not in sys.path:
+    sys.path.append(COMMON_DIR)
+from launcher import Launcher
 
 LAUNCH_JSON_FILE = Path("launch.json")
 DEFAULT_HOST = "127.0.0.1"
@@ -46,77 +51,12 @@ def create_launch_json(host, start_port, instances):
         json.dump(launch_data, file_handle, indent=4)
 
 
-def start_fusion():
-    """Opens a new instance of Fusion 360"""
-    if sys.platform == "darwin":
-        fusion_app = find_fusion_app_mac()
-        fusion_path = str(fusion_app.resolve())
-        args = ["open", "-n", fusion_path]
-
-    elif sys.platform == "win32":
-        fusion_app = find_fusion_app_windows()
-        fusion_path = str(fusion_app.resolve())
-        args = [fusion_path]
-
-    if not fusion_app.exists():
-        print(f"Error: Fusion not found at {fusion_path}")
-        exit()
-
-    print("Fusion launching from:", fusion_path)
-    # Turn off output from Fusion
-    return subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-
-def find_fusion_app_mac():
-    """Find the Fusion app on mac"""
-    # Shortcut location that links to the latest version
-    user_path = Path(os.path.expanduser("~"))
-    fusion_app = user_path / "Library/Application Support/Autodesk/webdeploy/production/Autodesk Fusion 360.app"
-    return fusion_app
-
-
-def find_fusion_app_windows():
-    """Find the Fusion app by looking in a windows FusionLauncher.exe.ini file"""
-    fusion_launcher = find_fusion_launcher()
-    if fusion_launcher is None:
-        return None
-    # FusionLauncher.exe.ini looks like this (encoding is UTF-16):
-    # [Launcher]
-    # stream = production
-    # auid = AutodeskInc.Fusion360
-    # cmd = ""C:\path\to\Fusion360.exe""
-    # global = False
-    with open(fusion_launcher, "r", encoding="utf16") as f:
-        lines = f.readlines()
-    lines = [x.strip() for x in lines]
-
-    for line in lines:
-        if line.startswith("cmd") and "Fusion360.exe" in line:
-            pieces = line.split("\"")
-            for piece in pieces:
-                if "Fusion360.exe" in piece:
-                    return Path(piece)
-    return None
-
-
-def find_fusion_launcher():
-    """Find the FusionLauncher.exe.ini file on windows"""
-    user_dir = Path(os.environ["LOCALAPPDATA"])
-    production_dir = user_dir / "Autodesk/webdeploy/production/"
-    production_contents = Path(production_dir).iterdir()
-    for item in production_contents:
-        if item.is_dir():
-            fusion_launcher = item / "FusionLauncher.exe.ini"
-            if fusion_launcher.exists():
-                return fusion_launcher
-    return None
-
-
 def launch_instances(host, start_port, instances):
     """Launch multiple instances of Fusion 360"""
+    launcher = Launcher()
     for port in range(start_port, start_port + instances):
         print(f"Launching Fusion 360 instance: {host}:{port}")
-        start_fusion()
+        launcher.launch()
         time.sleep(5)
 
 
@@ -172,4 +112,3 @@ if __name__ == "__main__":
     else:
         create_launch_json(args.host, args.start_port, args.instances)
         launch_instances(args.host, args.start_port, args.instances)
-

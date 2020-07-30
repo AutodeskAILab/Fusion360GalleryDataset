@@ -23,6 +23,16 @@ def point3d(point_data):
     )
 
 
+def point3d_list(point_list, xform=None):
+    points = []
+    for point_data in point_list:
+        point = point3d(point_data)
+        if xform is not None:
+            point.transformBy(xform)
+        points.append(point)
+    return points
+
+
 def vector3d(vector_data):
     return adsk.core.Vector3D.create(
         vector_data["x"],
