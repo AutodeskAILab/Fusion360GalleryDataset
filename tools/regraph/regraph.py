@@ -68,7 +68,7 @@ class Regraph():
         self.current_action_index = 0
         # The type of features we want
         # self.feature_type = "PerExtrude"
-        self.feature_type = "PerCurve"
+        self.feature_type = "PerFace"
 
     # -------------------------------------------------------------------------
     # EXPORT
@@ -94,21 +94,52 @@ class Regraph():
             for face in body.faces:
                 face_uuid = name.get_uuid(face)
                 assert face_uuid is not None
+        prev_extrude_index = 0
         # Next move the marker to after each extrude and export
         for timeline_object in self.timeline:
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.timeline.markerPosition = timeline_object.index + 1
+                extrude = timeline_object.entity
+                export_supported = self.is_supported_export(extrude)
+                if not export_supported:
+                    self.timeline.markerPosition = prev_extrude_index
+                    break
                 # Populate the cache again
-                self.add_extrude_to_cache(timeline_object.entity)
+                self.add_extrude_to_cache(extrude)
                 self.add_extrude_edges_to_cache()
-                self.inc_export_extrude(timeline_object.entity)
+                self.inc_export_extrude(extrude)
+                prev_extrude_index = self.timeline.markerPosition
         self.last_export()
+
+    def is_supported_export(self, extrude):
+        """Check if this is a supported state for export"""
+        print(extrude.name)
+        if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
+            self.logger.log(f"Skipping {extrude.name}: Extrude has intersect operation")
+            return False
+        if self.is_extrude_tapered(extrude):
+            self.logger.log(f"Skipping {extrude.name}: Extrude has taper")
+            return False
+        if self.feature_type == "PerFace":
+            # If we have a cut/intersect operation we want to use what we have
+            # and export it
+            if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
+                self.logger.log(f"Skipping {extrude.name}: Extrude has cut operation")
+                return False
+            # If we don't have a single extrude start/end face
+            if extrude.endFaces.count != 1 and extrude.startFaces.count != 1:
+                self.logger.log(f"Skipping {extrude.name}: Extrude doesn't have a single start or end face")
+                return False
+            # # If we don't have an end face
+            # if extrude.endFaces.count == 0:
+            #     self.logger.log(f"Skipping {extrude.name}: Extrude end faces == 0")
+            #     return False
+        return True
 
     def inc_export_extrude(self, extrude):
         """Save out a graph after each extrude as reconstruction takes place"""
         # If we are exporting per curve
-        if self.feature_type == "PerCurve":
-            self.add_curves_to_sequence(extrude)
+        if self.feature_type == "PerFace":
             self.add_extrude_to_sequence(extrude)
         elif self.feature_type == "PerExtrude":
             self.export_extrude_graph()
@@ -117,9 +148,11 @@ class Regraph():
     def last_export(self):
         """Export after the full reconstruction"""
         # The last extrude
-        if self.feature_type == "PerCurve":
-            self.export_extrude_graph()
-            self.export_sequence()
+        if self.feature_type == "PerFace":
+            # Only export if we had some valid extrudes
+            if self.current_extrude_index > 0:
+                self.export_extrude_graph()
+                self.export_sequence()
 
     def get_export_path(self, name):
         """Get the export path from a name"""
@@ -128,7 +161,7 @@ class Regraph():
     def export_extrude_graph(self):
         """Export a graph from an extrude operation"""
         graph = self.get_graph()
-        if self.feature_type == "PerCurve":
+        if self.feature_type == "PerFace":
             graph_file = self.get_export_path("target")
         else:
             graph_file = self.get_export_path(f"{self.current_extrude_index:04}")
@@ -198,13 +231,12 @@ class Regraph():
         # First toggle the previous extrude last_operation label
         for face_data in self.face_cache.values():
             face_data["last_operation_label"] = False
-        extrude_taper = self.is_extrude_tapered(extrude)
         operation, operation_short = self.get_extrude_operation(extrude.operation)
-        self.add_extrude_faces_to_cache(extrude.startFaces, operation, operation_short, "Start", extrude_taper)
-        self.add_extrude_faces_to_cache(extrude.endFaces, operation, operation_short, "End", extrude_taper)
-        self.add_extrude_faces_to_cache(extrude.sideFaces, operation, operation_short, "Side", extrude_taper)
+        self.add_extrude_faces_to_cache(extrude.startFaces, operation_short, "Start")
+        self.add_extrude_faces_to_cache(extrude.endFaces, operation_short, "End")
+        self.add_extrude_faces_to_cache(extrude.sideFaces, operation_short, "Side")
 
-    def add_extrude_faces_to_cache(self, extrude_faces, operation, operation_short, extrude_face_location, extrude_taper):
+    def add_extrude_faces_to_cache(self, extrude_faces, operation_short, extrude_face_location):
         """Update the extrude face cache with the recently added faces"""
         for face in extrude_faces:
             face_uuid = name.set_uuid(face)
@@ -215,9 +247,7 @@ class Regraph():
             self.face_cache[face_uuid] = {
                 # "timeline_label": self.current_extrude_index / self.extrude_count,
                 "operation_label": f"{operation_short}{extrude_face_location}",
-                "last_operation_label": True,
-                "operation": operation,
-                "extrude_taper": extrude_taper
+                "last_operation_label": True
             }
 
     def add_extrude_edges_to_cache(self):
@@ -240,46 +270,53 @@ class Regraph():
                         "target": name.get_uuid(edge.faces[1])
                     }
 
-    def add_curves_to_sequence(self, extrude):
-        """Add the curves incrementally to the sequence"""
-        # We draw from the end faces, as they are more likely to exist
-        # TODO: We really need to find the edges from the side faces
-        print()
-        start_edges = self.get_extrude_start_edges(extrude)
-        print()
-        end_edges = self.get_extrude_end_edges(extrude)
-        print()
-
-        # assert start_edges_complete or end_edges_complete
-        for face in extrude.endFaces:
-            # Find the total number of edges in all loops first
-            edge_total = 0
-            for loop in face.loops:
-                edge_total += loop.edges.count
-
-            edge_count = 0
-            for loop in face.loops:
-                for edge in loop.edges:
-                    edge_uuid = name.get_uuid(edge)
-                    assert edge_uuid is not None
-                    self.sequence_cache["edges"].add(edge_uuid)
-                    edge_count += 1
-                    # We are on the last edge, so lets add the face too
-                    if edge_total == edge_count:
-                        face_uuid = name.get_uuid(face)
-                        assert face_uuid is not None
-                        self.sequence_cache["faces"].add(face_uuid)
-                    sequence_entry = {
-                        "action": "add_edge",
-                        "action_edge":  edge_uuid,
-                        "faces": list(self.sequence_cache["faces"]),
-                        "edges": list(self.sequence_cache["edges"])
-                    }
-                    self.sequence.append(sequence_entry)
-
     def add_extrude_to_sequence(self, extrude):
         """Add the extrude operation to the sequence"""
-        # Add all the new faces and edges
+        # Look for a start or end face with a single face
+        if extrude.startFaces.count == 1:
+            print("Extruding from start face")
+            start_face = extrude.startFaces[0]
+            end_faces = extrude.endFaces
+            start_end_flipped = False
+        elif extrude.endFaces.count == 1:
+            print("Extruding from end face")
+            start_face = extrude.endFaces[0]
+            end_faces = extrude.startFaces
+            start_end_flipped = True
+        assert start_face is not None
+        start_face_uuid = name.get_uuid(start_face)
+        assert start_face_uuid is not None
+        print(f"Start face: {start_face.tempId}")
+        # Add the face and edges that we extrude from
+        self.sequence_cache["faces"].add(start_face_uuid)
+        for edge in start_face.edges:
+            edge_uuid = name.get_uuid(edge)
+            assert edge_uuid is not None
+            self.sequence_cache["edges"].add(edge_uuid)
+        extrude_from_sequence_entry = {
+            "action": start_face_uuid,
+            "faces": list(self.sequence_cache["faces"]),
+            "edges": list(self.sequence_cache["edges"])
+        }
+        self.sequence.append(extrude_from_sequence_entry)
+
+        if end_faces.count > 0:
+            # If we have a face to extrude to, lets use it
+            end_face = end_faces[0]
+        else:
+            # Or we need to find an end face to extrude to
+            # that is on coplanar to the end of the extrude
+            if start_end_flipped:
+                end_plane = self.get_extrude_start_plane(extrude)
+            else:
+                end_plane = self.get_extrude_end_plane(extrude)
+            # Search for faces that are coplanar
+            end_face = self.get_coplanar_face(end_plane)
+        assert end_face is not None
+        end_face_uuid = name.get_uuid(end_face)
+        assert end_face_uuid is not None
+        print(f"End face: {end_face.tempId}")
+        # Add the face and edges for everything that was extruded
         for face in extrude.faces:
             face_uuid = name.get_uuid(face)
             assert face_uuid is not None
@@ -288,19 +325,12 @@ class Regraph():
                 edge_uuid = name.get_uuid(edge)
                 assert edge_uuid is not None
                 self.sequence_cache["edges"].add(edge_uuid)
-
-        # TODO: We really need to find the extrude edge from the side faces
-        extrude_edge = extrude.startFaces[0].edges[0]
-        extrude_edge_uuid = name.get_uuid(extrude_edge)
-        operation, operation_short = self.get_extrude_operation(extrude.operation)
-        sequence_entry = {
-            "action": "add_extrude",
-            "action_edge": extrude_edge_uuid,
-            "action_operation": operation_short,
+        extrude_to_sequence_entry = {
+            "action": end_face_uuid,
             "faces": list(self.sequence_cache["faces"]),
             "edges": list(self.sequence_cache["edges"])
         }
-        self.sequence.append(sequence_entry)
+        self.sequence.append(extrude_to_sequence_entry)
 
     # -------------------------------------------------------------------------
     # FEATURES
@@ -417,8 +447,8 @@ class Regraph():
         face_metadata = self.face_cache[face_uuid]
         if self.feature_type == "PerExtrude":
             return self.get_face_data_per_extrude(face, face_uuid, face_metadata)
-        elif self.feature_type == "PerCurve":
-            return self.get_face_data_per_curve(face, face_uuid, face_metadata)
+        elif self.feature_type == "PerFace":
+            return self.get_face_data_per_face(face, face_uuid, face_metadata)
 
     def get_common_face_data(self, face, face_uuid):
         """Get common edge data"""
@@ -429,14 +459,6 @@ class Regraph():
     def get_face_data_per_extrude(self, face, face_uuid, face_metadata):
         """Get the features for a face for a per extrude graph"""
         face_data = self.get_common_face_data(face, face_uuid)
-        # Abort if we hit an intersect operation
-        if face_metadata["operation"] == "IntersectFeatureOperation":
-            self.logger.log("Skipping: Extrude uses intersection")
-            return None
-        # Abort if we hit a taper
-        if face_metadata["extrude_taper"]:
-            self.logger.log("Skipping: Extrude has taper")
-            return None
         face_data["surface_type"] = serialize.surface_type(face.geometry)
         # face_data["surface_type_id"] = face.geometry.surfaceType
         face_data["area"] = face.area
@@ -460,7 +482,7 @@ class Regraph():
         face_data["last_operation_label"] = face_metadata["last_operation_label"]
         return face_data
 
-    def get_face_data_per_curve(self, face, face_uuid, face_metadata):
+    def get_face_data_per_face(self, face, face_uuid, face_metadata):
         """Get the features for a face for a per curve graph"""
         face_data = self.get_common_face_data(face, face_uuid)
         return face_data
@@ -472,8 +494,8 @@ class Regraph():
         edge_metadata = self.edge_cache[edge_uuid]
         if self.feature_type == "PerExtrude":
             return self.get_edge_data_per_extrude(edge, edge_uuid, edge_metadata)
-        elif self.feature_type == "PerCurve":
-            return self.get_edge_data_per_curve(edge, edge_uuid, edge_metadata)
+        elif self.feature_type == "PerFace":
+            return self.get_edge_data_per_face(edge, edge_uuid, edge_metadata)
 
     def get_common_edge_data(self, edge_uuid, edge_metadata):
         """Get common edge data"""
@@ -504,62 +526,30 @@ class Regraph():
         edge_data["curvature"] = curvature
         return edge_data
 
-    def get_edge_data_per_curve(self, edge, edge_uuid, edge_metadata):
+    def get_edge_data_per_face(self, edge, edge_uuid, edge_metadata):
         """Get the features for an edge for a per curve graph"""
         edge_data = self.get_common_edge_data(edge_uuid, edge_metadata)
         edge_param_feat = self.get_edge_parameter_features(edge)
         edge_data.update(edge_param_feat)
         return edge_data
 
-    def get_extrude_end_edges(self, extrude):
-        """Get the edges that make up the end face profile"""
-        start_plane_origin, start_plane_normal = self.get_extrude_start_plane(extrude)
-        extrude_distance = self.get_extrude_distance(extrude)
-        end_plane_origin = self.offset_point_by_distance(start_plane_origin, start_plane_normal, extrude_distance)
-        edges_on_plane = self.get_edges_on_plane(end_plane_origin, start_plane_normal, extrude.sideFaces)
-        end_face_edges = self.get_face_collection_edges(extrude.endFaces)
-        # Return the result with more edges
-        if len(end_face_edges) >= len(edges_on_plane):
-            print("Using edges from end face")
-            return end_face_edges
-        else:
-            print("Using edges from end plane")
-            return edges_on_plane
-
-    def get_extrude_start_edges(self, extrude):
-        """Get the edges that make up the start face profile"""
-        print(extrude.name)
-        plane_origin, plane_normal = self.get_extrude_start_plane(extrude)
-        # Iterate over the faces and find the edges that sit on the start plane
-        edges_on_plane = self.get_edges_on_plane(plane_origin, plane_normal, extrude.sideFaces)
-        start_face_edges = self.get_face_collection_edges(extrude.startFaces)
-        # Return the result with more edges
-        if len(start_face_edges) >= len(edges_on_plane):
-            print("Using edges from start face")
-            return start_face_edges
-        else:
-            print("Using edges from start plane")
-            return edges_on_plane
-
-    def get_extrude_end_plane(self, extrude):
-        start_plane_origin, start_plane_normal = self.get_extrude_start_plane(extrude)
-        extrude_distance = self.get_extrude_distance(extrude)
-
     def get_extrude_start_plane(self, extrude):
-        """Get the origin and normal of the extrude start plane"""
+        """Get the plane where the extrude starts"""
         extrude_offset = self.get_extrude_offset(extrude)
         sketch = extrude.profile.parentSketch
-        print(f"Parent sketch {extrude.profile.parentSketch.name}")
         sketch_normal = extrude.profile.plane.normal
         sketch_normal.transformBy(sketch.transform)
         sketch_origin = sketch.origin
-        print(f"Original Sketch origin: {sketch.origin.x} {sketch.origin.y} {sketch.origin.z}")
         if extrude_offset != 0:
-            print(f"Extrude has offset: {extrude_offset}")
             sketch_origin = self.offset_point_by_distance(sketch_origin, sketch_normal, extrude_offset)
-        print(f"Plane origin: {sketch_origin.x} {sketch_origin.y} {sketch_origin.z}")
-        print(f"Plane normal: {sketch_normal.x} {sketch_normal.y} {sketch_normal.z}")
-        return sketch_origin, sketch_normal
+        return adsk.core.Plane.create(sketch_origin, sketch_normal)
+
+    def get_extrude_end_plane(self, extrude):
+        """Get the plane where the extrude ends"""
+        plane = self.get_extrude_start_plane(extrude)
+        extrude_distance = self.get_extrude_distance(extrude)
+        plane.origin = self.offset_point_by_distance(plane.origin, plane.normal, extrude_distance)
+        return plane
 
     def offset_point_by_distance(self, point, vector, distance):
         """Offset a point along a vector by a given distance"""
@@ -597,39 +587,15 @@ class Regraph():
                     return float(offset.stringValue)
         return 0
 
-    def get_face_collection_edges(self, faces):
-        """Get a list of edges from a face collection"""
-        edges = []
-        for face in faces:
-            for loop in face.loops:
-                for edge in loop.edges:
-                    edges.append(edge)
-        return edges
-
-    def get_edges_on_plane(self, plane_origin, plane_normal, side_faces):
-        """Get the edges of side faces that are on a plane"""
-        edges_on_plane = []
-        for face in side_faces:
-            for edge in face.edges:
-                on_plane = self.is_edge_on_plane(plane_origin, plane_normal, edge)
-                print(f"Face {face.tempId} Edge {edge.tempId} on plane: {on_plane}")
-                if on_plane:
-                    edges_on_plane.append(edge)
-                    # continue
-        return edges_on_plane
-
-    def is_edge_on_plane(self, plane_origin, plane_normal, edge):
-        """Check if an edge is on a plane"""
-        dist = self.get_plane_point_distance(plane_origin, plane_normal, edge.pointOnEdge)
-        return abs(dist) < self.app.pointTolerance
-
-    def get_plane_point_distance(self, plane_origin, plane_normal, point):
-        """Find the distance between a point and a plane"""
-        plane_origin_vector = plane_origin.asVector()
-        point_vector = point.asVector()
-        point_vector.subtract(plane_origin_vector)
-        dist = plane_normal.dotProduct(point_vector)
-        return dist
+    def get_coplanar_face(self, plane):
+        """Find a face that is coplanar to the given plane"""
+        for body in self.design.rootComponent.bRepBodies:
+            for face in body.faces:
+                if isinstance(face.geometry, adsk.core.Plane):
+                    is_coplanar = plane.isCoPlanarTo(face.geometry)
+                    if is_coplanar:
+                        return face
+        return None
 
 
 # -------------------------------------------------------------------------
@@ -669,10 +635,12 @@ def start():
         # data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
         # data_dir / "Z0HexagonCutJoin_RootComponent.json",
         # data_dir / "regraph/Pattern2_6c40bf33_0000.json"
-        data_dir / "regraph/Pattern4_f830f176_0000.json"
+        # data_dir / "regraph/Pattern4_f830f176_0000.json"
         # data_dir / "regraph/OffsetExtrude_46a87415_0000.json"
         # data_dir / "regraph/SingleSketchExtrude_45a31fdb_0000.json"
         # data_dir / "regraph/Pattern4-SteppedStartFace_a886a9e6_0000.json"
+        # data_dir / "regraph/Pattern6_1357454e_0000.json"
+        data_dir / "regraph/Z0StepHighAtOrig_12e50ae9_0000.json"
     ]
 
     json_count = len(json_files)
@@ -688,11 +656,11 @@ def start():
         except Exception as ex:
             logger.log(f"Error reconstructing: {ex}")
             logger.log(traceback.format_exc())
-        finally:
-            # Close the document
-            # Fusion automatically opens a new window
-            # after the last one is closed
-            app.activeDocument.close(False)
+        # finally:
+        #     # Close the document
+        #     # Fusion automatically opens a new window
+        #     # after the last one is closed
+        #     app.activeDocument.close(False)
 
 
 def run(context):
