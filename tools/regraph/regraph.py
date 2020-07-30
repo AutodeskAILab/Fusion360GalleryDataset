@@ -66,9 +66,9 @@ class Regraph():
         self.current_extrude_index = 0
         # Current overall action index
         self.current_action_index = 0
-        # The type of features we want
-        # self.feature_type = "PerExtrude"
-        self.feature_type = "PerFace"
+        # The mode we want
+        self.mode = "PerExtrude"
+        # self.mode = "PerFace"
 
     # -------------------------------------------------------------------------
     # EXPORT
@@ -113,14 +113,13 @@ class Regraph():
 
     def is_supported_export(self, extrude):
         """Check if this is a supported state for export"""
-        print(extrude.name)
         if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
             self.logger.log(f"Skipping {extrude.name}: Extrude has intersect operation")
             return False
         if self.is_extrude_tapered(extrude):
             self.logger.log(f"Skipping {extrude.name}: Extrude has taper")
             return False
-        if self.feature_type == "PerFace":
+        if self.mode == "PerFace":
             # If we have a cut/intersect operation we want to use what we have
             # and export it
             if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
@@ -139,16 +138,16 @@ class Regraph():
     def inc_export_extrude(self, extrude):
         """Save out a graph after each extrude as reconstruction takes place"""
         # If we are exporting per curve
-        if self.feature_type == "PerFace":
+        if self.mode == "PerFace":
             self.add_extrude_to_sequence(extrude)
-        elif self.feature_type == "PerExtrude":
+        elif self.mode == "PerExtrude":
             self.export_extrude_graph()
         self.current_extrude_index += 1
 
     def last_export(self):
         """Export after the full reconstruction"""
         # The last extrude
-        if self.feature_type == "PerFace":
+        if self.mode == "PerFace":
             # Only export if we had some valid extrudes
             if self.current_extrude_index > 0:
                 self.export_extrude_graph()
@@ -161,7 +160,7 @@ class Regraph():
     def export_extrude_graph(self):
         """Export a graph from an extrude operation"""
         graph = self.get_graph()
-        if self.feature_type == "PerFace":
+        if self.mode == "PerFace":
             graph_file = self.get_export_path("target")
         else:
             graph_file = self.get_export_path(f"{self.current_extrude_index:04}")
@@ -445,9 +444,9 @@ class Regraph():
         face_uuid = name.get_uuid(face)
         assert face_uuid is not None
         face_metadata = self.face_cache[face_uuid]
-        if self.feature_type == "PerExtrude":
+        if self.mode == "PerExtrude":
             return self.get_face_data_per_extrude(face, face_uuid, face_metadata)
-        elif self.feature_type == "PerFace":
+        elif self.mode == "PerFace":
             return self.get_face_data_per_face(face, face_uuid, face_metadata)
 
     def get_common_face_data(self, face, face_uuid):
@@ -492,9 +491,9 @@ class Regraph():
         edge_uuid = name.get_uuid(edge)
         assert edge_uuid is not None
         edge_metadata = self.edge_cache[edge_uuid]
-        if self.feature_type == "PerExtrude":
+        if self.mode == "PerExtrude":
             return self.get_edge_data_per_extrude(edge, edge_uuid, edge_metadata)
-        elif self.feature_type == "PerFace":
+        elif self.mode == "PerFace":
             return self.get_edge_data_per_face(edge, edge_uuid, edge_metadata)
 
     def get_common_edge_data(self, edge_uuid, edge_metadata):
@@ -619,8 +618,6 @@ def start():
     current_dir = Path(__file__).resolve().parent
     data_dir = current_dir.parent / "testdata"
     output_dir = current_dir / "output"
-    # data_dir = Path("E:/Autodesk/RegraphDataAugmentation/CutAugmentation/output")
-    # output_dir = Path("E:/Autodesk/RegraphDataAugmentation/CutAugmentation/output_graph")
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
@@ -630,17 +627,9 @@ def start():
     # Get all the files in the data folder
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
     json_files = [
-        # data_dir / "Couch.json",
+        data_dir / "Couch.json",
         # data_dir / "SingleSketchExtrude_RootComponent.json",
-        # data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
-        # data_dir / "Z0HexagonCutJoin_RootComponent.json",
-        # data_dir / "regraph/Pattern2_6c40bf33_0000.json"
-        # data_dir / "regraph/Pattern4_f830f176_0000.json"
-        # data_dir / "regraph/OffsetExtrude_46a87415_0000.json"
-        # data_dir / "regraph/SingleSketchExtrude_45a31fdb_0000.json"
-        # data_dir / "regraph/Pattern4-SteppedStartFace_a886a9e6_0000.json"
-        # data_dir / "regraph/Pattern6_1357454e_0000.json"
-        data_dir / "regraph/Z0StepHighAtOrig_12e50ae9_0000.json"
+        # data_dir / "regraph/Z0StepHighAtOrig_12e50ae9_0000.json"
     ]
 
     json_count = len(json_files)
@@ -656,11 +645,11 @@ def start():
         except Exception as ex:
             logger.log(f"Error reconstructing: {ex}")
             logger.log(traceback.format_exc())
-        # finally:
-        #     # Close the document
-        #     # Fusion automatically opens a new window
-        #     # after the last one is closed
-        #     app.activeDocument.close(False)
+        finally:
+            # Close the document
+            # Fusion automatically opens a new window
+            # after the last one is closed
+            app.activeDocument.close(False)
 
 
 def run(context):
