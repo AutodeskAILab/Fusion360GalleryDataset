@@ -639,8 +639,8 @@ def start():
         # else:
         try:
             logger.log(f"[{i}/{json_count}] Processing {json_file}")
-            reconverter = Regraph(json_file, logger)
-            reconverter.export(output_dir, results_file, results)
+            regraph = Regraph(json_file, logger)
+            regraph.export(output_dir, results_file, results)
 
         except Exception as ex:
             logger.log(f"Error reconstructing: {ex}")
