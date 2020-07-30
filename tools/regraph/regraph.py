@@ -19,6 +19,7 @@ if COMMON_DIR not in sys.path:
 import name
 import exporter
 import serialize
+import exceptions
 from logger import Logger
 from sketch_extrude_importer import SketchExtrudeImporter
 reload(serialize)
@@ -66,8 +67,8 @@ class Regraph():
         # Current overall action index
         self.current_action_index = 0
         # The type of features we want
-        self.feature_type = "PerExtrude"
-        # self.feature_type = "PerCurve"
+        # self.feature_type = "PerExtrude"
+        self.feature_type = "PerCurve"
 
     # -------------------------------------------------------------------------
     # EXPORT
@@ -221,22 +222,16 @@ class Regraph():
 
     def add_extrude_edges_to_cache(self):
         """Update the edge cache with the latest extrude"""
-        temp_edge_cache = {
-            "concave_edges": set()
-            # "convex_edges": set()
-        }
+        concave_edge_cache = set()
         for body in self.design.rootComponent.bRepBodies:
-            temp_edge_cache["concave_edges"].update(
-                self.get_temp_ids_from_collection(body.concaveEdges))
-            # temp_edge_cache["convex_edges"].update(
-            #     self.get_temp_ids_from_collection(body.convexEdges))
-
+            temp_ids = self.get_temp_ids_from_collection(body.concaveEdges)
+            concave_edge_cache.update(temp_ids)
         for body in self.design.rootComponent.bRepBodies:
             for face in body.faces:
                 for edge in face.edges:
                     assert edge.faces.count == 2
                     edge_uuid = name.set_uuid(edge)
-                    edge_concave = edge.tempId in temp_edge_cache["concave_edges"]
+                    edge_concave = edge.tempId in concave_edge_cache
                     assert edge_uuid is not None
                     self.edge_cache[edge_uuid] = {
                         "temp_id": edge.tempId,
@@ -249,6 +244,13 @@ class Regraph():
         """Add the curves incrementally to the sequence"""
         # We draw from the end faces, as they are more likely to exist
         # TODO: We really need to find the edges from the side faces
+        print()
+        start_edges = self.get_extrude_start_edges(extrude)
+        print()
+        end_edges = self.get_extrude_end_edges(extrude)
+        print()
+
+        # assert start_edges_complete or end_edges_complete
         for face in extrude.endFaces:
             # Find the total number of edges in all loops first
             edge_total = 0
@@ -257,8 +259,6 @@ class Regraph():
 
             edge_count = 0
             for loop in face.loops:
-                # TODO: Check this is the right order
-                # or do we need to traverse coedges
                 for edge in loop.edges:
                     edge_uuid = name.get_uuid(edge)
                     assert edge_uuid is not None
@@ -511,11 +511,126 @@ class Regraph():
         edge_data.update(edge_param_feat)
         return edge_data
 
-    # def get_extrude_start_edges(self, extrude):
-    #     """Get the edges that make up the start face profile"""
-    #     # adsk.fusion.ProfilePlaneStartDefinition
-    #     # adsk.fusion.OffsetStartDefinition
-    #     start_plane = extrude.startExtent.profilePlane
+    def get_extrude_end_edges(self, extrude):
+        """Get the edges that make up the end face profile"""
+        start_plane_origin, start_plane_normal = self.get_extrude_start_plane(extrude)
+        extrude_distance = self.get_extrude_distance(extrude)
+        end_plane_origin = self.offset_point_by_distance(start_plane_origin, start_plane_normal, extrude_distance)
+        edges_on_plane = self.get_edges_on_plane(end_plane_origin, start_plane_normal, extrude.sideFaces)
+        end_face_edges = self.get_face_collection_edges(extrude.endFaces)
+        # Return the result with more edges
+        if len(end_face_edges) >= len(edges_on_plane):
+            print("Using edges from end face")
+            return end_face_edges
+        else:
+            print("Using edges from end plane")
+            return edges_on_plane
+
+    def get_extrude_start_edges(self, extrude):
+        """Get the edges that make up the start face profile"""
+        print(extrude.name)
+        plane_origin, plane_normal = self.get_extrude_start_plane(extrude)
+        # Iterate over the faces and find the edges that sit on the start plane
+        edges_on_plane = self.get_edges_on_plane(plane_origin, plane_normal, extrude.sideFaces)
+        start_face_edges = self.get_face_collection_edges(extrude.startFaces)
+        # Return the result with more edges
+        if len(start_face_edges) >= len(edges_on_plane):
+            print("Using edges from start face")
+            return start_face_edges
+        else:
+            print("Using edges from start plane")
+            return edges_on_plane
+
+    def get_extrude_end_plane(self, extrude):
+        start_plane_origin, start_plane_normal = self.get_extrude_start_plane(extrude)
+        extrude_distance = self.get_extrude_distance(extrude)
+
+    def get_extrude_start_plane(self, extrude):
+        """Get the origin and normal of the extrude start plane"""
+        extrude_offset = self.get_extrude_offset(extrude)
+        sketch = extrude.profile.parentSketch
+        print(f"Parent sketch {extrude.profile.parentSketch.name}")
+        sketch_normal = extrude.profile.plane.normal
+        sketch_normal.transformBy(sketch.transform)
+        sketch_origin = sketch.origin
+        print(f"Original Sketch origin: {sketch.origin.x} {sketch.origin.y} {sketch.origin.z}")
+        if extrude_offset != 0:
+            print(f"Extrude has offset: {extrude_offset}")
+            sketch_origin = self.offset_point_by_distance(sketch_origin, sketch_normal, extrude_offset)
+        print(f"Plane origin: {sketch_origin.x} {sketch_origin.y} {sketch_origin.z}")
+        print(f"Plane normal: {sketch_normal.x} {sketch_normal.y} {sketch_normal.z}")
+        return sketch_origin, sketch_normal
+
+    def offset_point_by_distance(self, point, vector, distance):
+        """Offset a point along a vector by a given distance"""
+        point_vector = point.asVector()
+        scale_vector = vector.copy()
+        scale_vector.scaleBy(distance)
+        point_vector.add(scale_vector)
+        return point_vector.asPoint()
+
+    def get_extrude_distance(self, extrude):
+        """Get the extrude distance"""
+        if extrude.extentType != adsk.fusion.FeatureExtentTypes.OneSideFeatureExtentType:
+            raise exceptions.UnsupportedException(f"Unsupported Extent Type: {extrude.extentType}")
+        if not isinstance(extrude.extentOne, adsk.fusion.DistanceExtentDefinition):
+            raise exceptions.UnsupportedException(f"Unsupported Extent Definition: {extrude.extentOne.objectType}")
+        return extrude.extentOne.distance.value
+
+    def get_extrude_offset(self, extrude):
+        """Get any offset from the sketch plane to the extrude"""
+        start_extent = extrude.startExtent
+        if isinstance(start_extent, adsk.fusion.ProfilePlaneStartDefinition):
+            return 0
+        elif isinstance(start_extent, adsk.fusion.OffsetStartDefinition):
+            offset = start_extent.offset
+            # If the ProfilePlaneWithOffsetDefinition is
+            # associated with an existing feature
+            if isinstance(offset, adsk.fusion.ModelParameter):
+                return offset.value
+            # If the ProfilePlaneWithOffsetDefinition object was created statically
+            # and is not associated with a feature
+            elif isinstance(offset, adsk.core.ValueInput):
+                if offset.valueType == adsk.fusion.ValueTypes.RealValueType:
+                    return offset.realValue
+                elif value_input.valueType == adsk.fusion.ValueTypes.StringValueType:
+                    return float(offset.stringValue)
+        return 0
+
+    def get_face_collection_edges(self, faces):
+        """Get a list of edges from a face collection"""
+        edges = []
+        for face in faces:
+            for loop in face.loops:
+                for edge in loop.edges:
+                    edges.append(edge)
+        return edges
+
+    def get_edges_on_plane(self, plane_origin, plane_normal, side_faces):
+        """Get the edges of side faces that are on a plane"""
+        edges_on_plane = []
+        for face in side_faces:
+            for edge in face.edges:
+                on_plane = self.is_edge_on_plane(plane_origin, plane_normal, edge)
+                print(f"Face {face.tempId} Edge {edge.tempId} on plane: {on_plane}")
+                if on_plane:
+                    edges_on_plane.append(edge)
+                    # continue
+        return edges_on_plane
+
+    def is_edge_on_plane(self, plane_origin, plane_normal, edge):
+        """Check if an edge is on a plane"""
+        dist = self.get_plane_point_distance(plane_origin, plane_normal, edge.pointOnEdge)
+        return abs(dist) < self.app.pointTolerance
+
+    def get_plane_point_distance(self, plane_origin, plane_normal, point):
+        """Find the distance between a point and a plane"""
+        plane_origin_vector = plane_origin.asVector()
+        point_vector = point.asVector()
+        point_vector.subtract(plane_origin_vector)
+        dist = plane_normal.dotProduct(point_vector)
+        return dist
+
 
 # -------------------------------------------------------------------------
 # RUNNING
@@ -538,8 +653,8 @@ def start():
     current_dir = Path(__file__).resolve().parent
     data_dir = current_dir.parent / "testdata"
     output_dir = current_dir / "output"
-    data_dir = Path("E:/Autodesk/RegraphDataAugmentation/CutAugmentation/output")
-    output_dir = Path("E:/Autodesk/RegraphDataAugmentation/CutAugmentation/output_graph")
+    # data_dir = Path("E:/Autodesk/RegraphDataAugmentation/CutAugmentation/output")
+    # output_dir = Path("E:/Autodesk/RegraphDataAugmentation/CutAugmentation/output_graph")
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
@@ -547,14 +662,18 @@ def start():
     results = load_results(results_file)
 
     # Get all the files in the data folder
-    json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    # json_files = [
-    #     # data_dir / "Couch.json",
-    #     # data_dir / "SingleSketchExtrude_RootComponent.json",
-    #     # data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
-    #     # data_dir / "Z0HexagonCutJoin_RootComponent.json",
-    #     data_dir / "103_934385f5_0000.json",
-    # ]
+    # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
+    json_files = [
+        # data_dir / "Couch.json",
+        # data_dir / "SingleSketchExtrude_RootComponent.json",
+        # data_dir / "Z0DoubleProfileSketchExtrude_795c7869_0000.json",
+        # data_dir / "Z0HexagonCutJoin_RootComponent.json",
+        # data_dir / "regraph/Pattern2_6c40bf33_0000.json"
+        data_dir / "regraph/Pattern4_f830f176_0000.json"
+        # data_dir / "regraph/OffsetExtrude_46a87415_0000.json"
+        # data_dir / "regraph/SingleSketchExtrude_45a31fdb_0000.json"
+        # data_dir / "regraph/Pattern4-SteppedStartFace_a886a9e6_0000.json"
+    ]
 
     json_count = len(json_files)
     for i, json_file in enumerate(json_files, start=1):
