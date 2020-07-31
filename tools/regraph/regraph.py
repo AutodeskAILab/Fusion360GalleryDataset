@@ -363,6 +363,16 @@ class Regraph():
         elif is_tc:
             convexity = "Smooth"
         return convexity
+    
+    def get_trimming_mask(self, pt, body):
+        """Return a trimming mask value indicating if a point should be masked or not"""
+        containment = body.pointContainment(pt)
+        binary_containment = 1
+        if containment == adsk.fusion.PointContainment.PointOutsidePointContainment:
+            binary_containment = 0
+        elif containment == adsk.fusion.PointContainment.UnknownPointContainment:
+            binary_containment = 0
+        return binary_containment
 
     def linspace(self, start, stop, n):
         if n == 1:
@@ -405,12 +415,21 @@ class Regraph():
                 pt = adsk.core.Point2D.create(u_params[u], v_params[v])
                 params.append(pt)
         result, points = evaluator.getPointsAtParameters(params)
+        result, normals = evaluator.getNormalsAtParameters(params)
         assert result
         param_features["points"] = []
-        for pt in points:
+        param_features["normals"] = []
+        param_features["trimming_mask"] = []
+        for i, pt in enumerate(points):
             param_features["points"].append(pt.x)
             param_features["points"].append(pt.y)
             param_features["points"].append(pt.z)
+            normal = normals[i]
+            param_features["normals"].append(normal.x)
+            param_features["normals"].append(normal.y)
+            param_features["normals"].append(normal.z)
+            trim_mask = self.get_trimming_mask(pt, face.body)
+            param_features["trimming_mask"].append(trim_mask)
         return param_features
 
     # -------------------------------------------------------------------------
@@ -644,7 +663,7 @@ def start():
     logger = Logger()
     # Fusion requires an absolute path
     current_dir = Path(__file__).resolve().parent
-    data_dir = current_dir.parent / "testdata"
+    data_dir = current_dir.parent / "testdata/regraph2"
     output_dir = current_dir / "output"
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
@@ -653,15 +672,16 @@ def start():
     results = load_results(results_file)
 
     # Get all the files in the data folder
+    json_files = [f for f in data_dir.glob("**/*.json")]
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    json_files = [
-        # data_dir / "Couch.json",
-        # data_dir / "SingleSketchExtrude_RootComponent.json",
-        data_dir / "regraph/Z0StepHighAtOrig_12e50ae9_0000.json",
-        data_dir / "regraph/Pattern6_1357454e_0000.json"
-        # data_dir / "Z0HexagonCutJoin_RootComponent.json"
-        
-    ]
+    # json_files = [
+    #     # data_dir / "Couch.json",
+    #     data_dir / "SingleSketchExtrude_RootComponent.json",
+    #     data_dir / "regraph/Z0StepHighAtOrig_12e50ae9_0000.json",
+    #     data_dir / "regraph/Pattern6_1357454e_0000.json",
+    #     # data_dir / "Z0HexagonCutJoin_RootComponent.json"
+    #     data_dir / "regraph/Z0SketchLoop_12d931ee_0000.json"      
+    # ]
 
     json_count = len(json_files)
     for i, json_file in enumerate(json_files, start=1):
