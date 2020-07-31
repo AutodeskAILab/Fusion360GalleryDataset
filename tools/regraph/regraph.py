@@ -67,8 +67,8 @@ class Regraph():
         # Current overall action index
         self.current_action_index = 0
         # The mode we want
-        self.mode = "PerExtrude"
-        # self.mode = "PerFace"
+        # self.mode = "PerExtrude"
+        self.mode = "PerFace"
 
     # -------------------------------------------------------------------------
     # EXPORT
@@ -273,19 +273,19 @@ class Regraph():
         """Add the extrude operation to the sequence"""
         # Look for a start or end face with a single face
         if extrude.startFaces.count == 1:
-            print("Extruding from start face")
+            # print("Extruding from start face")
             start_face = extrude.startFaces[0]
             end_faces = extrude.endFaces
             start_end_flipped = False
         elif extrude.endFaces.count == 1:
-            print("Extruding from end face")
+            # print("Extruding from end face")
             start_face = extrude.endFaces[0]
             end_faces = extrude.startFaces
             start_end_flipped = True
         assert start_face is not None
         start_face_uuid = name.get_uuid(start_face)
         assert start_face_uuid is not None
-        print(f"Start face: {start_face.tempId}")
+        # print(f"Start face: {start_face.tempId}")
         # Add the face and edges that we extrude from
         self.sequence_cache["faces"].add(start_face_uuid)
         for edge in start_face.edges:
@@ -314,7 +314,7 @@ class Regraph():
         assert end_face is not None
         end_face_uuid = name.get_uuid(end_face)
         assert end_face_uuid is not None
-        print(f"End face: {end_face.tempId}")
+        # print(f"End face: {end_face.tempId}")
         # Add the face and edges for everything that was extruded
         for face in extrude.faces:
             face_uuid = name.get_uuid(face)
@@ -381,11 +381,36 @@ class Regraph():
         parameters = list(self.linspace(start_param, end_param, samples))
         result, points = evaluator.getPointsAtParameters(parameters)
         assert result
-        param_features["param_points"] = []
+        param_features["points"] = []
         for pt in points:
-            param_features["param_points"].append(pt.x)
-            param_features["param_points"].append(pt.y)
-            param_features["param_points"].append(pt.z)
+            param_features["points"].append(pt.x)
+            param_features["points"].append(pt.y)
+            param_features["points"].append(pt.z)
+        return param_features
+
+    def get_face_parameter_features(self, face):
+        param_features = {}
+        samples = 4
+        evaluator = face.evaluator
+        range_bbox = evaluator.parametricRange()
+        u_min = range_bbox.minPoint.x
+        u_max = range_bbox.maxPoint.x
+        v_min = range_bbox.minPoint.y
+        v_max = range_bbox.maxPoint.y
+        u_params = list(self.linspace(u_min, u_max, samples+2))[1:-1]
+        v_params = list(self.linspace(v_min, v_max, samples+2))[1:-1]
+        params = []
+        for u in range(samples):
+            for v in range(samples):
+                pt = adsk.core.Point2D.create(u_params[u], v_params[v])
+                params.append(pt)
+        result, points = evaluator.getPointsAtParameters(params)
+        assert result
+        param_features["points"] = []
+        for pt in points:
+            param_features["points"].append(pt.x)
+            param_features["points"].append(pt.y)
+            param_features["points"].append(pt.z)
         return param_features
 
     # -------------------------------------------------------------------------
@@ -484,6 +509,9 @@ class Regraph():
     def get_face_data_per_face(self, face, face_uuid, face_metadata):
         """Get the features for a face for a per curve graph"""
         face_data = self.get_common_face_data(face, face_uuid)
+        face_data["surface_type"] = serialize.surface_type(face.geometry)
+        face_param_feat = self.get_face_parameter_features(face)
+        face_data.update(face_param_feat)
         return face_data
 
     def get_edge_data(self, edge):
@@ -528,8 +556,8 @@ class Regraph():
     def get_edge_data_per_face(self, edge, edge_uuid, edge_metadata):
         """Get the features for an edge for a per curve graph"""
         edge_data = self.get_common_edge_data(edge_uuid, edge_metadata)
-        edge_param_feat = self.get_edge_parameter_features(edge)
-        edge_data.update(edge_param_feat)
+        # edge_param_feat = self.get_edge_parameter_features(edge)
+        # edge_data.update(edge_param_feat)
         return edge_data
 
     def get_extrude_start_plane(self, extrude):
@@ -627,9 +655,12 @@ def start():
     # Get all the files in the data folder
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
     json_files = [
-        data_dir / "Couch.json",
+        # data_dir / "Couch.json",
         # data_dir / "SingleSketchExtrude_RootComponent.json",
-        # data_dir / "regraph/Z0StepHighAtOrig_12e50ae9_0000.json"
+        data_dir / "regraph/Z0StepHighAtOrig_12e50ae9_0000.json",
+        data_dir / "regraph/Pattern6_1357454e_0000.json"
+        # data_dir / "Z0HexagonCutJoin_RootComponent.json"
+        
     ]
 
     json_count = len(json_files)
