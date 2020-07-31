@@ -675,12 +675,7 @@ def start():
     json_files = [f for f in data_dir.glob("**/*.json")]
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
     # json_files = [
-    #     # data_dir / "Couch.json",
-    #     data_dir / "SingleSketchExtrude_RootComponent.json",
-    #     data_dir / "regraph/Z0StepHighAtOrig_12e50ae9_0000.json",
-    #     data_dir / "regraph/Pattern6_1357454e_0000.json",
-    #     # data_dir / "Z0HexagonCutJoin_RootComponent.json"
-    #     data_dir / "regraph/Z0SketchLoop_12d931ee_0000.json"      
+    #     # data_dir / "Couch.json",  
     # ]
 
     json_count = len(json_files)

@@ -49,6 +49,8 @@ The following data is provided for each step in the `sequence` list:
 
 Additionally a `bounding_box` is provided that in the `properties` data structure that can be used to normalize any geometry in model space.
 
-### Edge Features
-Currently the following features are given for each edge:
-- `param_points`: 10 points sampled along the edge in model space.
+### Face Features
+Currently the following features are given for each edge (see [UV-Net](https://arxiv.org/abs/2006.10211)):
+- `points`: Points sampled on the face in model space. The order is by xyz point in row first order `u0_v0, u0_v1, u0_v2... uN_vN`.
+- `normals`: Normals at the corresponding point location.
+- `trimming_mask`: Binary value indicating if the corresponding point is inside/outside the trimming boundary.
