@@ -35,8 +35,11 @@ class SketchExtrudeImporter():
         # called incrementally when the design changs
         self.reconstruct_cb = None
 
-    def reconstruct(self, reconstruct_cb=None):
+    def reconstruct(self, reconstruct_cb=None, target_component=None):
         self.reconstruct_cb = reconstruct_cb
+        self.target_component = target_component
+        if self.target_component is None:
+            self.target_component = self.design.rootComponent
         timeline = self.data["timeline"]
         entities = self.data["entities"]
         # Get the profiles used in this design
@@ -197,7 +200,7 @@ class SketchExtrudeImporter():
         if "curves" not in sketch_data or "profiles" not in sketch_data or "points" not in sketch_data:
             return None
 
-        sketches = self.design.rootComponent.sketches
+        sketches = self.target_component.sketches
         # Find the right sketch plane to use
         sketch_plane = self.get_sketch_plane(sketch_data["reference_plane"], sketch_profiles)
         sketch = sketches.addWithoutEdges(sketch_plane)
@@ -252,14 +255,14 @@ class SketchExtrudeImporter():
                 # and use that
                 # This preserves the reference indirectly
                 # through the construction plane
-                planes = self.design.rootComponent.constructionPlanes
+                planes = self.target_component.constructionPlanes
                 plane_input = planes.createInput()
                 offset_distance = adsk.core.ValueInput.createByReal(0)
                 plane_input.setByOffset(sketch_profile, offset_distance)
                 plane = planes.add(plane_input)
                 return plane
 
-        return self.design.rootComponent.xYConstructionPlane
+        return self.target_component.xYConstructionPlane
 
     def reconstruct_curves(self, sketch, sketch_data, sketch_uuid, sketch_index, xform):
         # Turn off sketch compute until we add all the curves
@@ -521,7 +524,7 @@ class SketchExtrudeImporter():
         return nurbs_curve
 
     def reconstruct_extrude_feature(self, extrude_data, extrude_uuid, extrude_index, sketch_profiles):
-        extrudes = self.design.rootComponent.features.extrudeFeatures
+        extrudes = self.target_component.features.extrudeFeatures
 
         # There can be more than one profile, so we create an object collection
         extrude_profiles = adsk.core.ObjectCollection.create()

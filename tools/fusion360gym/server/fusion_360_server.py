@@ -17,10 +17,8 @@ from http.server import BaseHTTPRequestHandler
 COMMON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "common"))
 if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
-import logger
-importlib.reload(logger)
-from logger import Logger
 
+from logger import Logger
 from .command_runner import CommandRunner
 
 
