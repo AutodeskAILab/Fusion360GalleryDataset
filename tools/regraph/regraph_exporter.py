@@ -84,6 +84,8 @@ class RegraphExporter():
         graph_data = regraph.generate()
         regraph_tester = RegraphTester(mode=self.mode)
         regraph_tester.test(graph_data)
+        if self.mode == "PerFace":
+            regraph_tester.reconstruct(graph_data)
         self.export_graph_data(graph_data)
 
     def export_graph_data(self, graph_data):
@@ -160,6 +162,7 @@ def start():
     json_files = [
         # data_dir / "Couch.json"
         data_dir / "SingleSketchExtrude_RootComponent.json"
+        # data_dir / "ReconstructionExtractor_Z0CircleLineSplit_9f3ee338_Untitled.json"
     ]
 
     json_count = len(json_files)

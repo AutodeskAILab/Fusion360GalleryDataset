@@ -16,6 +16,7 @@ import copy
 from pathlib import Path
 from importlib import reload
 import unittest
+import math
 
 import name
 import geometry
@@ -579,6 +580,16 @@ class RegraphTester(unittest.TestCase):
                 self.assertEqual(len(graph_data["graphs"]), 1, msg="Only 1 per face graph")
                 self.test_per_face_graph(graph_data["graphs"][0], graph_data["sequences"][0])
 
+    def reconstruct(self, graph_data, target_component=None):
+        """Reconstruct and test it matches the target"""
+        regraph_reconstructor = RegraphReconstructor(graph_data, target_component)
+        regraph_reconstructor.reconstruct()
+        # Compare the ground truth with the reconstruction
+        gt = regraph_reconstructor.target_component
+        rc = regraph_reconstructor.reconstruction.component
+        self.test_reconstruction(gt, rc)
+        regraph_reconstructor.remove()
+
     def test_per_extrude_graph(self, graph):
         """Test a per extrude graph"""
         self.assertIsNotNone(graph, msg="Graph is not None")
@@ -629,6 +640,7 @@ class RegraphTester(unittest.TestCase):
         self.assertIsNotNone(sequence, msg="Sequence is not None")
         self.assertIn("sequence", sequence, msg="Sequence has sequence")
         self.assertGreaterEqual(len(sequence["sequence"]), 2, msg="Sequence length >= 2")
+        self.assertEqual(len(sequence["sequence"]) % 2, 0, msg="Sequence length is multiple of 2")
         for seq in sequence["sequence"]:
             self.assertIn("action", seq, msg="Sequence element has action")
             self.assertIn(seq["action"], node_set, msg="Action is in target nodes")
@@ -641,3 +653,161 @@ class RegraphTester(unittest.TestCase):
         # Properties
         self.assertIn("properties", sequence, msg="Sequence has properties")
         self.assertIn("bounding_box", sequence["properties"], msg="Properties has bounding_box")
+
+    def test_reconstruction(self, gt, rc, places=1):
+        """Test the reconstruction"""
+        self.assertEqual(
+            len(gt.bRepBodies),
+            len(rc.bRepBodies),
+            msg="Same number of bodies"
+        )
+        self.assertEqual(
+            geometry.get_face_count(gt),
+            geometry.get_face_count(rc),
+            msg="Same number of faces"
+        )
+        self.assertEqual(
+            geometry.get_edge_count(gt),
+            geometry.get_edge_count(rc),
+            msg="Same number of edges"
+        )
+        gt_bbox = geometry.get_bounding_box(gt)
+        rc_bbox = geometry.get_bounding_box(rc)
+        self.assertAlmostEqual(
+            rc_bbox.maxPoint.x,
+            gt_bbox.maxPoint.x,
+            places=places, msg="bounding_box_max_x"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.maxPoint.y,
+            gt_bbox.maxPoint.y,
+            places=places,
+            msg="bounding_box_max_y"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.maxPoint.z,
+            gt_bbox.maxPoint.z,
+            places=places,
+            msg="bounding_box_max_z"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.minPoint.x,
+            gt_bbox.minPoint.x,
+            places=places,
+            msg="bounding_box_min_x"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.minPoint.y,
+            gt_bbox.minPoint.y,
+            places=places,
+            msg="bounding_box_min_y"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.minPoint.z,
+            gt_bbox.minPoint.z,
+            places=places,
+            msg="bounding_box_min_z"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.maxPoint.x),
+            msg="bounding_box_max_x != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.maxPoint.y),
+            msg="bounding_box_max_y != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.maxPoint.z),
+            msg="bounding_box_max_z != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.minPoint.x),
+            msg="bounding_box_min_x != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.minPoint.y),
+            msg="bounding_box_min_y != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.minPoint.z),
+            msg="bounding_box_min_z != inf"
+        )
+
+
+class RegraphReconstructor():
+    """Reconstruct the graph to test it matches the target"""
+
+    def __init__(self, graph_data, target_component=None):
+        self.app = adsk.core.Application.get()
+        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
+        self.target_component = target_component
+        if self.target_component is None:
+            self.target_component = self.design.rootComponent
+        self.graph = graph_data["graphs"][0]
+        self.sequence = graph_data["sequences"][0]
+
+    def reconstruct(self):
+        """Reconstruct from the sequence of faces"""
+        # Create a reconstruction component that we create geometry in
+        self.reconstruction = self.design.rootComponent.occurrences.addNewComponent(
+            adsk.core.Matrix3D.create()
+        )
+        self.reconstruction.component.name = "Reconstruction"
+        uuid_to_face_map = self.get_uuid_to_face_map()
+        extrude_count = int(len(self.sequence["sequence"]) * 0.5)
+        for extrude_index in range(extrude_count):
+            start_index = extrude_index * 2
+            end_index = extrude_index * 2 + 1
+            start_face = self.get_face_from_sequence_index(start_index, uuid_to_face_map)
+            end_face = self.get_face_from_sequence_index(end_index, uuid_to_face_map)
+            self.add_extrude(start_face, end_face)
+
+    def get_face_from_sequence_index(self, seq_index, uuid_to_face_map):
+        """Get a face from an index in the sequence"""
+        face_uuid = self.sequence["sequence"][seq_index]["action"]
+        indices = uuid_to_face_map[face_uuid]
+        body_index = indices["body_index"]
+        face_index = indices["face_index"]
+        body = self.target_component.bRepBodies[body_index]
+        face = body.faces[face_index]
+        return face
+
+    def get_uuid_to_face_map(self):
+        """As we have to find faces multiple times we first
+            make a map between uuids and face indices"""
+        uuid_to_face_map = {}
+        for body_index, body in enumerate(self.target_component.bRepBodies):
+            for face_index, face in enumerate(body.faces):
+                face_uuid = name.get_uuid(face)
+                assert face_uuid is not None
+                uuid_to_face_map[face_uuid] = {
+                    "body_index": body_index,
+                    "face_index": face_index
+                }
+        return uuid_to_face_map
+
+    def add_extrude(self, start_face, end_face):
+        """Create an extrude from a start face to an end face"""
+        # We generate the extrude bodies in the reconstruction component
+        extrudes = self.reconstruction.component.features.extrudeFeatures
+        operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+        extrude_input = extrudes.createInput(start_face, operation)
+        extent = adsk.fusion.ToEntityExtentDefinition.create(end_face, False)
+        extrude_input.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
+        extrude = extrudes.add(extrude_input)
+        # The Fusion API  doesn't seem to be able to do join extrudes
+        # that don't join to the goal body
+        # so we make the bodies separate and then join them after the fact
+        if self.reconstruction.component.bRepBodies.count > 1:
+            combines = self.reconstruction.component.features.combineFeatures
+            first_body = self.reconstruction.component.bRepBodies[0]
+            tools = adsk.core.ObjectCollection.create()
+            for body in extrude.bodies:
+                tools.add(body)
+            combine_input = combines.createInput(first_body, tools)
+            combine = combines.add(combine_input)
+        return extrude
+
+    def remove(self):
+        """Remove the reconstructed component"""
+        self.reconstruction.deleteMe()

@@ -65,3 +65,78 @@ def are_faces_tangentially_connected(face1, face2):
         if tc_face.tempId == face2.tempId:
             return True
     return False
+
+
+def get_edge_count(entity):
+    bodies = __get_bodies_from_entity(entity)
+    count = 0
+    for body in bodies:
+        try:
+            count += body.edges.count
+        except Exception:
+            pass
+    return count
+
+
+def get_face_count(entity):
+    bodies = __get_bodies_from_entity(entity)
+    count = 0
+    for body in bodies:
+        try:
+            count += body.faces.count
+        except Exception:
+            pass
+    return count
+
+
+def get_shell_count(entity):
+    bodies = __get_bodies_from_entity(entity)
+    count = 0
+    for body in bodies:
+        try:
+            count += body.shells.count
+        except Exception:
+            pass
+    return count
+
+
+def get_loop_count(entity):
+    bodies = __get_bodies_from_entity(entity)
+    count = 0
+    for body in bodies:
+        for face in body.faces:
+            count += face.loops.count
+    return count
+
+
+def get_sketch_point_count(entity):
+    count = 0
+    if isinstance(entity, adsk.fusion.Components):
+        for component in entity:
+            for sketch in component.sketches:
+                count += sketch.sketchPoints.count
+    elif isinstance(entity, adsk.fusion.Component):
+        for sketch in entity.sketches:
+            count += sketch.sketchPoints.count
+    return count
+
+
+def get_vertex_count(entity):
+    bodies = __get_bodies_from_entity(entity)
+    count = 0
+    for body in bodies:
+        count += body.vertices.count
+    return count
+
+
+def __get_bodies_from_entity(entity):
+    """Return a collection of bodies from a Component, Instance, or BRepBody"""
+    bodies = []
+    if (isinstance(entity, adsk.fusion.Component) or
+       isinstance(entity, adsk.fusion.Occurrence)):
+        bodies = entity.bRepBodies
+    elif isinstance(entity, adsk.fusion.BRepBody):
+        bodies = [entity]
+    else:
+        raise Exception(f"Unexpected entity type: {entity.classType()}")
+    return bodies
