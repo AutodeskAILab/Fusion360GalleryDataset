@@ -36,6 +36,7 @@ class SketchExtrudeImporter():
         self.reconstruct_cb = None
 
     def reconstruct(self, reconstruct_cb=None, target_component=None):
+        """Reconstruct the full design"""
         self.reconstruct_cb = reconstruct_cb
         self.target_component = target_component
         if self.target_component is None:
@@ -54,12 +55,26 @@ class SketchExtrudeImporter():
             if entity["type"] == "Sketch":
                 # Only reconstruct this sketch if it is used with an extrude
                 if entity_uuid in profiles_used["sketches"]:
-                    sketch_profile_set = self.reconstruct_sketch(entity, entity_uuid, entity_index, sketch_profiles)
+                    sketch, sketch_profile_set = self.reconstruct_sketch_feature(entity, entity_uuid, entity_index, sketch_profiles)
                     if sketch_profile_set:
                         sketch_profiles.update(**sketch_profile_set)
 
             elif entity["type"] == "ExtrudeFeature":
                 self.reconstruct_extrude_feature(entity, entity_uuid, entity_index, sketch_profiles)
+
+    def reconstruct_sketch(self, sketch_uuid, reconstruct_cb=None, target_component=None):
+        """Reconstruct and return just a single sketch"""
+        self.reconstruct_cb = reconstruct_cb
+        self.target_component = target_component
+        if self.target_component is None:
+            self.target_component = self.design.rootComponent
+        sketch_index = 0
+        for timeline_object in self.data["timeline"]:
+            if timeline_object["entity"] == sketch_uuid:
+                sketch_index = timeline_object["index"]
+        sketch_data = self.data["entities"][sketch_uuid]
+        sketch, sketch_profile_set = self.reconstruct_sketch_feature(sketch_data, sketch_uuid, sketch_index, {})
+        return sketch
 
     def get_extrude_profiles(self, timeline, entities):
         """Get the profiles used with extrude operations"""
@@ -195,7 +210,7 @@ class SketchExtrudeImporter():
         xform.transformBy(sketch_transform)
         return xform
 
-    def reconstruct_sketch(self, sketch_data, sketch_uuid, sketch_index, sketch_profiles):
+    def reconstruct_sketch_feature(self, sketch_data, sketch_uuid, sketch_index, sketch_profiles):
         # Skip empty sketches
         if "curves" not in sketch_data or "profiles" not in sketch_data or "points" not in sketch_data:
             return None
@@ -222,7 +237,7 @@ class SketchExtrudeImporter():
         # Draw exactly what the user drew and then search for the profiles
         new_sketch_profiles = self.reconstruct_curves(sketch, sketch_data, sketch_uuid, sketch_index, transform_for_sketch_geom)
         adsk.doEvents()
-        return new_sketch_profiles
+        return sketch, new_sketch_profiles
 
     def get_sketch_plane(self, reference_plane, sketch_profiles):
         # ConstructionPlane as reference plane
