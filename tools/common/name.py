@@ -148,3 +148,13 @@ def set_uuids_for_sketch(sketch, group_name="Dataset"):
     # We are only interested points and curves
     set_uuids_for_collection(sketch.sketchCurves)
     set_uuids_for_collection(sketch.sketchPoints)
+
+
+def get_temp_ids_from_collection(collection):
+    """From a collection, make a set of the tempids"""
+    id_set = set()
+    for entity in collection:
+        if entity is not None:
+            temp_id = entity.tempId
+            id_set.add(temp_id)
+    return id_set

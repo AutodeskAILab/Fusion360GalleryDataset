@@ -1,3 +1,10 @@
+"""
+
+Reconstruction Graph
+Generates a graph data structure using a face adjacency graph of B-Rep topology
+
+"""
+
 import adsk.core
 import adsk.fusion
 import traceback
@@ -8,49 +15,36 @@ import time
 import copy
 from pathlib import Path
 from importlib import reload
-
-
-# Add the common folder to sys.path
-COMMON_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "..", "common"))
-if COMMON_DIR not in sys.path:
-    sys.path.append(COMMON_DIR)
+import unittest
+import math
 
 import name
+import geometry
 import exporter
 import serialize
 import exceptions
 from logger import Logger
-from sketch_extrude_importer import SketchExtrudeImporter
-reload(serialize)
-
-
-# Event handlers
-handlers = []
-
-
-class OnlineStatusChangedHandler(adsk.core.ApplicationEventHandler):
-    def __init__(self):
-        super().__init__()
-
-    def notify(self, args):
-        # Start the server when onlineStatusChanged handler returns
-        start()
+reload(name)
+reload(geometry)
 
 
 class Regraph():
-    """Reconstruction Graph
-        Takes a reconstruction json file and converts it
-        into a graph representing B-Rep topology"""
+    """Reconstruction Graph generation"""
 
-    def __init__(self, json_file, logger):
-        self.json_file = json_file
+    def __init__(self, logger=None, mode="PerExtrude"):
         self.logger = logger
+        if self.logger is None:
+            self.logger = Logger()
         # References to the Fusion design
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         self.product = self.app.activeProduct
         self.timeline = self.app.activeProduct.timeline
+        # Data structure to return
+        self.data = {
+            "graphs": [],
+            "sequences": []
+        }
         # Cache of the extrude face label information
         self.face_cache = {}
         # Cache of the edge information
@@ -67,30 +61,24 @@ class Regraph():
         # Current overall action index
         self.current_action_index = 0
         # The mode we want
-        # self.mode = "PerExtrude"
-        self.mode = "PerFace"
+        self.mode = mode
 
     # -------------------------------------------------------------------------
-    # EXPORT
+    # GENERATE
     # -------------------------------------------------------------------------
 
-    def export(self, output_dir, results_file, results):
-        """Reconstruct the design from the json file"""
-        self.output_dir = output_dir
-        self.results = results
-        self.results_file = results_file
-        # Immediately log this in case we crash
-        self.results[self.json_file.name] = []
-        self.save_results()
-        importer = SketchExtrudeImporter(self.json_file)
-        self.extrude_count = self.get_extrude_count(importer.data)
-        importer.reconstruct()
-        # After reconstruction, iterate over the timeline and populate the face cache
+    def generate(self, target_component=None):
+        """Generate graphs from the design in the timeline"""
+        self.target_component = target_component
+        if self.target_component is None:
+            self.target_component = self.design.rootComponent
+        assert self.target_component.bRepBodies.count > 0
+        # Iterate over the timeline and populate the face cache
         for timeline_object in self.timeline:
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.add_extrude_to_cache(timeline_object.entity)
         # Check that all faces have uuids
-        for body in self.design.rootComponent.bRepBodies:
+        for body in self.target_component.bRepBodies:
             for face in body.faces:
                 face_uuid = name.get_uuid(face)
                 assert face_uuid is not None
@@ -100,121 +88,49 @@ class Regraph():
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.timeline.markerPosition = timeline_object.index + 1
                 extrude = timeline_object.entity
-                export_supported = self.is_supported_export(extrude)
-                if not export_supported:
+                supported = self.is_supported(extrude)
+                if not supported:
                     self.timeline.markerPosition = prev_extrude_index
                     break
                 # Populate the cache again
                 self.add_extrude_to_cache(extrude)
                 self.add_extrude_edges_to_cache()
-                self.inc_export_extrude(extrude)
+                self.inc_generate_extrude(extrude)
                 prev_extrude_index = self.timeline.markerPosition
-        self.last_export()
+        self.generate_last()
+        return self.data
 
-    def is_supported_export(self, extrude):
-        """Check if this is a supported state for export"""
-        if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
-            self.logger.log(f"Skipping {extrude.name}: Extrude has intersect operation")
-            return False
-        if self.is_extrude_tapered(extrude):
-            self.logger.log(f"Skipping {extrude.name}: Extrude has taper")
-            return False
-        if self.mode == "PerFace":
-            # If we have a cut/intersect operation we want to use what we have
-            # and export it
-            if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
-                self.logger.log(f"Skipping {extrude.name}: Extrude has cut operation")
-                return False
-            # If we don't have a single extrude start/end face
-            if extrude.endFaces.count != 1 and extrude.startFaces.count != 1:
-                self.logger.log(f"Skipping {extrude.name}: Extrude doesn't have a single start or end face")
-                return False
-            # # If we don't have an end face
-            # if extrude.endFaces.count == 0:
-            #     self.logger.log(f"Skipping {extrude.name}: Extrude end faces == 0")
-            #     return False
-        return True
-
-    def inc_export_extrude(self, extrude):
-        """Save out a graph after each extrude as reconstruction takes place"""
+    def inc_generate_extrude(self, extrude):
+        """Generate a graph after each extrude as reconstruction takes place"""
         # If we are exporting per curve
         if self.mode == "PerFace":
             self.add_extrude_to_sequence(extrude)
         elif self.mode == "PerExtrude":
-            self.export_extrude_graph()
+            graph = self.get_graph()
+            self.data["graphs"].append(graph)
         self.current_extrude_index += 1
 
-    def last_export(self):
+    def generate_last(self):
         """Export after the full reconstruction"""
         # The last extrude
         if self.mode == "PerFace":
             # Only export if we had some valid extrudes
             if self.current_extrude_index > 0:
-                self.export_extrude_graph()
-                self.export_sequence()
-
-    def get_export_path(self, name):
-        """Get the export path from a name"""
-        return self.output_dir / f"{self.json_file.stem}_{name}.json"
-
-    def export_extrude_graph(self):
-        """Export a graph from an extrude operation"""
-        graph = self.get_graph()
-        if self.mode == "PerFace":
-            graph_file = self.get_export_path("target")
-        else:
-            graph_file = self.get_export_path(f"{self.current_extrude_index:04}")
-        self.export_graph(graph_file, graph)
-
-    def export_graph(self, graph_file, graph):
-        """Export a graph as json"""
-        self.logger.log(f"Exporting {graph_file}")
-        exporter.export_json(graph_file, graph)
-        if graph_file.exists():
-            self.results[self.json_file.name].append(graph_file.name)
-            self.save_results()
-        else:
-            self.logger.log(f"Error exporting {graph_file}")
-
-    def export_sequence(self):
-        """Export the sequence data"""
-        seq_file = self.output_dir / f"{self.json_file.stem}_sequence.json"
-        seq_data = {
-            "sequence": self.sequence,
-            "properties": {
-                "bounding_box": serialize.bounding_box3d(
-                    self.design.rootComponent.boundingBox)
-            }
-        }
-        with open(seq_file, "w", encoding="utf8") as f:
-            json.dump(seq_data, f, indent=4)
-
-    def save_results(self):
-        """Save out the results of conversion"""
-        with open(self.results_file, "w", encoding="utf8") as f:
-            json.dump(self.results, f, indent=4)
-
-    def get_extrude_count(self, data):
-        """Get the number of extrudes in a design"""
-        extrude_count = 0
-        entities = data["entities"]
-        for entity in entities.values():
-            if entity["type"] == "ExtrudeFeature":
-                extrude_count += 1
-        return extrude_count
+                graph = self.get_graph()
+                self.data["graphs"].append(graph)
+                bbox = geometry.get_bounding_box(self.target_component)
+                bbox_data = serialize.bounding_box3d(bbox)
+                seq_data = {
+                    "sequence": self.sequence,
+                    "properties": {
+                        "bounding_box": bbox_data
+                    }
+                }
+                self.data["sequences"].append(seq_data)
 
     # -------------------------------------------------------------------------
     # DATA CACHING
     # -------------------------------------------------------------------------
-
-    def get_temp_ids_from_collection(self, collection):
-        """From a collection, make a set of the tempids"""
-        id_set = set()
-        for entity in collection:
-            if entity is not None:
-                temp_id = entity.tempId
-                id_set.add(temp_id)
-        return id_set
 
     def get_extrude_operation(self, extrude_operation):
         """Get the extrude operation as short string and regular string"""
@@ -252,10 +168,10 @@ class Regraph():
     def add_extrude_edges_to_cache(self):
         """Update the edge cache with the latest extrude"""
         concave_edge_cache = set()
-        for body in self.design.rootComponent.bRepBodies:
-            temp_ids = self.get_temp_ids_from_collection(body.concaveEdges)
+        for body in self.target_component.bRepBodies:
+            temp_ids = name.get_temp_ids_from_collection(body.concaveEdges)
             concave_edge_cache.update(temp_ids)
-        for body in self.design.rootComponent.bRepBodies:
+        for body in self.target_component.bRepBodies:
             for face in body.faces:
                 for edge in face.edges:
                     assert edge.faces.count == 2
@@ -335,27 +251,9 @@ class Regraph():
     # FEATURES
     # -------------------------------------------------------------------------
 
-    def get_face_normal(self, face):
-        point_on_face = face.pointOnFace
-        evaluator = face.evaluator
-        normal_result, normal = evaluator.getNormalAtPoint(point_on_face)
-        assert normal_result
-        return normal
-
-    def are_faces_tangentially_connected(self, face1, face2):
-        for tc_face in face1.tangentiallyConnectedFaces:
-            if tc_face.tempId == face2.tempId:
-                return True
-        return False
-
-    def are_faces_perpendicular(self, face1, face2):
-        normal1 = self.get_face_normal(face1)
-        normal2 = self.get_face_normal(face2)
-        return normal1.isPerpendicularTo(normal2)
-
     def get_edge_convexity(self, edge, is_concave):
         # is_concave = self.is_concave_edge(edge.tempId)
-        is_tc = self.are_faces_tangentially_connected(edge.faces[0], edge.faces[1])
+        is_tc = geometry.are_faces_tangentially_connected(edge.faces[0], edge.faces[1])
         convexity = "Convex"
         # edge_data["convex"] = self.is_convex_edge(edge.tempId)
         if is_concave:
@@ -363,7 +261,7 @@ class Regraph():
         elif is_tc:
             convexity = "Smooth"
         return convexity
-    
+
     def get_trimming_mask(self, pt, body):
         """Return a trimming mask value indicating if a point should be masked or not"""
         containment = body.pointContainment(pt)
@@ -436,6 +334,26 @@ class Regraph():
     # FILTER
     # -------------------------------------------------------------------------
 
+    def is_supported(self, extrude):
+        """Check if this is a supported state for export"""
+        if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
+            self.logger.log(f"Skipping {extrude.name}: Extrude has intersect operation")
+            return False
+        if self.is_extrude_tapered(extrude):
+            self.logger.log(f"Skipping {extrude.name}: Extrude has taper")
+            return False
+        if self.mode == "PerFace":
+            # If we have a cut/intersect operation we want to use what we have
+            # and export it
+            if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
+                self.logger.log(f"Skipping {extrude.name}: Extrude has cut operation")
+                return False
+            # If we don't have a single extrude start/end face
+            if extrude.endFaces.count != 1 and extrude.startFaces.count != 1:
+                self.logger.log(f"Skipping {extrude.name}: Extrude doesn't have a single start or end face")
+                return False
+        return True
+
     def is_extrude_tapered(self, extrude):
         if extrude.extentOne is not None:
             if isinstance(extrude.extentOne, adsk.fusion.DistanceExtentDefinition):
@@ -471,7 +389,7 @@ class Regraph():
     def get_graph(self):
         """Get a graph data structure for bodies"""
         graph = self.get_empty_graph()
-        for body in self.design.rootComponent.bRepBodies:
+        for body in self.target_component.bRepBodies:
             for face in body.faces:
                 if face is not None:
                     face_data = self.get_face_data(face)
@@ -505,7 +423,7 @@ class Regraph():
         face_data["surface_type"] = serialize.surface_type(face.geometry)
         # face_data["surface_type_id"] = face.geometry.surfaceType
         face_data["area"] = face.area
-        normal = self.get_face_normal(face)
+        normal = geometry.get_face_normal(face)
         face_data["normal_x"] = normal.x
         face_data["normal_y"] = normal.y
         face_data["normal_z"] = normal.z
@@ -559,7 +477,7 @@ class Regraph():
         edge_data["length"] = edge.length
         # Create a feature for the edge convexity
         edge_data["convexity"] = edge_metadata["convexity"]
-        edge_data["perpendicular"] = self.are_faces_perpendicular(edge.faces[0], edge.faces[1])
+        edge_data["perpendicular"] = geometry.are_faces_perpendicular(edge.faces[0], edge.faces[1])
         point_on_edge = edge.pointOnEdge
         evaluator = edge.evaluator
         parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
@@ -635,7 +553,7 @@ class Regraph():
 
     def get_coplanar_face(self, plane):
         """Find a face that is coplanar to the given plane"""
-        for body in self.design.rootComponent.bRepBodies:
+        for body in self.target_component.bRepBodies:
             for face in body.faces:
                 if isinstance(face.geometry, adsk.core.Plane):
                     is_coplanar = plane.isCoPlanarTo(face.geometry)
@@ -644,75 +562,252 @@ class Regraph():
         return None
 
 
-# -------------------------------------------------------------------------
-# RUNNING
-# -------------------------------------------------------------------------
+class RegraphTester(unittest.TestCase):
+    """Reconstruction Graph tester to check for invalid data"""
+
+    def __init__(self, mode="PerExtrude"):
+        self.mode = mode
+        unittest.TestCase.__init__(self)
+
+    def test(self, graph_data):
+        """Test the graph data structure returned by regraph"""
+        if self.mode == "PerExtrude":
+            for graph in graph_data["graphs"]:
+                self.test_per_extrude_graph(graph)
+        elif self.mode == "PerFace":
+            if len(graph_data["sequences"]) > 0:
+                self.assertEqual(len(graph_data["sequences"]), 1, msg="Only 1 per face sequence")
+                self.assertEqual(len(graph_data["graphs"]), 1, msg="Only 1 per face graph")
+                self.test_per_face_graph(graph_data["graphs"][0], graph_data["sequences"][0])
+
+    def reconstruct(self, graph_data, target_component=None):
+        """Reconstruct and test it matches the target"""
+        regraph_reconstructor = RegraphReconstructor(graph_data, target_component)
+        regraph_reconstructor.reconstruct()
+        # Compare the ground truth with the reconstruction
+        gt = regraph_reconstructor.target_component
+        rc = regraph_reconstructor.reconstruction.component
+        self.test_reconstruction(gt, rc)
+        regraph_reconstructor.remove()
+
+    def test_per_extrude_graph(self, graph):
+        """Test a per extrude graph"""
+        self.assertIsNotNone(graph, msg="Graph is not None")
+        self.assertIn("nodes", graph, msg="Graph has nodes")
+        self.assertIn("links", graph, msg="Graph has links")
+        self.assertGreaterEqual(len(graph["nodes"]), 3, msg="Graph nodes >= 3")
+        self.assertGreaterEqual(len(graph["links"]), 3, msg="Graph links >= 3")
+        node_set = set()
+        node_list = []
+        for node in graph["nodes"]:
+            self.assertIn("id", node, msg="Graph node has id")
+            node_set.add(node["id"])
+            node_list.append(node["id"])
+        self.assertEqual(len(node_set), len(node_list), msg="Graph nodes are unique")
+        for link in graph["links"]:
+            self.assertIn("id", link, msg="Graph link has id")
+            self.assertIn("source", link, msg="Graph link has source")
+            self.assertIn(link["source"], node_set, msg="Graph link source in node set")
+            self.assertIn("target", link, msg="Graph link has target")
+            self.assertIn(link["target"], node_set, msg="Graph link target in node set")
+
+    def test_per_face_graph(self, graph, sequence):
+        """Test a per face graph"""
+        # Target graph
+        self.assertIsNotNone(graph, msg="Graph is not None")
+        self.assertIn("nodes", graph, msg="Graph has nodes")
+        self.assertIsInstance(graph["nodes"], list, msg="Nodes is list")
+        self.assertIn("links", graph, msg="Graph has links")
+        self.assertIsInstance(graph["links"], list, msg="Links is list")
+        self.assertGreaterEqual(len(graph["nodes"]), 3, msg="Graph nodes >= 3")
+        self.assertGreaterEqual(len(graph["links"]), 3, msg="Graph links >= 3")
+        node_set = set()
+        node_list = []
+        for node in graph["nodes"]:
+            self.assertIn("id", node, msg="Graph node has id")
+            node_set.add(node["id"])
+            node_list.append(node["id"])
+        self.assertEqual(len(node_set), len(node_list), msg="Graph nodes are unique")
+        link_set = set()
+        for link in graph["links"]:
+            self.assertIn("id", link, msg="Graph link has id")
+            link_set.add(link["id"])
+            self.assertIn("source", link, msg="Graph link has source")
+            self.assertIn(link["source"], node_set, msg="Graph link source in node set")
+            self.assertIn("target", link, msg="Graph link has target")
+            self.assertIn(link["target"], node_set, msg="Graph link target in node set")        
+        # Sequence
+        self.assertIsNotNone(sequence, msg="Sequence is not None")
+        self.assertIn("sequence", sequence, msg="Sequence has sequence")
+        self.assertGreaterEqual(len(sequence["sequence"]), 2, msg="Sequence length >= 2")
+        self.assertEqual(len(sequence["sequence"]) % 2, 0, msg="Sequence length is multiple of 2")
+        for seq in sequence["sequence"]:
+            self.assertIn("action", seq, msg="Sequence element has action")
+            self.assertIn(seq["action"], node_set, msg="Action is in target nodes")
+            self.assertIn("faces", seq, msg="Sequence element has faces")
+            for face in seq["faces"]:
+                self.assertIn(face, node_set, msg="Face is in target nodes")
+            self.assertIn("edges", seq, msg="Sequence element has edges")
+            for edge in seq["edges"]:
+                self.assertIn(edge, link_set, msg="Edge is in target links")
+        # Properties
+        self.assertIn("properties", sequence, msg="Sequence has properties")
+        self.assertIn("bounding_box", sequence["properties"], msg="Properties has bounding_box")
+
+    def test_reconstruction(self, gt, rc, places=1):
+        """Test the reconstruction"""
+        self.assertEqual(
+            len(gt.bRepBodies),
+            len(rc.bRepBodies),
+            msg="Same number of bodies"
+        )
+        self.assertEqual(
+            geometry.get_face_count(gt),
+            geometry.get_face_count(rc),
+            msg="Same number of faces"
+        )
+        self.assertEqual(
+            geometry.get_edge_count(gt),
+            geometry.get_edge_count(rc),
+            msg="Same number of edges"
+        )
+        gt_bbox = geometry.get_bounding_box(gt)
+        rc_bbox = geometry.get_bounding_box(rc)
+        self.assertAlmostEqual(
+            rc_bbox.maxPoint.x,
+            gt_bbox.maxPoint.x,
+            places=places, msg="bounding_box_max_x"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.maxPoint.y,
+            gt_bbox.maxPoint.y,
+            places=places,
+            msg="bounding_box_max_y"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.maxPoint.z,
+            gt_bbox.maxPoint.z,
+            places=places,
+            msg="bounding_box_max_z"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.minPoint.x,
+            gt_bbox.minPoint.x,
+            places=places,
+            msg="bounding_box_min_x"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.minPoint.y,
+            gt_bbox.minPoint.y,
+            places=places,
+            msg="bounding_box_min_y"
+        )
+        self.assertAlmostEqual(
+            rc_bbox.minPoint.z,
+            gt_bbox.minPoint.z,
+            places=places,
+            msg="bounding_box_min_z"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.maxPoint.x),
+            msg="bounding_box_max_x != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.maxPoint.y),
+            msg="bounding_box_max_y != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.maxPoint.z),
+            msg="bounding_box_max_z != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.minPoint.x),
+            msg="bounding_box_min_x != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.minPoint.y),
+            msg="bounding_box_min_y != inf"
+        )
+        self.assertFalse(
+            math.isinf(rc_bbox.minPoint.z),
+            msg="bounding_box_min_z != inf"
+        )
 
 
-def load_results(results_file):
-    """Load the results of conversion"""
-    if results_file.exists():
-        with open(results_file, "r", encoding="utf8") as f:
-            return json.load(f)
-    return {}
+class RegraphReconstructor():
+    """Reconstruct the graph to test it matches the target"""
 
+    def __init__(self, graph_data, target_component=None):
+        self.app = adsk.core.Application.get()
+        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
+        self.target_component = target_component
+        if self.target_component is None:
+            self.target_component = self.design.rootComponent
+        self.graph = graph_data["graphs"][0]
+        self.sequence = graph_data["sequences"][0]
 
-def start():
-    app = adsk.core.Application.get()
-    # Logger to print to the text commands window in Fusion
-    logger = Logger()
-    # Fusion requires an absolute path
-    current_dir = Path(__file__).resolve().parent
-    data_dir = current_dir.parent / "testdata/regraph2"
-    output_dir = current_dir / "output"
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
+    def reconstruct(self):
+        """Reconstruct from the sequence of faces"""
+        # Create a reconstruction component that we create geometry in
+        self.reconstruction = self.design.rootComponent.occurrences.addNewComponent(
+            adsk.core.Matrix3D.create()
+        )
+        self.reconstruction.component.name = "Reconstruction"
+        uuid_to_face_map = self.get_uuid_to_face_map()
+        extrude_count = int(len(self.sequence["sequence"]) * 0.5)
+        for extrude_index in range(extrude_count):
+            start_index = extrude_index * 2
+            end_index = extrude_index * 2 + 1
+            start_face = self.get_face_from_sequence_index(start_index, uuid_to_face_map)
+            end_face = self.get_face_from_sequence_index(end_index, uuid_to_face_map)
+            self.add_extrude(start_face, end_face)
 
-    results_file = output_dir / "regraph_results.json"
-    results = load_results(results_file)
+    def get_face_from_sequence_index(self, seq_index, uuid_to_face_map):
+        """Get a face from an index in the sequence"""
+        face_uuid = self.sequence["sequence"][seq_index]["action"]
+        indices = uuid_to_face_map[face_uuid]
+        body_index = indices["body_index"]
+        face_index = indices["face_index"]
+        body = self.target_component.bRepBodies[body_index]
+        face = body.faces[face_index]
+        return face
 
-    # Get all the files in the data folder
-    json_files = [f for f in data_dir.glob("**/*.json")]
-    # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    # json_files = [
-    #     # data_dir / "Couch.json",  
-    # ]
+    def get_uuid_to_face_map(self):
+        """As we have to find faces multiple times we first
+            make a map between uuids and face indices"""
+        uuid_to_face_map = {}
+        for body_index, body in enumerate(self.target_component.bRepBodies):
+            for face_index, face in enumerate(body.faces):
+                face_uuid = name.get_uuid(face)
+                assert face_uuid is not None
+                uuid_to_face_map[face_uuid] = {
+                    "body_index": body_index,
+                    "face_index": face_index
+                }
+        return uuid_to_face_map
 
-    json_count = len(json_files)
-    for i, json_file in enumerate(json_files, start=1):
-        # if json_file.name in results:
-        #     logger.log(f"[{i}/{json_count}] Skipping {json_file}")
-        # else:
-        try:
-            logger.log(f"[{i}/{json_count}] Processing {json_file}")
-            regraph = Regraph(json_file, logger)
-            regraph.export(output_dir, results_file, results)
+    def add_extrude(self, start_face, end_face):
+        """Create an extrude from a start face to an end face"""
+        # We generate the extrude bodies in the reconstruction component
+        extrudes = self.reconstruction.component.features.extrudeFeatures
+        operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+        extrude_input = extrudes.createInput(start_face, operation)
+        extent = adsk.fusion.ToEntityExtentDefinition.create(end_face, False)
+        extrude_input.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
+        extrude = extrudes.add(extrude_input)
+        # The Fusion API  doesn't seem to be able to do join extrudes
+        # that don't join to the goal body
+        # so we make the bodies separate and then join them after the fact
+        if self.reconstruction.component.bRepBodies.count > 1:
+            combines = self.reconstruction.component.features.combineFeatures
+            first_body = self.reconstruction.component.bRepBodies[0]
+            tools = adsk.core.ObjectCollection.create()
+            for body in extrude.bodies:
+                tools.add(body)
+            combine_input = combines.createInput(first_body, tools)
+            combine = combines.add(combine_input)
+        return extrude
 
-        except Exception as ex:
-            logger.log(f"Error reconstructing: {ex}")
-            logger.log(traceback.format_exc())
-        finally:
-            # Close the document
-            # Fusion automatically opens a new window
-            # after the last one is closed
-            app.activeDocument.close(False)
-
-
-def run(context):
-    try:
-        app = adsk.core.Application.get()
-        # If we have started manually
-        # we go ahead and startup
-        if app.isStartupComplete:
-            start()
-        else:
-            # If we are being started on startup
-            # then we subscribe to ‘onlineStatusChanged’ event
-            # This event is triggered on Fusion startup
-            print("Setting up online status changed handler...")
-            on_online_status_changed = OnlineStatusChangedHandler()
-            app.onlineStatusChanged.add(on_online_status_changed)
-            handlers.append(on_online_status_changed)
-
-    except:
-        print(traceback.format_exc())
+    def remove(self):
+        """Remove the reconstructed component"""
+        self.reconstruction.deleteMe()
