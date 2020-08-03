@@ -1,3 +1,10 @@
+"""
+
+Reconstruction Graph
+Generates a graph data structure using a face adjacency graph of B-Rep topology
+
+"""
+
 import adsk.core
 import adsk.fusion
 import traceback
@@ -8,7 +15,7 @@ import time
 import copy
 from pathlib import Path
 from importlib import reload
-
+import unittest
 
 import name
 import geometry
@@ -21,8 +28,7 @@ reload(geometry)
 
 
 class Regraph():
-    """Reconstruction Graph
-        Generates a graph data structure from B-Rep topology"""
+    """Reconstruction Graph generation"""
 
     def __init__(self, logger=None, mode="PerExtrude"):
         self.logger = logger
@@ -553,3 +559,85 @@ class Regraph():
                     if is_coplanar:
                         return face
         return None
+
+
+class RegraphTester(unittest.TestCase):
+    """Reconstruction Graph tester to check for invalid data"""
+
+    def __init__(self, mode="PerExtrude"):
+        self.mode = mode
+        unittest.TestCase.__init__(self)
+
+    def test(self, graph_data):
+        """Test the graph data structure returned by regraph"""
+        if self.mode == "PerExtrude":
+            for graph in graph_data["graphs"]:
+                self.test_per_extrude_graph(graph)
+        elif self.mode == "PerFace":
+            if len(graph_data["sequences"]) > 0:
+                self.assertEqual(len(graph_data["sequences"]), 1, msg="Only 1 per face sequence")
+                self.assertEqual(len(graph_data["graphs"]), 1, msg="Only 1 per face graph")
+                self.test_per_face_graph(graph_data["graphs"][0], graph_data["sequences"][0])
+
+    def test_per_extrude_graph(self, graph):
+        """Test a per extrude graph"""
+        self.assertIsNotNone(graph, msg="Graph is not None")
+        self.assertIn("nodes", graph, msg="Graph has nodes")
+        self.assertIn("links", graph, msg="Graph has links")
+        self.assertGreaterEqual(len(graph["nodes"]), 3, msg="Graph nodes >= 3")
+        self.assertGreaterEqual(len(graph["links"]), 3, msg="Graph links >= 3")
+        node_set = set()
+        node_list = []
+        for node in graph["nodes"]:
+            self.assertIn("id", node, msg="Graph node has id")
+            node_set.add(node["id"])
+            node_list.append(node["id"])
+        self.assertEqual(len(node_set), len(node_list), msg="Graph nodes are unique")
+        for link in graph["links"]:
+            self.assertIn("id", link, msg="Graph link has id")
+            self.assertIn("source", link, msg="Graph link has source")
+            self.assertIn(link["source"], node_set, msg="Graph link source in node set")
+            self.assertIn("target", link, msg="Graph link has target")
+            self.assertIn(link["target"], node_set, msg="Graph link target in node set")
+
+    def test_per_face_graph(self, graph, sequence):
+        """Test a per face graph"""
+        # Target graph
+        self.assertIsNotNone(graph, msg="Graph is not None")
+        self.assertIn("nodes", graph, msg="Graph has nodes")
+        self.assertIsInstance(graph["nodes"], list, msg="Nodes is list")
+        self.assertIn("links", graph, msg="Graph has links")
+        self.assertIsInstance(graph["links"], list, msg="Links is list")
+        self.assertGreaterEqual(len(graph["nodes"]), 3, msg="Graph nodes >= 3")
+        self.assertGreaterEqual(len(graph["links"]), 3, msg="Graph links >= 3")
+        node_set = set()
+        node_list = []
+        for node in graph["nodes"]:
+            self.assertIn("id", node, msg="Graph node has id")
+            node_set.add(node["id"])
+            node_list.append(node["id"])
+        self.assertEqual(len(node_set), len(node_list), msg="Graph nodes are unique")
+        link_set = set()
+        for link in graph["links"]:
+            self.assertIn("id", link, msg="Graph link has id")
+            link_set.add(link["id"])
+            self.assertIn("source", link, msg="Graph link has source")
+            self.assertIn(link["source"], node_set, msg="Graph link source in node set")
+            self.assertIn("target", link, msg="Graph link has target")
+            self.assertIn(link["target"], node_set, msg="Graph link target in node set")        
+        # Sequence
+        self.assertIsNotNone(sequence, msg="Sequence is not None")
+        self.assertIn("sequence", sequence, msg="Sequence has sequence")
+        self.assertGreaterEqual(len(sequence["sequence"]), 2, msg="Sequence length >= 2")
+        for seq in sequence["sequence"]:
+            self.assertIn("action", seq, msg="Sequence element has action")
+            self.assertIn(seq["action"], node_set, msg="Action is in target nodes")
+            self.assertIn("faces", seq, msg="Sequence element has faces")
+            for face in seq["faces"]:
+                self.assertIn(face, node_set, msg="Face is in target nodes")
+            self.assertIn("edges", seq, msg="Sequence element has edges")
+            for edge in seq["edges"]:
+                self.assertIn(edge, link_set, msg="Edge is in target links")
+        # Properties
+        self.assertIn("properties", sequence, msg="Sequence has properties")
+        self.assertIn("bounding_box", sequence["properties"], msg="Properties has bounding_box")

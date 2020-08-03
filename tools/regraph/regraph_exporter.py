@@ -26,6 +26,7 @@ reload(regraph)
 from logger import Logger
 from sketch_extrude_importer import SketchExtrudeImporter
 from regraph import Regraph
+from regraph import RegraphTester
 
 
 # Event handlers
@@ -81,6 +82,8 @@ class RegraphExporter():
         regraph = Regraph(mode=self.mode)
         # By default regraph assumes the geometry is in the rootComponent
         graph_data = regraph.generate()
+        regraph_tester = RegraphTester(mode=self.mode)
+        regraph_tester.test(graph_data)
         self.export_graph_data(graph_data)
 
     def export_graph_data(self, graph_data):
@@ -125,7 +128,7 @@ class RegraphExporter():
 
 
 # -------------------------------------------------------------------------
-# RUNNING
+# PROCESSING
 # -------------------------------------------------------------------------
 
 
