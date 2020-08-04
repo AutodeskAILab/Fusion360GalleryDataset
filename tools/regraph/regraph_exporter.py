@@ -76,17 +76,37 @@ class RegraphExporter():
         # Immediately log this in case we crash
         self.results[self.json_file.name] = []
         self.save_results()
-        importer = SketchExtrudeImporter(self.json_file)
-        importer.reconstruct()
-        # Graph generation
-        regraph = Regraph(mode=self.mode)
-        # By default regraph assumes the geometry is in the rootComponent
-        graph_data = regraph.generate()
-        regraph_tester = RegraphTester(mode=self.mode)
-        regraph_tester.test(graph_data)
-        if self.mode == "PerFace":
-            regraph_tester.reconstruct(graph_data)
-        self.export_graph_data(graph_data)
+        try:
+            importer = SketchExtrudeImporter(self.json_file)
+            importer.reconstruct()
+            # Graph generation
+            regraph = Regraph(mode=self.mode)
+            # By default regraph assumes the geometry is in the rootComponent
+            graph_data = regraph.generate()
+            if len(graph_data["graphs"]) > 0:
+                regraph_tester = RegraphTester(mode=self.mode)
+                regraph_tester.test(graph_data)
+                if self.mode == "PerFace":
+                    regraph_tester.reconstruct(graph_data)
+                self.export_graph_data(graph_data)
+            for index, status in enumerate(graph_data["status"]):
+                if index < len(self.results[self.json_file.name]):
+                    self.results[self.json_file.name][index]["status"] = status
+                else:
+                    self.results[self.json_file.name].append({
+                        "status": status
+                    })
+        except Exception as ex:
+            self.logger.log(f"Exception: {ex}")
+            trace = traceback.format_exc()
+            self.logger.log(trace)
+            self.results[self.json_file.name].append({
+                        "status": "Exception",
+                        "exception": ex.__class__.__name__,
+                        "exception_args": str(ex.args),
+                        "trace": trace
+                    })
+        self.save_results()
 
     def export_graph_data(self, graph_data):
         """Export the graph data generated from regraph"""
@@ -112,7 +132,9 @@ class RegraphExporter():
         self.logger.log(f"Exporting {graph_file}")
         exporter.export_json(graph_file, graph)
         if graph_file.exists():
-            self.results[self.json_file.name].append(graph_file.name)
+            self.results[self.json_file.name].append({
+                "file": graph_file.name
+            })
             self.save_results()
         else:
             self.logger.log(f"Error exporting {graph_file}")
@@ -160,8 +182,8 @@ def start():
     # json_files = [f for f in data_dir.glob("**/*.json")]
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
     json_files = [
-        # data_dir / "Couch.json"
-        data_dir / "SingleSketchExtrude_RootComponent.json"
+        data_dir / "Couch.json"
+        # data_dir / "SingleSketchExtrude_RootComponent.json"
         # data_dir / "ReconstructionExtractor_Z0CircleLineSplit_9f3ee338_Untitled.json"
     ]
 
@@ -173,11 +195,11 @@ def start():
         try:
             logger.log(f"[{i}/{json_count}] Processing {json_file}")
             regraph_exporter = RegraphExporter(
-                json_file, logger=logger, mode="PerFace")
+                json_file, logger=logger, mode="PerExtrude")
             regraph_exporter.export(output_dir, results_file, results)
 
         except Exception as ex:
-            logger.log(f"Error reconstructing: {ex}")
+            logger.log(f"Error exporting: {ex}")
             logger.log(traceback.format_exc())
         finally:
             # Close the document

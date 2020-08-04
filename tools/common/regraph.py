@@ -43,7 +43,8 @@ class Regraph():
         # Data structure to return
         self.data = {
             "graphs": [],
-            "sequences": []
+            "sequences": [],
+            "status": []
         }
         # Cache of the extrude face label information
         self.face_cache = {}
@@ -83,24 +84,29 @@ class Regraph():
                 face_uuid = name.get_uuid(face)
                 assert face_uuid is not None
         prev_extrude_index = 0
+        skip_reason = None
         # Next move the marker to after each extrude and export
         for timeline_object in self.timeline:
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.timeline.markerPosition = timeline_object.index + 1
                 extrude = timeline_object.entity
-                supported = self.is_supported(extrude)
+                supported, unsupported_reason = self.is_supported(extrude)
                 if not supported:
                     self.timeline.markerPosition = prev_extrude_index
+                    skip_reason = unsupported_reason
                     break
                 # Populate the cache again
                 self.add_extrude_to_cache(extrude)
                 self.add_extrude_edges_to_cache()
-                self.inc_generate_extrude(extrude)
+                self.generate_extrude(extrude)
                 prev_extrude_index = self.timeline.markerPosition
-        self.generate_last()
+        if skip_reason is None:
+            self.generate_last()
+        else:
+            self.data["status"].append(skip_reason)
         return self.data
 
-    def inc_generate_extrude(self, extrude):
+    def generate_extrude(self, extrude):
         """Generate a graph after each extrude as reconstruction takes place"""
         # If we are exporting per curve
         if self.mode == "PerFace":
@@ -108,6 +114,7 @@ class Regraph():
         elif self.mode == "PerExtrude":
             graph = self.get_graph()
             self.data["graphs"].append(graph)
+            self.data["status"].append("Success")
         self.current_extrude_index += 1
 
     def generate_last(self):
@@ -127,6 +134,7 @@ class Regraph():
                     }
                 }
                 self.data["sequences"].append(seq_data)
+                self.data["status"].append("Success")
 
     # -------------------------------------------------------------------------
     # DATA CACHING
@@ -336,23 +344,24 @@ class Regraph():
 
     def is_supported(self, extrude):
         """Check if this is a supported state for export"""
+        reason = None
         if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
-            self.logger.log(f"Skipping {extrude.name}: Extrude has intersect operation")
-            return False
-        if self.is_extrude_tapered(extrude):
-            self.logger.log(f"Skipping {extrude.name}: Extrude has taper")
-            return False
-        if self.mode == "PerFace":
+            reason = "Extrude has intersect operation"
+        elif self.is_extrude_tapered(extrude):
+            reason = "Extrude has taper"
+        elif self.mode == "PerFace":
             # If we have a cut/intersect operation we want to use what we have
             # and export it
             if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
-                self.logger.log(f"Skipping {extrude.name}: Extrude has cut operation")
-                return False
+                reason = "Extrude has cut operation"
             # If we don't have a single extrude start/end face
-            if extrude.endFaces.count != 1 and extrude.startFaces.count != 1:
-                self.logger.log(f"Skipping {extrude.name}: Extrude doesn't have a single start or end face")
-                return False
-        return True
+            elif extrude.endFaces.count != 1 and extrude.startFaces.count != 1:
+                reason = "Extrude doesn't have a single start or end face"
+        if reason is not None:
+            self.logger.log(f"Skipping {extrude.name}: {reason}")
+            return False, reason
+        else:
+            return True, None
 
     def is_extrude_tapered(self, extrude):
         if extrude.extentOne is not None:
