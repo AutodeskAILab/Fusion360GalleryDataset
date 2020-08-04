@@ -396,8 +396,8 @@ class Regraph():
             reason = "Extrude has intersect operation"
         elif self.is_extrude_tapered(extrude):
             reason = "Extrude has taper"
-        elif extrude.extentType != adsk.fusion.FeatureExtentTypes.OneSideFeatureExtentType:
-            reason = "Extrude is not one sided"
+        # elif extrude.extentType != adsk.fusion.FeatureExtentTypes.OneSideFeatureExtentType:
+        #     reason = "Extrude is not one sided"
         elif self.mode == "PerFace":
             # If we have a cut/intersect operation we want to use what we have
             # and export it
@@ -432,9 +432,9 @@ class Regraph():
                      entity["extent_one"]["taper_angle"]["value"] != 0):
                         reason = "Extrude has taper"
                         break
-                elif entity["extent_type"] != "OneSideFeatureExtentType":
-                    reason = "Extrude is not one sided"
-                    break
+                # elif entity["extent_type"] != "OneSideFeatureExtentType":
+                #     reason = "Extrude is not one sided"
+                #     break
                 elif self.mode == "PerFace":
                     if entity["operation"] == "CutFeatureOperation":
                         reason = "Extrude has cut operation"
