@@ -43,7 +43,8 @@ class Regraph():
         # Data structure to return
         self.data = {
             "graphs": [],
-            "sequences": []
+            "sequences": [],
+            "status": []
         }
         # Cache of the extrude face label information
         self.face_cache = {}
@@ -83,24 +84,29 @@ class Regraph():
                 face_uuid = name.get_uuid(face)
                 assert face_uuid is not None
         prev_extrude_index = 0
+        skip_reason = None
         # Next move the marker to after each extrude and export
         for timeline_object in self.timeline:
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.timeline.markerPosition = timeline_object.index + 1
                 extrude = timeline_object.entity
-                supported = self.is_supported(extrude)
+                supported, unsupported_reason = self.is_supported(extrude)
                 if not supported:
                     self.timeline.markerPosition = prev_extrude_index
+                    skip_reason = unsupported_reason
                     break
                 # Populate the cache again
                 self.add_extrude_to_cache(extrude)
                 self.add_extrude_edges_to_cache()
-                self.inc_generate_extrude(extrude)
+                self.generate_extrude(extrude)
                 prev_extrude_index = self.timeline.markerPosition
-        self.generate_last()
+        if skip_reason is None:
+            self.generate_last()
+        else:
+            self.data["status"].append(skip_reason)
         return self.data
 
-    def inc_generate_extrude(self, extrude):
+    def generate_extrude(self, extrude):
         """Generate a graph after each extrude as reconstruction takes place"""
         # If we are exporting per curve
         if self.mode == "PerFace":
@@ -108,6 +114,7 @@ class Regraph():
         elif self.mode == "PerExtrude":
             graph = self.get_graph()
             self.data["graphs"].append(graph)
+            self.data["status"].append("Success")
         self.current_extrude_index += 1
 
     def generate_last(self):
@@ -127,6 +134,7 @@ class Regraph():
                     }
                 }
                 self.data["sequences"].append(seq_data)
+                self.data["status"].append("Success")
 
     # -------------------------------------------------------------------------
     # DATA CACHING
@@ -187,21 +195,68 @@ class Regraph():
 
     def add_extrude_to_sequence(self, extrude):
         """Add the extrude operation to the sequence"""
+        adsk.doEvents()
         # Look for a start or end face with a single face
-        if extrude.startFaces.count == 1:
-            # print("Extruding from start face")
-            start_face = extrude.startFaces[0]
-            end_faces = extrude.endFaces
-            start_end_flipped = False
-        elif extrude.endFaces.count == 1:
-            # print("Extruding from end face")
-            start_face = extrude.endFaces[0]
-            end_faces = extrude.startFaces
-            start_end_flipped = True
+        start_end_face_set = False
+        if (extrude.startFaces.count == 1 and
+           extrude.endFaces.count == 1):
+            # If we have both a start face and an end face
+            # we can't tell which face will remain intact so
+            # we skip to the end of the design
+            # and check it still exists
+            prev_timeline_index = self.timeline.markerPosition
+            self.timeline.moveToEnd()
+            # If either start or end is absent
+            # assign the other if we can
+            if extrude.startFaces.count == 0:
+                if extrude.endFaces.count > 0:
+                    start_face = extrude.endFaces[0]
+                    end_faces = extrude.startFaces
+                    start_end_flipped = True
+                    start_end_face_set = True
+                self.timeline.markerPosition = prev_timeline_index
+            elif extrude.endFaces.count == 0:
+                if extrude.startFaces.count > 0:
+                    start_face = extrude.startFaces[0]
+                    end_faces = extrude.endFaces
+                    start_end_flipped = False
+                    start_end_face_set = True
+                self.timeline.markerPosition = prev_timeline_index
+            # If we have both start and end then pick the larger one
+            # which has not been trimmed/split
+            if (extrude.startFaces.count > 0 and
+                extrude.endFaces.count > 0):
+                    sf = extrude.startFaces[0]
+                    ef = extrude.endFaces[0]
+                    sf_area = sf.area
+                    ef_area = ef.area
+                    self.timeline.markerPosition = prev_timeline_index
+                    # If both start and end are the same size
+                    # then we want to skip out here
+                    # and let the regular priority order take place
+                    if not math.isclose(sf_area, ef_area, abs_tol=0.01):
+                        if sf_area > ef_area:
+                            start_face = extrude.startFaces[0]
+                            end_faces = extrude.endFaces
+                            start_end_flipped = False
+                        else:
+                            start_face = extrude.endFaces[0]
+                            end_faces = extrude.startFaces
+                            start_end_flipped = True
+                        start_end_face_set = True
+        # If we haven't yet decided, prioritize the start face
+        if not start_end_face_set:
+            if extrude.startFaces.count == 1:
+                start_face = extrude.startFaces[0]
+                end_faces = extrude.endFaces
+                start_end_flipped = False
+            elif extrude.endFaces.count == 1:
+                start_face = extrude.endFaces[0]
+                end_faces = extrude.startFaces
+                start_end_flipped = True
         assert start_face is not None
         start_face_uuid = name.get_uuid(start_face)
         assert start_face_uuid is not None
-        # print(f"Start face: {start_face.tempId}")
         # Add the face and edges that we extrude from
         self.sequence_cache["faces"].add(start_face_uuid)
         for edge in start_face.edges:
@@ -336,23 +391,24 @@ class Regraph():
 
     def is_supported(self, extrude):
         """Check if this is a supported state for export"""
+        reason = None
         if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
-            self.logger.log(f"Skipping {extrude.name}: Extrude has intersect operation")
-            return False
-        if self.is_extrude_tapered(extrude):
-            self.logger.log(f"Skipping {extrude.name}: Extrude has taper")
-            return False
-        if self.mode == "PerFace":
+            reason = "Extrude has intersect operation"
+        elif self.is_extrude_tapered(extrude):
+            reason = "Extrude has taper"
+        elif self.mode == "PerFace":
             # If we have a cut/intersect operation we want to use what we have
             # and export it
             if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
-                self.logger.log(f"Skipping {extrude.name}: Extrude has cut operation")
-                return False
+                reason = "Extrude has cut operation"
             # If we don't have a single extrude start/end face
-            if extrude.endFaces.count != 1 and extrude.startFaces.count != 1:
-                self.logger.log(f"Skipping {extrude.name}: Extrude doesn't have a single start or end face")
-                return False
-        return True
+            elif extrude.endFaces.count != 1 and extrude.startFaces.count != 1:
+                reason = "Extrude doesn't have a single start or end face"
+        if reason is not None:
+            self.logger.log(f"Skipping {extrude.name}: {reason}")
+            return False, reason
+        else:
+            return True, None
 
     def is_extrude_tapered(self, extrude):
         if extrude.extentOne is not None:
@@ -596,7 +652,7 @@ class RegraphTester(unittest.TestCase):
         self.assertIn("nodes", graph, msg="Graph has nodes")
         self.assertIn("links", graph, msg="Graph has links")
         self.assertGreaterEqual(len(graph["nodes"]), 3, msg="Graph nodes >= 3")
-        self.assertGreaterEqual(len(graph["links"]), 3, msg="Graph links >= 3")
+        self.assertGreaterEqual(len(graph["links"]), 2, msg="Graph links >= 2")
         node_set = set()
         node_list = []
         for node in graph["nodes"]:
@@ -620,7 +676,7 @@ class RegraphTester(unittest.TestCase):
         self.assertIn("links", graph, msg="Graph has links")
         self.assertIsInstance(graph["links"], list, msg="Links is list")
         self.assertGreaterEqual(len(graph["nodes"]), 3, msg="Graph nodes >= 3")
-        self.assertGreaterEqual(len(graph["links"]), 3, msg="Graph links >= 3")
+        self.assertGreaterEqual(len(graph["links"]), 2, msg="Graph links >= 3")
         node_set = set()
         node_list = []
         for node in graph["nodes"]:
