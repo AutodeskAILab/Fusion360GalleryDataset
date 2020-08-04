@@ -61,6 +61,9 @@ if __name__ == "__main__":
     # We use the timestamp of this file to check we haven't timed out
     # This file is updated at regular intervals when all is working
     results_file = output_dir / "regraph_results.json"
+    if results_file.exists():
+        # Touch the file to start the timer
+        results_file.touch()
     
     launcher = Launcher()
     launch_loop(launcher, results_file)
