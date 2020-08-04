@@ -89,21 +89,15 @@ class RegraphExporter():
                 if self.mode == "PerFace":
                     regraph_tester.reconstruct(graph_data)
                 self.export_graph_data(graph_data)
-            for index, status in enumerate(graph_data["status"]):
-                if index < len(self.results[self.json_file.name]):
-                    self.results[self.json_file.name][index]["status"] = status
-                else:
-                    self.results[self.json_file.name].append({
-                        "status": status
-                    })
+            self.update_results_status(graph_data)
         except Exception as ex:
             self.logger.log(f"Exception: {ex}")
             trace = traceback.format_exc()
-            self.logger.log(trace)
+            # self.logger.log(trace)
             self.results[self.json_file.name].append({
                         "status": "Exception",
                         "exception": ex.__class__.__name__,
-                        "exception_args": str(ex.args),
+                        "exception_args": " ".join(ex.args),
                         "trace": trace
                     })
         self.save_results()
@@ -145,6 +139,21 @@ class RegraphExporter():
         with open(seq_file, "w", encoding="utf8") as f:
             json.dump(seq_data, f, indent=4)
 
+    def update_results_status(self, graph_data):
+        """Update the results status"""
+        for index, status in enumerate(graph_data["status"]):
+            reason = status
+            if status != "Success":
+                status = "Skip"
+            if index < len(self.results[self.json_file.name]):
+                self.results[self.json_file.name][index]["status"] = status
+                self.results[self.json_file.name][index]["reason"] = reason
+            else:
+                self.results[self.json_file.name].append({
+                    "status": status,
+                    "reason": reason
+                })
+
     def save_results(self):
         """Save out the results of conversion"""
         with open(self.results_file, "w", encoding="utf8") as f:
@@ -179,33 +188,32 @@ def start():
     results = load_results(results_file)
 
     # Get all the files in the data folder
-    # json_files = [f for f in data_dir.glob("**/*.json")]
+    json_files = [f for f in data_dir.glob("**/*.json")]
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    json_files = [
-        data_dir / "Couch.json"
-        # data_dir / "SingleSketchExtrude_RootComponent.json"
-        # data_dir / "ReconstructionExtractor_Z0CircleLineSplit_9f3ee338_Untitled.json"
-    ]
+    # json_files = [
+    #     # data_dir / "Couch.json"
+    #     # data_dir / "SingleSketchExtrude_RootComponent.json"
+    # ]
 
     json_count = len(json_files)
     for i, json_file in enumerate(json_files, start=1):
-        # if json_file.name in results:
-        #     logger.log(f"[{i}/{json_count}] Skipping {json_file}")
-        # else:
-        try:
-            logger.log(f"[{i}/{json_count}] Processing {json_file}")
-            regraph_exporter = RegraphExporter(
-                json_file, logger=logger, mode="PerExtrude")
-            regraph_exporter.export(output_dir, results_file, results)
+        if json_file.name in results:
+            logger.log(f"[{i}/{json_count}] Skipping {json_file}")
+        else:
+            try:
+                logger.log(f"[{i}/{json_count}] Processing {json_file}")
+                regraph_exporter = RegraphExporter(
+                    json_file, logger=logger, mode="PerFace")
+                regraph_exporter.export(output_dir, results_file, results)
 
-        except Exception as ex:
-            logger.log(f"Error exporting: {ex}")
-            logger.log(traceback.format_exc())
-        finally:
-            # Close the document
-            # Fusion automatically opens a new window
-            # after the last one is closed
-            app.activeDocument.close(False)
+            except Exception as ex:
+                logger.log(f"Error exporting: {ex}")
+                logger.log(traceback.format_exc())
+            finally:
+                # Close the document
+                # Fusion automatically opens a new window
+                # after the last one is closed
+                app.activeDocument.close(False)
 
 
 def run(context):
