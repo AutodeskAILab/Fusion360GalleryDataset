@@ -90,7 +90,7 @@ class Regraph():
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.timeline.markerPosition = timeline_object.index + 1
                 extrude = timeline_object.entity
-                supported, unsupported_reason = self.is_supported(extrude)
+                supported, unsupported_reason = self.is_extrude_supported(extrude)
                 if not supported:
                     self.timeline.markerPosition = prev_extrude_index
                     skip_reason = unsupported_reason
@@ -389,13 +389,15 @@ class Regraph():
     # FILTER
     # -------------------------------------------------------------------------
 
-    def is_supported(self, extrude):
-        """Check if this is a supported state for export"""
+    def is_extrude_supported(self, extrude):
+        """Check if this is a supported extrude for export"""
         reason = None
         if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
             reason = "Extrude has intersect operation"
         elif self.is_extrude_tapered(extrude):
             reason = "Extrude has taper"
+        # elif extrude.extentType != adsk.fusion.FeatureExtentTypes.OneSideFeatureExtentType:
+        #     reason = "Extrude is not one sided"
         elif self.mode == "PerFace":
             # If we have a cut/intersect operation we want to use what we have
             # and export it
@@ -409,6 +411,42 @@ class Regraph():
             return False, reason
         else:
             return True, None
+
+    def is_design_supported(self, json_data):
+        """Check the raw json data to see if this is a supported design for export"""
+        if not isinstance(json_data, dict):
+            with open(json_data, encoding="utf8") as f:
+                json_data = json.load(f, object_pairs_hook=OrderedDict)
+        reason = None
+        timeline = json_data["timeline"]
+        entities = json_data["entities"]
+        for timeline_object in timeline:
+            entity_uuid = timeline_object["entity"]
+            entity_index = timeline_object["index"]
+            entity = entities[entity_uuid]
+            if entity["type"] == "ExtrudeFeature":
+                if entity["operation"] == "IntersectFeatureOperation":
+                    reason = "Extrude has intersect operation"
+                    break
+                elif ("taper_angle" in entity["extent_one"] and
+                     entity["extent_one"]["taper_angle"]["value"] != 0):
+                        reason = "Extrude has taper"
+                        break
+                # elif entity["extent_type"] != "OneSideFeatureExtentType":
+                #     reason = "Extrude is not one sided"
+                #     break
+                elif self.mode == "PerFace":
+                    if entity["operation"] == "CutFeatureOperation":
+                        reason = "Extrude has cut operation"
+                        break
+                    elif len(entity["extrude_start_faces"]) != 1 and len(entity["extrude_end_faces"]) != 1:
+                        reason = "Extrude doesn't have a single start or end face"
+                        break
+        if reason is not None:
+            self.logger.log(f"Skipping {json_data['metadata']['parent_project']} early: {reason}")
+            return False, reason
+        else:
+            return True, None 
 
     def is_extrude_tapered(self, extrude):
         if extrude.extentOne is not None:
@@ -645,7 +683,7 @@ class RegraphTester(unittest.TestCase):
         rc = regraph_reconstructor.reconstruction.component
         self.test_reconstruction(gt, rc)
         regraph_reconstructor.remove()
-
+    
     def test_per_extrude_graph(self, graph):
         """Test a per extrude graph"""
         self.assertIsNotNone(graph, msg="Graph is not None")

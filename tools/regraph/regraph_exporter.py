@@ -8,6 +8,7 @@ import time
 import copy
 from pathlib import Path
 from importlib import reload
+from collections import OrderedDict 
 
 
 # Add the common folder to sys.path
@@ -77,23 +78,36 @@ class RegraphExporter():
         self.results[self.json_file.name] = []
         self.save_results()
         try:
-            importer = SketchExtrudeImporter(self.json_file)
-            importer.reconstruct()
+            with open(self.json_file, encoding="utf8") as f:
+                json_data = json.load(f, object_pairs_hook=OrderedDict)
+            
             # Graph generation
             regraph = Regraph(mode=self.mode)
-            # By default regraph assumes the geometry is in the rootComponent
-            graph_data = regraph.generate()
-            if len(graph_data["graphs"]) > 0:
-                regraph_tester = RegraphTester(mode=self.mode)
-                regraph_tester.test(graph_data)
-                if self.mode == "PerFace":
-                    regraph_tester.reconstruct(graph_data)
-                self.export_graph_data(graph_data)
-            self.update_results_status(graph_data)
+            # First ask if this is supported, to avoid reconstruction and save time
+            supported, reason = regraph.is_design_supported(json_data)
+            # We abort if in PerFace mode
+            # as there may be some partial designs we can use in PerExtrude mode
+            if not supported and self.mode == "PerFace":
+                self.results[self.json_file.name].append({
+                    "status": "Skip",
+                    "reason": reason
+                })
+            else:
+                importer = SketchExtrudeImporter(json_data)
+                importer.reconstruct()
+                
+                # By default regraph assumes the geometry is in the rootComponent
+                graph_data = regraph.generate()
+                if len(graph_data["graphs"]) > 0:
+                    regraph_tester = RegraphTester(mode=self.mode)
+                    regraph_tester.test(graph_data)
+                    if self.mode == "PerFace":
+                        regraph_tester.reconstruct(graph_data)
+                    self.export_graph_data(graph_data)
+                self.update_results_status(graph_data)
         except Exception as ex:
-            self.logger.log(f"Exception: {ex}")
+            self.logger.log(f"Exception: {ex.__class__.__name__}")
             trace = traceback.format_exc()
-            # self.logger.log(trace)
             self.results[self.json_file.name].append({
                         "status": "Exception",
                         "exception": ex.__class__.__name__,
@@ -179,7 +193,7 @@ def start():
     logger = Logger()
     # Fusion requires an absolute path
     current_dir = Path(__file__).resolve().parent
-    data_dir = current_dir.parent / "testdata"
+    data_dir = current_dir.parent / "testdata/regraph"
     output_dir = current_dir / "output"
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
