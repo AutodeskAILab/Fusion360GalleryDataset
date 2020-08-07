@@ -22,7 +22,6 @@ import exporter
 import regraph
 import serialize
 import exceptions
-reload(serialize)
 reload(regraph)
 from logger import Logger
 from sketch_extrude_importer import SketchExtrudeImporter
@@ -193,7 +192,7 @@ def start():
     logger = Logger()
     # Fusion requires an absolute path
     current_dir = Path(__file__).resolve().parent
-    data_dir = current_dir.parent / "testdata/regraph"
+    data_dir = current_dir.parent / "testdata"
     output_dir = current_dir / "output"
     if not output_dir.exists():
         output_dir.mkdir(parents=True)

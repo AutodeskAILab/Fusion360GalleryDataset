@@ -22,6 +22,7 @@ import name
 import geometry
 import exporter
 import serialize
+import deserialize
 import exceptions
 from logger import Logger
 reload(name)
@@ -192,11 +193,75 @@ class Regraph():
                         "source": name.get_uuid(edge.faces[0]),
                         "target": name.get_uuid(edge.faces[1])
                     }
+                    # TODO: Handle cases where an edge has more than 2 faces
+                    # We have to connect each face to one another
+                    # but currently we cache 1 graph edge for each brep edge
+                    # we need to have a way to store multiple graph edges per brep edge...
+                    # for edge_face_index, edge_face in enumerate(edge.faces):
+                    #     for index in range(edge_face_index + 1, edge.faces.count):
+                    #         print(edge_face_index, index)
+                    #         self.edge_cache[edge_uuid] = {
+                    #             "temp_id": edge.tempId,
+                    #             "convexity": self.get_edge_convexity(edge, edge_concave),
+                    #             "source": name.get_uuid(edge.faces[edge_face_index]),
+                    #             "target": name.get_uuid(edge.faces[index])
+                    #         }
 
     def add_extrude_to_sequence(self, extrude):
         """Add the extrude operation to the sequence"""
-        adsk.doEvents()
+        # adsk.doEvents()
+        if extrude.startFaces.count > 1 or extrude.endFaces.count > 1:
+            start_faces = extrude.startFaces
+            start_end_flipped = False
+            if extrude.endFaces.count > extrude.startFaces.count:
+                start_faces = extrude.endFaces
+                start_end_flipped = True
+            for start_face in start_faces:
+                self.add_extrude_faces_to_sequence(extrude, start_face, start_end_flipped)
+        # Single extrude
+        else:
+            self.add_extrude_faces_to_sequence(extrude)    
+    
+    def add_extrude_faces_to_sequence(self, extrude, start_face=None, start_end_flipped=None):
+        """Add the extrude operation to the sequence"""
+        # If we don't already have a start face
+        if start_face is None or start_end_flipped is None:
+            start_face, start_end_flipped = self.get_extrude_start_face(extrude)
+        assert start_face is not None
+        start_face_uuid = name.get_uuid(start_face)
+        assert start_face_uuid is not None
+
+        # End face
+        end_face = self.get_extrude_end_face(extrude, start_end_flipped, start_face.body)
+        assert end_face is not None
+        end_face_uuid = name.get_uuid(end_face)
+        assert end_face_uuid is not None
+
+        # Add the face and edges for everything that was extruded
+        for face in extrude.faces:
+            face_uuid = name.get_uuid(face)
+            assert face_uuid is not None
+            self.sequence_cache["faces"].add(face_uuid)
+            for edge in face.edges:
+                edge_uuid = name.get_uuid(edge)
+                assert edge_uuid is not None
+                self.sequence_cache["edges"].add(edge_uuid)         
+        operation = serialize.feature_operation(extrude.operation)    
+        # Add the extrude to the sequence
+        extrude_to_sequence_entry = {
+            "start_face": start_face_uuid,
+            "end_face": end_face_uuid,
+            "operation": operation,
+            "faces": list(self.sequence_cache["faces"]),
+            "edges": list(self.sequence_cache["edges"])
+        }
+        self.sequence.append(extrude_to_sequence_entry)
+
+    def get_extrude_start_face(self, extrude):
+        """Get the start face from an extrude, along with a flag to
+            indicate if the start and end face are flipped"""
         # Look for a start or end face with a single face
+        start_end_flipped = False
         start_end_face_set = False
         if (extrude.startFaces.count == 1 and
            extrude.endFaces.count == 1):
@@ -211,14 +276,12 @@ class Regraph():
             if extrude.startFaces.count == 0:
                 if extrude.endFaces.count > 0:
                     start_face = extrude.endFaces[0]
-                    end_faces = extrude.startFaces
                     start_end_flipped = True
                     start_end_face_set = True
                 self.timeline.markerPosition = prev_timeline_index
             elif extrude.endFaces.count == 0:
                 if extrude.startFaces.count > 0:
                     start_face = extrude.startFaces[0]
-                    end_faces = extrude.endFaces
                     start_end_flipped = False
                     start_end_face_set = True
                 self.timeline.markerPosition = prev_timeline_index
@@ -237,42 +300,34 @@ class Regraph():
                     if not math.isclose(sf_area, ef_area, abs_tol=0.01):
                         if sf_area > ef_area:
                             start_face = extrude.startFaces[0]
-                            end_faces = extrude.endFaces
                             start_end_flipped = False
                         else:
                             start_face = extrude.endFaces[0]
-                            end_faces = extrude.startFaces
                             start_end_flipped = True
                         start_end_face_set = True
         # If we haven't yet decided, prioritize the start face
         if not start_end_face_set:
             if extrude.startFaces.count == 1:
                 start_face = extrude.startFaces[0]
-                end_faces = extrude.endFaces
                 start_end_flipped = False
             elif extrude.endFaces.count == 1:
                 start_face = extrude.endFaces[0]
-                end_faces = extrude.startFaces
                 start_end_flipped = True
-        assert start_face is not None
-        start_face_uuid = name.get_uuid(start_face)
-        assert start_face_uuid is not None
-        # Add the face and edges that we extrude from
-        self.sequence_cache["faces"].add(start_face_uuid)
-        for edge in start_face.edges:
-            edge_uuid = name.get_uuid(edge)
-            assert edge_uuid is not None
-            self.sequence_cache["edges"].add(edge_uuid)
-        extrude_from_sequence_entry = {
-            "action": start_face_uuid,
-            "faces": list(self.sequence_cache["faces"]),
-            "edges": list(self.sequence_cache["edges"])
-        }
-        self.sequence.append(extrude_from_sequence_entry)
+        return start_face, start_end_flipped
 
+    def get_extrude_end_face(self, extrude, start_end_flipped, body):
+        """Get the end face from an extrude
+            based on whether the start end faces are flipped"""
+        end_faces = extrude.endFaces
+        if start_end_flipped:
+            end_faces = extrude.startFaces
         if end_faces.count > 0:
-            # If we have a face to extrude to, lets use it
-            end_face = end_faces[0]
+            # If we have a face to extrude to
+            # lets use one from the same body
+            for ef in end_faces:
+                if ef.body.revisionId == body.revisionId:
+                    end_face = end_faces[0]
+                    break
         else:
             # Or we need to find an end face to extrude to
             # that is on coplanar to the end of the extrude
@@ -280,27 +335,9 @@ class Regraph():
                 end_plane = self.get_extrude_start_plane(extrude)
             else:
                 end_plane = self.get_extrude_end_plane(extrude)
-            # Search for faces that are coplanar
-            end_face = self.get_coplanar_face(end_plane)
-        assert end_face is not None
-        end_face_uuid = name.get_uuid(end_face)
-        assert end_face_uuid is not None
-        # print(f"End face: {end_face.tempId}")
-        # Add the face and edges for everything that was extruded
-        for face in extrude.faces:
-            face_uuid = name.get_uuid(face)
-            assert face_uuid is not None
-            self.sequence_cache["faces"].add(face_uuid)
-            for edge in face.edges:
-                edge_uuid = name.get_uuid(edge)
-                assert edge_uuid is not None
-                self.sequence_cache["edges"].add(edge_uuid)
-        extrude_to_sequence_entry = {
-            "action": end_face_uuid,
-            "faces": list(self.sequence_cache["faces"]),
-            "edges": list(self.sequence_cache["edges"])
-        }
-        self.sequence.append(extrude_to_sequence_entry)
+            # Search for faces on the same body that are coplanar
+            end_face = self.get_coplanar_face(end_plane, body)
+        return end_face
 
     # -------------------------------------------------------------------------
     # FEATURES
@@ -392,20 +429,20 @@ class Regraph():
     def is_extrude_supported(self, extrude):
         """Check if this is a supported extrude for export"""
         reason = None
-        if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
-            reason = "Extrude has intersect operation"
-        elif self.is_extrude_tapered(extrude):
+        if self.is_extrude_tapered(extrude):
             reason = "Extrude has taper"
-        # elif extrude.extentType != adsk.fusion.FeatureExtentTypes.OneSideFeatureExtentType:
-        #     reason = "Extrude is not one sided"
-        elif self.mode == "PerFace":
-            # If we have a cut/intersect operation we want to use what we have
-            # and export it
-            if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
-                reason = "Extrude has cut operation"
-            # If we don't have a single extrude start/end face
-            elif extrude.endFaces.count != 1 and extrude.startFaces.count != 1:
-                reason = "Extrude doesn't have a single start or end face"
+        if reason is None:
+            if self.mode == "PerExtrude":
+                if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
+                    reason = "Extrude has intersect operation"
+            elif self.mode == "PerFace":
+                # If we have a cut/intersect operation we want to use what we have
+                # and export it
+                # if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
+                #     reason = "Extrude has cut operation"
+                # If we don't have a single extrude start/end face
+                if extrude.endFaces.count == 0 and extrude.startFaces.count == 0:
+                    reason = "Extrude doesn't have start or end faces"
         if reason is not None:
             self.logger.log(f"Skipping {extrude.name}: {reason}")
             return False, reason
@@ -425,22 +462,20 @@ class Regraph():
             entity_index = timeline_object["index"]
             entity = entities[entity_uuid]
             if entity["type"] == "ExtrudeFeature":
-                if entity["operation"] == "IntersectFeatureOperation":
-                    reason = "Extrude has intersect operation"
+                if ("taper_angle" in entity["extent_one"] and
+                        entity["extent_one"]["taper_angle"]["value"] != 0):
+                    reason = "Extrude has taper"
                     break
-                elif ("taper_angle" in entity["extent_one"] and
-                     entity["extent_one"]["taper_angle"]["value"] != 0):
-                        reason = "Extrude has taper"
+                if self.mode == "PerExtrude":
+                    if entity["operation"] == "IntersectFeatureOperation":
+                        reason = "Extrude has intersect operation"
                         break
-                # elif entity["extent_type"] != "OneSideFeatureExtentType":
-                #     reason = "Extrude is not one sided"
-                #     break
                 elif self.mode == "PerFace":
-                    if entity["operation"] == "CutFeatureOperation":
-                        reason = "Extrude has cut operation"
-                        break
-                    elif len(entity["extrude_start_faces"]) != 1 and len(entity["extrude_end_faces"]) != 1:
-                        reason = "Extrude doesn't have a single start or end face"
+                    # if entity["operation"] == "CutFeatureOperation":
+                    #     reason = "Extrude has cut operation"
+                    #     break
+                    if len(entity["extrude_start_faces"]) == 0 and len(entity["extrude_end_faces"]) == 0:
+                        reason = "Extrude doesn't have start or end faces"
                         break
         if reason is not None:
             self.logger.log(f"Skipping {json_data['metadata']['parent_project']} early: {reason}")
@@ -594,13 +629,22 @@ class Regraph():
     def get_extrude_start_plane(self, extrude):
         """Get the plane where the extrude starts"""
         extrude_offset = self.get_extrude_offset(extrude)
-        sketch = extrude.profile.parentSketch
-        sketch_normal = extrude.profile.plane.normal
+        sketch, profile = self.get_extrude_sketch_profile(extrude)
+        sketch_normal = profile.plane.normal
         sketch_normal.transformBy(sketch.transform)
         sketch_origin = sketch.origin
         if extrude_offset != 0:
             sketch_origin = self.offset_point_by_distance(sketch_origin, sketch_normal, extrude_offset)
         return adsk.core.Plane.create(sketch_origin, sketch_normal)
+
+    def get_extrude_sketch_profile(self, extrude):
+        """Get the sketch referenced from an extrude"""
+        if isinstance(extrude.profile, adsk.fusion.Profile):
+            return extrude.profile.parentSketch, extrude.profile
+        elif isinstance(extrude.profile, adsk.core.ObjectCollection):
+            return extrude.profile[0].parentSketch, extrude.profile[0]
+        else:
+            raise Exception("Extrude sketch profile error")
 
     def get_extrude_end_plane(self, extrude):
         """Get the plane where the extrude ends"""
@@ -645,14 +689,14 @@ class Regraph():
                     return float(offset.stringValue)
         return 0
 
-    def get_coplanar_face(self, plane):
-        """Find a face that is coplanar to the given plane"""
-        for body in self.target_component.bRepBodies:
-            for face in body.faces:
-                if isinstance(face.geometry, adsk.core.Plane):
-                    is_coplanar = plane.isCoPlanarTo(face.geometry)
-                    if is_coplanar:
-                        return face
+    def get_coplanar_face(self, plane, body):
+        """Find a face on the same body that is coplanar to the given plane"""
+        # for body in self.target_component.bRepBodies:
+        for face in body.faces:
+            if isinstance(face.geometry, adsk.core.Plane):
+                is_coplanar = plane.isCoPlanarTo(face.geometry)
+                if is_coplanar:
+                    return face
         return None
 
 
@@ -733,11 +777,20 @@ class RegraphTester(unittest.TestCase):
         # Sequence
         self.assertIsNotNone(sequence, msg="Sequence is not None")
         self.assertIn("sequence", sequence, msg="Sequence has sequence")
-        self.assertGreaterEqual(len(sequence["sequence"]), 2, msg="Sequence length >= 2")
-        self.assertEqual(len(sequence["sequence"]) % 2, 0, msg="Sequence length is multiple of 2")
+        self.assertGreaterEqual(len(sequence["sequence"]), 1, msg="Sequence length >= 1")
+        valid_extrudes = [
+            "JoinFeatureOperation",
+            "CutFeatureOperation",
+            "IntersectFeatureOperation",
+            "NewBodyFeatureOperation"
+        ]
         for seq in sequence["sequence"]:
-            self.assertIn("action", seq, msg="Sequence element has action")
-            self.assertIn(seq["action"], node_set, msg="Action is in target nodes")
+            self.assertIn("start_face", seq, msg="Sequence element has start_face")
+            self.assertIn(seq["start_face"], node_set, msg="Start face is in target nodes")
+            self.assertIn("end_face", seq, msg="Sequence element has end_face")
+            self.assertIn(seq["end_face"], node_set, msg="End face is in target nodes")
+            self.assertIn("operation", seq, msg="Sequence element has operation")
+            self.assertIn(seq["operation"], valid_extrudes, msg="Operation is valid")
             self.assertIn("faces", seq, msg="Sequence element has faces")
             for face in seq["faces"]:
                 self.assertIn(face, node_set, msg="Face is in target nodes")
@@ -848,17 +901,15 @@ class RegraphReconstructor():
         )
         self.reconstruction.component.name = "Reconstruction"
         uuid_to_face_map = self.get_uuid_to_face_map()
-        extrude_count = int(len(self.sequence["sequence"]) * 0.5)
-        for extrude_index in range(extrude_count):
-            start_index = extrude_index * 2
-            end_index = extrude_index * 2 + 1
-            start_face = self.get_face_from_sequence_index(start_index, uuid_to_face_map)
-            end_face = self.get_face_from_sequence_index(end_index, uuid_to_face_map)
-            self.add_extrude(start_face, end_face)
+        for seq in self.sequence["sequence"]:
+            start_face = self.get_face_from_sequence_index(seq, "start_face", uuid_to_face_map)
+            end_face = self.get_face_from_sequence_index(seq, "end_face", uuid_to_face_map)
+            operation = deserialize.feature_operations(seq["operation"])
+            self.add_extrude(start_face, end_face, operation)
 
-    def get_face_from_sequence_index(self, seq_index, uuid_to_face_map):
+    def get_face_from_sequence_index(self, seq, seq_key, uuid_to_face_map):
         """Get a face from an index in the sequence"""
-        face_uuid = self.sequence["sequence"][seq_index]["action"]
+        face_uuid = seq[seq_key]
         indices = uuid_to_face_map[face_uuid]
         body_index = indices["body_index"]
         face_index = indices["face_index"]
@@ -880,11 +931,15 @@ class RegraphReconstructor():
                 }
         return uuid_to_face_map
 
-    def add_extrude(self, start_face, end_face):
+    def add_extrude(self, start_face, end_face, operation):
         """Create an extrude from a start face to an end face"""
         # We generate the extrude bodies in the reconstruction component
         extrudes = self.reconstruction.component.features.extrudeFeatures
-        operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+        # Workaround for a fusion bug that joins to the root component
+        join_post_process = False
+        if operation == adsk.fusion.FeatureOperations.JoinFeatureOperation:
+            operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+            join_post_process = True
         extrude_input = extrudes.createInput(start_face, operation)
         extent = adsk.fusion.ToEntityExtentDefinition.create(end_face, False)
         extrude_input.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
@@ -892,7 +947,7 @@ class RegraphReconstructor():
         # The Fusion API  doesn't seem to be able to do join extrudes
         # that don't join to the goal body
         # so we make the bodies separate and then join them after the fact
-        if self.reconstruction.component.bRepBodies.count > 1:
+        if join_post_process and self.reconstruction.component.bRepBodies.count > 1:
             combines = self.reconstruction.component.features.combineFeatures
             first_body = self.reconstruction.component.bRepBodies[0]
             tools = adsk.core.ObjectCollection.create()
