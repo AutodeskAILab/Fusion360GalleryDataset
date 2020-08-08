@@ -201,12 +201,12 @@ def start():
     results = load_results(results_file)
 
     # Get all the files in the data folder
-    json_files = [f for f in data_dir.glob("**/*.json")]
+    # json_files = [f for f in data_dir.glob("**/*.json")]
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    # json_files = [
-    #     # data_dir / "Couch.json"
-    #     # data_dir / "SingleSketchExtrude_RootComponent.json"
-    # ]
+    json_files = [
+        data_dir / "Couch.json"
+        # data_dir / "SingleSketchExtrude_RootComponent.json"
+    ]
 
     json_count = len(json_files)
     for i, json_file in enumerate(json_files, start=1):
