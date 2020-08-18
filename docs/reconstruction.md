@@ -122,6 +122,31 @@ Constraints are used to control how the sketch is generated when parameters are 
 }
 ```
 
+#### Dimensions
+Dimensions are defined by the user to set angles, diameters, distances etc... between sketch geometry to constraint the sketch as it is edited. Each dimension has a uuid key and a [`SketchDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchDimension.htm) representing a dimension type such as: [`SketchAngularDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchAngularDimension.htm), [`SketchConcentricCircleDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchConcentricCircleDimension.htm), [`SketchDiameterDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchDiameterDimension.htm), [`SketchEllipseMajorRadiusDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchEllipseMajorRadiusDimension.htm), [`SketchEllipseMinorRadiusDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchEllipseMinorRadiusDimension.htm), [`SketchLinearDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchLinearDimension.htm), [`SketchOffsetCurvesDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchOffsetCurvesDimension.htm), [`SketchOffsetDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchOffsetDimension.htm), [`SketchRadialDimension`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SketchRadialDimension.htm). The example below describes a linear dimension of 5.27 cm between two points.
+
+```json
+"6bac825c-c842-11ea-af4b-54bf646e7e1f": {
+    "parameter": {
+        "type": "ModelParameter",
+        "value": 5.27451897,
+        "name": "d2",
+        "role": "Linear Dimension-2"
+    },
+    "text_position": {
+        "type": "Point3D",
+        "x": -6.666826879191981,
+        "y": -3.1769168442187983,
+        "z": 0.0
+    },
+    "is_driving": true,
+    "entity_one": "6bab9808-c842-11ea-8db0-54bf646e7e1f",
+    "entity_two": "6babbf08-c842-11ea-8cac-54bf646e7e1f",
+    "orientation": "AlignedDimensionOrientation",
+    "type": "SketchLinearDimension"
+}
+```
+
 #### Profiles
 Profiles represent a collection of curves that joint together to make a closed loop. In Fusion 360 profiles are automatically generated from arbitrary curves that don't necessarily connect at the end points. In the example below two profiles (`pr1` and `pr2`) are generated when the line crosses the triangle. We provide both the original curves used to generate the profiles (left) and the trimmed profile information containing just the closed profile loop.
 
