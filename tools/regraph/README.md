@@ -43,7 +43,9 @@ When `mode` is set to `PerFace`, a target graph is created for the full design, 
 
 ### Sequence Data
 The following data is provided for each step in the `sequence` list:
-- `action`: The id of the face used at this step.
+- `start_face`: The id of the start face used at this step.
+- `end_face`: The id of the end face used at this step.
+- `operation`: The type of extrude operation used at this step. This will be one of either `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`. See [`FeatureOperations` documentation](http://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/FeatureOperations.htm).
 - `faces`: The ids of the faces that are explained at this step.
 - `edges`: The ids of the edges that are explained at this step.
 
@@ -51,6 +53,7 @@ Additionally a `bounding_box` is provided that in the `properties` data structur
 
 ### Face Features
 Currently the following features are given for each edge (see [UV-Net](https://arxiv.org/abs/2006.10211)):
+- `surface_type`: The type of surface for the face. This will be one of either `PlaneSurfaceType`, `CylinderSurfaceType`, `ConeSurfaceType`, `SphereSurfaceType`, `TorusSurfaceType`, `EllipticalCylinderSurfaceType`, `EllipticalConeSurfaceType`, or `NurbsSurfaceType`. See [`SurfaceTypes` documentation](http://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SurfaceTypes.htm).
 - `points`: Points sampled on the face in model space. The order is by xyz point in row first order `u0_v0, u0_v1, u0_v2... uN_vN`.
 - `normals`: Normals at the corresponding point location.
 - `trimming_mask`: Binary value indicating if the corresponding point is inside/outside the trimming boundary.
