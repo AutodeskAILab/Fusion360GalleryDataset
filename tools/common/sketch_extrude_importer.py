@@ -62,7 +62,9 @@ class SketchExtrudeImporter():
             elif entity["type"] == "ExtrudeFeature":
                 self.reconstruct_extrude_feature(entity, entity_uuid, entity_index, sketch_profiles)
 
-    def reconstruct_sketch(self, sketch_uuid, reconstruct_cb=None, target_component=None):
+    def reconstruct_sketch(self, sketch_uuid,
+                           reconstruct_cb=None, target_component=None,
+                           sketch_plane=None, transform=None):
         """Reconstruct and return just a single sketch"""
         self.reconstruct_cb = reconstruct_cb
         self.target_component = target_component
@@ -73,7 +75,10 @@ class SketchExtrudeImporter():
             if timeline_object["entity"] == sketch_uuid:
                 sketch_index = timeline_object["index"]
         sketch_data = self.data["entities"][sketch_uuid]
-        sketch, sketch_profile_set = self.reconstruct_sketch_feature(sketch_data, sketch_uuid, sketch_index, {})
+        sketch, sketch_profile_set = self.reconstruct_sketch_feature(
+            sketch_data, sketch_uuid, sketch_index, {},
+            sketch_plane=sketch_plane, transform=transform
+        )
         return sketch
 
     def get_extrude_profiles(self, timeline, entities):
@@ -210,21 +215,34 @@ class SketchExtrudeImporter():
         xform.transformBy(sketch_transform)
         return xform
 
-    def reconstruct_sketch_feature(self, sketch_data, sketch_uuid, sketch_index, sketch_profiles):
+    def reconstruct_sketch_feature(self, sketch_data, sketch_uuid,
+                                   sketch_index, sketch_profiles,
+                                   sketch_plane=None, transform=None):
         # Skip empty sketches
-        if "curves" not in sketch_data or "profiles" not in sketch_data or "points" not in sketch_data:
+        if ("curves" not in sketch_data or "profiles" not in sketch_data or
+           "points" not in sketch_data):
             return None
 
         sketches = self.target_component.sketches
         # Find the right sketch plane to use
-        sketch_plane = self.get_sketch_plane(sketch_data["reference_plane"], sketch_profiles)
+        if sketch_plane is None:
+            sketch_plane = self.get_sketch_plane(sketch_data["reference_plane"], sketch_profiles)
         sketch = sketches.addWithoutEdges(sketch_plane)
 
-        # Create an identity matrix
-        transform_for_sketch_geom = adsk.core.Matrix3D.create()
-        # We will need to apply some other transform to the sketch data
-        sketch_transform = sketch.transform
-        transform_for_sketch_geom = self.find_transform_for_sketch_geom(sketch_transform, sketch_data["transform"])
+        # If we want to manually overide the transform we can
+        # but the sketch may be flipped without the call to
+        # find_transform_for_sketch_geom()
+        if transform is not None:
+            transform_for_sketch_geom = transform
+        else:
+            # We need to apply some other transform to the sketch data
+            # as sketch geometry created via the UI has a slightly different
+            # coordinate system when created via the API
+            # This applies when the sketch plane references other geometry
+            # like a B-Rep face
+            transform_for_sketch_geom = adsk.core.Matrix3D.create()
+            sketch_transform = sketch.transform
+            transform_for_sketch_geom = self.find_transform_for_sketch_geom(sketch_transform, sketch_data["transform"])
 
         if self.reconstruct_cb is not None:
             self.reconstruct_cb({
