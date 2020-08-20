@@ -112,10 +112,9 @@ class Regraph():
         # If we are exporting per curve
         if self.mode == "PerFace":
             self.add_extrude_to_sequence(extrude)
-        elif self.mode == "PerExtrude":
-            graph = self.get_graph()
-            self.data["graphs"].append(graph)
-            self.data["status"].append("Success")
+        graph = self.get_graph()
+        self.data["graphs"].append(graph)
+        self.data["status"].append("Success")
         self.current_extrude_index += 1
 
     def generate_last(self):
@@ -124,8 +123,6 @@ class Regraph():
         if self.mode == "PerFace":
             # Only export if we had some valid extrudes
             if self.current_extrude_index > 0:
-                graph = self.get_graph()
-                self.data["graphs"].append(graph)
                 bbox = geometry.get_bounding_box(self.target_component)
                 bbox_data = serialize.bounding_box3d(bbox)
                 seq_data = {
@@ -135,7 +132,6 @@ class Regraph():
                     }
                 }
                 self.data["sequences"].append(seq_data)
-                self.data["status"].append("Success")
 
     # -------------------------------------------------------------------------
     # DATA CACHING
@@ -220,8 +216,8 @@ class Regraph():
                 self.add_extrude_faces_to_sequence(extrude, start_face, start_end_flipped)
         # Single extrude
         else:
-            self.add_extrude_faces_to_sequence(extrude)    
-    
+            self.add_extrude_faces_to_sequence(extrude)
+
     def add_extrude_faces_to_sequence(self, extrude, start_face=None, start_end_flipped=None):
         """Add the extrude operation to the sequence"""
         # If we don't already have a start face
@@ -237,23 +233,12 @@ class Regraph():
         end_face_uuid = name.get_uuid(end_face)
         assert end_face_uuid is not None
 
-        # Add the face and edges for everything that was extruded
-        for face in extrude.faces:
-            face_uuid = name.get_uuid(face)
-            assert face_uuid is not None
-            self.sequence_cache["faces"].add(face_uuid)
-            for edge in face.edges:
-                edge_uuid = name.get_uuid(edge)
-                assert edge_uuid is not None
-                self.sequence_cache["edges"].add(edge_uuid)         
-        operation = serialize.feature_operation(extrude.operation)    
+        operation = serialize.feature_operation(extrude.operation)
         # Add the extrude to the sequence
         extrude_to_sequence_entry = {
             "start_face": start_face_uuid,
             "end_face": end_face_uuid,
-            "operation": operation,
-            "faces": list(self.sequence_cache["faces"]),
-            "edges": list(self.sequence_cache["edges"])
+            "operation": operation
         }
         self.sequence.append(extrude_to_sequence_entry)
 
@@ -715,8 +700,12 @@ class RegraphTester(unittest.TestCase):
         elif self.mode == "PerFace":
             if len(graph_data["sequences"]) > 0:
                 self.assertEqual(len(graph_data["sequences"]), 1, msg="Only 1 per face sequence")
-                self.assertEqual(len(graph_data["graphs"]), 1, msg="Only 1 per face graph")
-                self.test_per_face_graph(graph_data["graphs"][0], graph_data["sequences"][0])
+                sequence = graph_data["sequences"][0]
+                self.assertGreaterEqual(len(graph_data["graphs"]), 1, msg=">= 1 per face graph")
+                self.assertEqual(len(graph_data["graphs"]), len(sequence["sequence"]), msg="Number of graphs === sequence length")
+                for index, graph in enumerate(graph_data["graphs"]):
+                    node_set, link_set = self.test_per_face_graph(graph)
+                self.test_per_face_sequence(sequence, node_set, link_set)
 
     def reconstruct(self, graph_data, target_component=None):
         """Reconstruct and test it matches the target"""
@@ -727,7 +716,7 @@ class RegraphTester(unittest.TestCase):
         rc = regraph_reconstructor.reconstruction.component
         self.test_reconstruction(gt, rc)
         regraph_reconstructor.remove()
-    
+
     def test_per_extrude_graph(self, graph):
         """Test a per extrude graph"""
         self.assertIsNotNone(graph, msg="Graph is not None")
@@ -749,7 +738,7 @@ class RegraphTester(unittest.TestCase):
             self.assertIn("target", link, msg="Graph link has target")
             self.assertIn(link["target"], node_set, msg="Graph link target in node set")
 
-    def test_per_face_graph(self, graph, sequence):
+    def test_per_face_graph(self, graph):
         """Test a per face graph"""
         # Target graph
         self.assertIsNotNone(graph, msg="Graph is not None")
@@ -770,10 +759,14 @@ class RegraphTester(unittest.TestCase):
         for link in graph["links"]:
             self.assertIn("id", link, msg="Graph link has id")
             link_set.add(link["id"])
+            # Check that the edges refer to existing faces
             self.assertIn("source", link, msg="Graph link has source")
             self.assertIn(link["source"], node_set, msg="Graph link source in node set")
             self.assertIn("target", link, msg="Graph link has target")
-            self.assertIn(link["target"], node_set, msg="Graph link target in node set")        
+            self.assertIn(link["target"], node_set, msg="Graph link target in node set")
+        return node_set, link_set
+
+    def test_per_face_sequence(self, sequence, node_set, link_set):
         # Sequence
         self.assertIsNotNone(sequence, msg="Sequence is not None")
         self.assertIn("sequence", sequence, msg="Sequence has sequence")
@@ -785,18 +778,17 @@ class RegraphTester(unittest.TestCase):
             "NewBodyFeatureOperation"
         ]
         for seq in sequence["sequence"]:
+            # Check that the faces are in the target
             self.assertIn("start_face", seq, msg="Sequence element has start_face")
             self.assertIn(seq["start_face"], node_set, msg="Start face is in target nodes")
             self.assertIn("end_face", seq, msg="Sequence element has end_face")
             self.assertIn(seq["end_face"], node_set, msg="End face is in target nodes")
             self.assertIn("operation", seq, msg="Sequence element has operation")
             self.assertIn(seq["operation"], valid_extrudes, msg="Operation is valid")
-            self.assertIn("faces", seq, msg="Sequence element has faces")
-            for face in seq["faces"]:
-                self.assertIn(face, node_set, msg="Face is in target nodes")
-            self.assertIn("edges", seq, msg="Sequence element has edges")
-            for edge in seq["edges"]:
-                self.assertIn(edge, link_set, msg="Edge is in target links")
+            self.assertIn("graph", seq, msg="Sequence element has graph")
+            self.assertIsInstance(seq["graph"], str, msg="Sequence graph is string")
+            self.assertTrue(seq["graph"].endswith(".json"), msg="Sequence ends with .json")
+
         # Properties
         self.assertIn("properties", sequence, msg="Sequence has properties")
         self.assertIn("bounding_box", sequence["properties"], msg="Properties has bounding_box")
@@ -890,7 +882,6 @@ class RegraphReconstructor():
         self.target_component = target_component
         if self.target_component is None:
             self.target_component = self.design.rootComponent
-        self.graph = graph_data["graphs"][0]
         self.sequence = graph_data["sequences"][0]
 
     def reconstruct(self):

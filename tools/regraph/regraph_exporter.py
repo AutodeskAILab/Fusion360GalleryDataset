@@ -79,7 +79,7 @@ class RegraphExporter():
         try:
             with open(self.json_file, encoding="utf8") as f:
                 json_data = json.load(f, object_pairs_hook=OrderedDict)
-            
+
             # Graph generation
             regraph = Regraph(mode=self.mode)
             # First ask if this is supported, to avoid reconstruction and save time
@@ -94,10 +94,12 @@ class RegraphExporter():
             else:
                 importer = SketchExtrudeImporter(json_data)
                 importer.reconstruct()
-                
+
                 # By default regraph assumes the geometry is in the rootComponent
                 graph_data = regraph.generate()
                 if len(graph_data["graphs"]) > 0:
+                    if self.mode == "PerFace":
+                        self.update_sequence_data(graph_data)
                     regraph_tester = RegraphTester(mode=self.mode)
                     regraph_tester.test(graph_data)
                     if self.mode == "PerFace":
@@ -115,12 +117,23 @@ class RegraphExporter():
                     })
         self.save_results()
 
+    def update_sequence_data(self, graph_data):
+        """Update the sequence with the correct graph file names"""
+        graph_files = []
+        for index, graph in enumerate(graph_data["graphs"]):
+            graph_file = self.get_export_path(f"{index:04}")
+            graph_files.append(graph_file)
+        # Add the names of the graphs to the sequence
+        seq_data = graph_data["sequences"][0]
+        for index, seq in enumerate(seq_data["sequence"]):
+            seq["graph"] = graph_files[index].name
+
     def export_graph_data(self, graph_data):
         """Export the graph data generated from regraph"""
         for index, graph in enumerate(graph_data["graphs"]):
             self.export_extrude_graph(graph, index)
-        for seq_data in graph_data["sequences"]:
-            self.export_sequence(seq_data)
+        seq_data = graph_data["sequences"][0]
+        self.export_sequence(seq_data)
 
     def get_export_path(self, name):
         """Get the export path from a name"""
@@ -128,10 +141,7 @@ class RegraphExporter():
 
     def export_extrude_graph(self, graph, extrude_index):
         """Export a graph from an extrude operation"""
-        if self.mode == "PerFace":
-            graph_file = self.get_export_path("target")
-        else:
-            graph_file = self.get_export_path(f"{extrude_index:04}")
+        graph_file = self.get_export_path(f"{extrude_index:04}")
         self.export_graph(graph_file, graph)
 
     def export_graph(self, graph_file, graph):
@@ -192,7 +202,7 @@ def start():
     logger = Logger()
     # Fusion requires an absolute path
     current_dir = Path(__file__).resolve().parent
-    data_dir = current_dir.parent / "testdata"
+    data_dir = current_dir.parent / "testdata/regraph"
     output_dir = current_dir / "output"
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
@@ -201,12 +211,12 @@ def start():
     results = load_results(results_file)
 
     # Get all the files in the data folder
-    # json_files = [f for f in data_dir.glob("**/*.json")]
+    json_files = [f for f in data_dir.glob("**/*.json")]
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    json_files = [
-        data_dir / "Couch.json"
-        # data_dir / "SingleSketchExtrude_RootComponent.json"
-    ]
+    # json_files = [
+    #     data_dir / "Couch.json"
+    #     # data_dir / "SingleSketchExtrude_RootComponent.json"
+    # ]
 
     json_count = len(json_files)
     for i, json_file in enumerate(json_files, start=1):
