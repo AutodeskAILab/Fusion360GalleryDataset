@@ -41,6 +41,53 @@ class Fusion360Client():
             json_data = json.load(file_handle)
         return self.send_command("reconstruct", json_data)
 
+    def reconstruct_sketch(self, json_data, sketch_name, sketch_plane=None, transform=None):
+        """Reconstruct a sketch from the provided json data and sketch name"""
+        if not isinstance(json_data, dict) or not bool(json_data):
+            return self.__return_error("JSON data is invalid")
+        if not isinstance(sketch_name, str):
+            return self.__return_error("Sketch name is not string")
+        # check if the sketch name exists in the JSON data
+        sketches = []
+        timeline = json_data["timeline"]
+        entities = json_data["entities"]
+        for timeline_object in timeline:
+            entity_uuid = timeline_object["entity"]
+            entity_index = timeline_object["index"]
+            entity = entities[entity_uuid]
+            if entity["type"] == "Sketch":
+                sketches.append(entity["name"])
+        if sketch_name not in sketches:
+            return self.__return_error("Sketch name doesn't exist")
+        if sketch_plane is not None: 
+            is_str = isinstance(sketch_plane, str)
+            is_int = isinstance(sketch_plane, int)
+            is_dict = isinstance(sketch_plane, dict)
+            if not is_str and not is_int and not is_dict:
+                return self.__return_error(f"Invalid sketch_plane value")
+            if is_dict:
+                if ("x" not in sketch_plane or
+                        "y" not in sketch_plane or
+                        "z" not in sketch_plane):
+                    return self.__return_error(f"Invalid sketch_plane value")
+        if transform is not None: 
+            if not isinstance(transform, list):
+                return self.__return_error("the type of transform should be List")
+            if len(transform) != 2:
+                return self.__return_error("the size of transform should be 2 x 3")
+            if len(transform[0]) != 3 or len(transform[1]) != 3:
+                return self.__return_error("the size of transform should be 2 x 3")
+            if (not all(isinstance(x, (int, float)) for x in transform[0]) or 
+                    not all(isinstance(x, (int, float)) for x in transform[1])):
+                return self.__return_error("the value of transform should be int or float")
+        command_data = {
+            "json_data": json_data,
+            "sketch_name": sketch_name,
+            "sketch_plane": sketch_plane,
+            "transform": transform,
+        } 
+        return self.send_command("reconstruct_sketch", data=command_data)
+
     def clear(self):
         """Clear (i.e. close) all open designs in Fusion"""
         return self.send_command("clear")

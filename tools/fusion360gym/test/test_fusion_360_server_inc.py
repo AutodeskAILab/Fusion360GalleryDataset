@@ -34,6 +34,11 @@ class TestFusion360Server(unittest.TestCase):
         cls.client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
         # Clear all documents so we start with a clean slate
         cls.client.clear()
+        # ------------------------------------------
+        # TEST FILES
+        cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
+        hex_design = "Z0HexagonCutJoin_RootComponent"
+        cls.hex_design_json_file = cls.data_dir / f"{hex_design}.json"
 
     def test_add_sketch(self):
         self.client.clear()
@@ -630,6 +635,31 @@ class TestFusion360Server(unittest.TestCase):
         self.assertIn("faces", response_data, msg="add_extrude response has faces")
         self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
         self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
+    
+    def test_reconstruct_sketch(self):
+        self.client.clear()
+        with open(self.hex_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        sketch_id = json_data["timeline"][0]["entity"]
+        sketch = json_data["entities"][sketch_id]
+        sketch_name = json_data["entities"][sketch_id]["name"]
+        # reconstruct sektch 
+        r = self.client.reconstruct_sketch(json_data, sketch_name)
+        self.assertIsNotNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct status code")
+        # reconstruct sektch with sketch plane and transform
+        sketch_plane = "XZ"
+        scale = [2,2,2]
+        translation = [1,0,0]
+        transform = [scale, translation]
+        r = self.client.reconstruct_sketch(json_data, sketch_name, 
+                                sketch_plane=sketch_plane,
+                                transform=transform
+                                )
+        self.assertIsNotNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct status code")
+        
+
 
 
 if __name__ == "__main__":

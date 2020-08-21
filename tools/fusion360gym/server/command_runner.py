@@ -62,6 +62,8 @@ class CommandRunner():
                 result = self.increment.close_profile(data)
             elif command == "add_extrude":
                 result = self.increment.add_extrude(data)
+            elif command == "reconstruct_sketch":
+                result = self.increment.reconstruct_sketch(data)
             else:
                 return self.return_failure("Unknown command")
             return result
