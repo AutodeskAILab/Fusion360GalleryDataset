@@ -22,6 +22,8 @@ The following labels are given for each face:
 ### Face Features
 The following features are given for each face:
 - `surface_type`: The type of surface, see [API reference](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SurfaceTypes.htm).
+- `reversed`: If the normal of this face is reversed with respect to the surface geometry associated with this face, see [API Reference](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-54B1FCE4-25BB-4C37-BF2A-A984739B13E1).
+ 
 - `area`: The area of the face.
 - `normal_*`: The normal vector of the face.
 - `max_tangent_*`: The output directions of maximum curvature at a point at or near the center of the face.

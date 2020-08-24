@@ -29,6 +29,9 @@ from regraph import Regraph
 from regraph import RegraphTester
 
 
+# Set the graph mode to either PerExtrude or PerFace
+GRAPH_MODE = "PerExtrude"
+
 # Event handlers
 handlers = []
 
@@ -76,10 +79,11 @@ class RegraphExporter():
         # Immediately log this in case we crash
         self.results[self.json_file.name] = []
         self.save_results()
+        return_result = False
         try:
             with open(self.json_file, encoding="utf8") as f:
                 json_data = json.load(f, object_pairs_hook=OrderedDict)
-            
+
             # Graph generation
             regraph = Regraph(mode=self.mode)
             # First ask if this is supported, to avoid reconstruction and save time
@@ -91,19 +95,23 @@ class RegraphExporter():
                     "status": "Skip",
                     "reason": reason
                 })
+                return_result = False
             else:
                 importer = SketchExtrudeImporter(json_data)
                 importer.reconstruct()
-                
+
                 # By default regraph assumes the geometry is in the rootComponent
                 graph_data = regraph.generate()
                 if len(graph_data["graphs"]) > 0:
+                    if self.mode == "PerFace":
+                        self.update_sequence_data(graph_data)
                     regraph_tester = RegraphTester(mode=self.mode)
                     regraph_tester.test(graph_data)
                     if self.mode == "PerFace":
                         regraph_tester.reconstruct(graph_data)
                     self.export_graph_data(graph_data)
                 self.update_results_status(graph_data)
+                return_result = True
         except Exception as ex:
             self.logger.log(f"Exception: {ex.__class__.__name__}")
             trace = traceback.format_exc()
@@ -113,13 +121,27 @@ class RegraphExporter():
                         "exception_args": " ".join(ex.args),
                         "trace": trace
                     })
+            return_result = False
         self.save_results()
+        return return_result
+
+    def update_sequence_data(self, graph_data):
+        """Update the sequence with the correct graph file names"""
+        graph_files = []
+        for index, graph in enumerate(graph_data["graphs"]):
+            graph_file = self.get_export_path(f"{index:04}")
+            graph_files.append(graph_file)
+        # Add the names of the graphs to the sequence
+        seq_data = graph_data["sequences"][0]
+        for index, seq in enumerate(seq_data["sequence"]):
+            seq["graph"] = graph_files[index].name
 
     def export_graph_data(self, graph_data):
         """Export the graph data generated from regraph"""
         for index, graph in enumerate(graph_data["graphs"]):
             self.export_extrude_graph(graph, index)
-        for seq_data in graph_data["sequences"]:
+        if self.mode == "PerFace":
+            seq_data = graph_data["sequences"][0]
             self.export_sequence(seq_data)
 
     def get_export_path(self, name):
@@ -128,10 +150,7 @@ class RegraphExporter():
 
     def export_extrude_graph(self, graph, extrude_index):
         """Export a graph from an extrude operation"""
-        if self.mode == "PerFace":
-            graph_file = self.get_export_path("target")
-        else:
-            graph_file = self.get_export_path(f"{extrude_index:04}")
+        graph_file = self.get_export_path(f"{extrude_index:04}")
         self.export_graph(graph_file, graph)
 
     def export_graph(self, graph_file, graph):
@@ -209,6 +228,7 @@ def start():
     ]
 
     json_count = len(json_files)
+    success_count = 0
     for i, json_file in enumerate(json_files, start=1):
         if json_file.name in results:
             logger.log(f"[{i}/{json_count}] Skipping {json_file}")
@@ -216,9 +236,10 @@ def start():
             try:
                 logger.log(f"[{i}/{json_count}] Processing {json_file}")
                 regraph_exporter = RegraphExporter(
-                    json_file, logger=logger, mode="PerFace")
-                regraph_exporter.export(output_dir, results_file, results)
-
+                    json_file, logger=logger, mode=GRAPH_MODE)
+                result = regraph_exporter.export(output_dir, results_file, results)
+                if result:
+                    success_count += 1
             except Exception as ex:
                 logger.log(f"Error exporting: {ex}")
                 logger.log(traceback.format_exc())
@@ -227,6 +248,8 @@ def start():
                 # Fusion automatically opens a new window
                 # after the last one is closed
                 app.activeDocument.close(False)
+    logger.log("----------------------------")
+    logger.log(f"[{success_count}/{json_count}] designs processed successfully")
 
 
 def run(context):
