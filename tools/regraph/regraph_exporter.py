@@ -29,6 +29,9 @@ from regraph import Regraph
 from regraph import RegraphTester
 
 
+# Set the graph mode to either PerExtrude or PerFace
+GRAPH_MODE = "PerExtrude"
+
 # Event handlers
 handlers = []
 
@@ -137,8 +140,9 @@ class RegraphExporter():
         """Export the graph data generated from regraph"""
         for index, graph in enumerate(graph_data["graphs"]):
             self.export_extrude_graph(graph, index)
-        seq_data = graph_data["sequences"][0]
-        self.export_sequence(seq_data)
+        if self.mode == "PerFace":
+            seq_data = graph_data["sequences"][0]
+            self.export_sequence(seq_data)
 
     def get_export_path(self, name):
         """Get the export path from a name"""
@@ -207,7 +211,7 @@ def start():
     logger = Logger()
     # Fusion requires an absolute path
     current_dir = Path(__file__).resolve().parent
-    data_dir = current_dir.parent / "testdata/regraph"
+    data_dir = current_dir.parent / "testdata"
     output_dir = current_dir / "output"
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
@@ -216,12 +220,12 @@ def start():
     results = load_results(results_file)
 
     # Get all the files in the data folder
-    json_files = [f for f in data_dir.glob("**/*.json")]
+    # json_files = [f for f in data_dir.glob("**/*.json")]
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    # json_files = [
-    #     data_dir / "Couch.json"
-    #     # data_dir / "SingleSketchExtrude_RootComponent.json"
-    # ]
+    json_files = [
+        data_dir / "Couch.json"
+        # data_dir / "SingleSketchExtrude_RootComponent.json"
+    ]
 
     json_count = len(json_files)
     success_count = 0
@@ -232,7 +236,7 @@ def start():
             try:
                 logger.log(f"[{i}/{json_count}] Processing {json_file}")
                 regraph_exporter = RegraphExporter(
-                    json_file, logger=logger, mode="PerFace")
+                    json_file, logger=logger, mode=GRAPH_MODE)
                 result = regraph_exporter.export(output_dir, results_file, results)
                 if result:
                     success_count += 1
