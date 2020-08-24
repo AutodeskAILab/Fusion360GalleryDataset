@@ -576,6 +576,7 @@ class Regraph():
         """Get the features for a face for a per extrude graph"""
         face_data = self.get_common_face_data(face, face_uuid)
         face_data["surface_type"] = serialize.surface_type(face.geometry)
+        face_data["reversed"] = face.isParamReversed
         # face_data["surface_type_id"] = face.geometry.surfaceType
         face_data["area"] = face.area
         normal = geometry.get_face_normal(face)
