@@ -80,9 +80,12 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 
 
 #### Reconstruction
+Reconstruct entire designs from json files provided with the reconstruction subset.
 - `reconstruct(file)`: Reconstruct a design from the provided json file
 - `clear()`: Clear (i.e. close) all open designs in Fusion
+
 #### Incremental Construction
+Incremental construction of new designs. Currently only a small subset of the Fusion API is supported, but we will expand this over time.
 - `add_sketch(sketch_plane)`: Adds a sketch to the design.
     - `sketch_plane`: can be either one of:
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
@@ -105,10 +108,20 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
     - `profile_id`: is the uuid of the profile returned by `add_line()`
     - `distance`: is the extrude distance perpendicular to the profile plane
-    - `operation`: a string with the values: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
+    - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
     - Returns BRep vertices of the resulting body, BRep face information
 
+#### Target Reconstruction
+Reconstruct from a target design.
+- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design.
+- `add_extrude_by_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
+    - `start_face`: is the uuid of the start face in the target
+    - `end_face`: is the uuid of the end face in the target
+    - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
+    - Returns TBD
+
 #### Export
+Export the existing design in a number of formats.
 - `mesh(file)`: Retreive a mesh in .obj or .stl format and write it to the local file provided.
 - `brep(file)`: Retreive a brep in .step or .smt format and write it to a local file provided.
 - `sketches(dir, format)`: Retreive each sketch in a given format.
@@ -116,6 +129,7 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
     - `format`: a string with the values `.png` or `.dxf`
 
 #### Utility
+Various utility calls to interact with Fusion 360.
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
