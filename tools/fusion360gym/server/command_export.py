@@ -15,6 +15,7 @@ import importlib
 from zipfile import ZipFile
 from pathlib import Path
 
+from .command_base import CommandBase
 
 # Add the common folder to sys.path
 COMMON_DIR = os.path.abspath(
@@ -22,20 +23,13 @@ COMMON_DIR = os.path.abspath(
 )
 if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
+
 import exporter
 import view_control
 from sketch_extrude_importer import SketchExtrudeImporter
 
 
-class CommandExport():
-
-    def __init__(self, runner):
-        self.runner = runner
-        self.logger = None
-        self.app = adsk.core.Application.get()
-
-    def set_logger(self, logger):
-        self.logger = logger
+class CommandExport(CommandBase):
 
     def reconstruct(self, data):
         """Reconstruct a design from the provided json data"""

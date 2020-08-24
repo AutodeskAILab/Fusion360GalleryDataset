@@ -10,6 +10,8 @@ import os
 import sys
 import importlib
 
+from .command_base import CommandBase
+
 # Add the common folder to sys.path
 COMMON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "common"))
 if COMMON_DIR not in sys.path:
@@ -24,20 +26,7 @@ importlib.reload(deserialize)
 importlib.reload(serialize)
 
 
-class CommandIncrement():
-
-    def __init__(self, runner):
-        self.runner = runner
-        self.logger = None
-        self.app = adsk.core.Application.get()
-        self.sketch_state = {}
-
-    def set_logger(self, logger):
-        self.logger = logger
-
-    def clear(self):
-        """Clear the state"""
-        self.sketch_state = {}
+class CommandIncrement(CommandBase):
 
     def add_sketch(self, data):
         """Add a sketch to the existing design"""
@@ -65,7 +54,7 @@ class CommandIncrement():
             return self.runner.return_failure("sketch not found")
         sketch_uuid = name.get_uuid(sketch)
         # If this is the first point, store it and return
-        if sketch.name not in self.sketch_state:
+        if sketch.name not in self.state:
             self.__init_sketch_state(sketch.name, data["pt"], data["pt"])
             profile_data = serialize.sketch_profiles(sketch.profiles)
             return self.runner.return_success({
@@ -73,7 +62,7 @@ class CommandIncrement():
                 "sketch_name": sketch.name,
                 "profiles": profile_data
             })
-        state = self.sketch_state[sketch.name]
+        state = self.state[sketch.name]
         transform = data["transform"] if "transform" in data else None
         return self.__add_line(sketch, sketch_uuid, state["last_pt"], data["pt"], transform)
 
@@ -98,9 +87,9 @@ class CommandIncrement():
         if sketch is None:
             return self.runner.return_failure("sketch not found")
         sketch_uuid = name.get_uuid(sketch)
-        if sketch.name not in self.sketch_state:
+        if sketch.name not in self.state:
             return self.runner.return_failure("sketch state not found")
-        state = self.sketch_state[sketch.name]
+        state = self.state[sketch.name]
         # We need at least 4 points (2 lines with 2 points each)
         if state["pt_count"] < 4:
             return self.runner.return_failure("sketch has too few points")
@@ -159,7 +148,7 @@ class CommandIncrement():
         curve_uuid = name.set_uuid(line)
         name.set_uuids_for_sketch(sketch)
         profile_data = serialize.sketch_profiles(sketch.profiles)
-        if sketch.name not in self.sketch_state:
+        if sketch.name not in self.state:
             self.__init_sketch_state(sketch.name, pt1, pt2, transform=transform)
         else:
             self.__inc_sketch_state(sketch.name, pt2, transform=transform)
@@ -185,7 +174,7 @@ class CommandIncrement():
     def __init_sketch_state(self, sketch_name, first_pt=None, last_pt=None,
                             pt_count=0, transform=None):
         """Initialize the sketch state"""
-        self.sketch_state[sketch_name] = {
+        self.state[sketch_name] = {
             "first_pt": first_pt,
             "last_pt": last_pt,
             "pt_count": pt_count,
@@ -194,7 +183,7 @@ class CommandIncrement():
 
     def __inc_sketch_state(self, sketch_name, last_pt, transform=None):
         """Increment the sketch state with the latest point"""
-        state = self.sketch_state[sketch_name]
+        state = self.state[sketch_name]
         state["last_pt"] = last_pt
         # Increment by 2 as we are adding a curve
         state["pt_count"] += 2
