@@ -109,12 +109,32 @@ class Regraph():
 
     def generate_extrude(self, extrude):
         """Generate a graph after each extrude as reconstruction takes place"""
-        # If we are exporting per curve
+        # If we are exporting per face
         if self.mode == "PerFace":
-            self.add_extrude_to_sequence(extrude)
-        graph = self.get_graph()
-        self.data["graphs"].append(graph)
-        self.data["status"].append("Success")
+            bodies = self.add_extrude_to_sequence(extrude)
+            if len(bodies) == 1:
+                graph = self.get_graph()
+                self.data["graphs"].append(graph)
+                self.data["status"].append("Success")
+            else:
+                body_ids = [b.revisionId for b in bodies]
+                body_ids_set = set(body_ids)
+                # Check if we have multiple faces extruding the same body
+                if len(body_ids) != len(body_ids_set):
+                    raise exceptions.UnsupportedException(
+                            "Multiple face extrude to single body")
+                for body in bodies:
+                    if len(self.data["graphs"]) > 0:
+                        prev_graph = copy.deepcopy(self.data["graphs"][-1])
+                    else:
+                        prev_graph = None
+                    graph = self.get_graph_delta(prev_graph, body)
+                    self.data["graphs"].append(graph)
+                    self.data["status"].append("Success")
+        else:
+            graph = self.get_graph()
+            self.data["graphs"].append(graph)
+            self.data["status"].append("Success")
         self.current_extrude_index += 1
 
     def generate_last(self):
@@ -205,7 +225,9 @@ class Regraph():
 
     def add_extrude_to_sequence(self, extrude):
         """Add the extrude operation to the sequence"""
-        # adsk.doEvents()
+        # Keep track of which bodies from each extrude
+        bodies = []
+        # Multiple start or end faces in a single extrude
         if extrude.startFaces.count > 1 or extrude.endFaces.count > 1:
             start_faces = extrude.startFaces
             start_end_flipped = False
@@ -213,10 +235,13 @@ class Regraph():
                 start_faces = extrude.endFaces
                 start_end_flipped = True
             for start_face in start_faces:
-                self.add_extrude_faces_to_sequence(extrude, start_face, start_end_flipped)
+                body = self.add_extrude_faces_to_sequence(extrude, start_face, start_end_flipped)
+                bodies.append(body)
         # Single extrude
         else:
-            self.add_extrude_faces_to_sequence(extrude)
+            body = self.add_extrude_faces_to_sequence(extrude)
+            bodies.append(body)
+        return bodies
 
     def add_extrude_faces_to_sequence(self, extrude, start_face=None, start_end_flipped=None):
         """Add the extrude operation to the sequence"""
@@ -241,6 +266,7 @@ class Regraph():
             "operation": operation
         }
         self.sequence.append(extrude_to_sequence_entry)
+        return start_face.body
 
     def get_extrude_start_face(self, extrude):
         """Get the start face from an extrude, along with a flag to
@@ -508,11 +534,26 @@ class Regraph():
                 if face is not None:
                     face_data = self.get_face_data(face)
                     graph["nodes"].append(face_data)
-
             for edge in body.edges:
                 if edge is not None:
                     edge_data = self.get_edge_data(edge)
                     graph["links"].append(edge_data)
+        return graph
+
+    def get_graph_delta(self, prev_graph, body):
+        """Get a graph data structure as a delta from a previous graph
+            while adding a body from an extrude"""
+        graph = self.get_empty_graph()
+        if prev_graph is not None:
+            graph = prev_graph
+        for face in body.faces:
+            if face is not None:
+                face_data = self.get_face_data(face)
+                graph["nodes"].append(face_data)
+        for edge in body.edges:
+            if edge is not None:
+                edge_data = self.get_edge_data(edge)
+                graph["links"].append(edge_data)
         return graph
 
     def get_face_data(self, face):

@@ -76,6 +76,7 @@ class RegraphExporter():
         # Immediately log this in case we crash
         self.results[self.json_file.name] = []
         self.save_results()
+        return_result = False
         try:
             with open(self.json_file, encoding="utf8") as f:
                 json_data = json.load(f, object_pairs_hook=OrderedDict)
@@ -91,6 +92,7 @@ class RegraphExporter():
                     "status": "Skip",
                     "reason": reason
                 })
+                return_result = False
             else:
                 importer = SketchExtrudeImporter(json_data)
                 importer.reconstruct()
@@ -106,6 +108,7 @@ class RegraphExporter():
                         regraph_tester.reconstruct(graph_data)
                     self.export_graph_data(graph_data)
                 self.update_results_status(graph_data)
+                return_result = True
         except Exception as ex:
             self.logger.log(f"Exception: {ex.__class__.__name__}")
             trace = traceback.format_exc()
@@ -115,7 +118,9 @@ class RegraphExporter():
                         "exception_args": " ".join(ex.args),
                         "trace": trace
                     })
+            return_result = False
         self.save_results()
+        return return_result
 
     def update_sequence_data(self, graph_data):
         """Update the sequence with the correct graph file names"""
@@ -219,6 +224,7 @@ def start():
     # ]
 
     json_count = len(json_files)
+    success_count = 0
     for i, json_file in enumerate(json_files, start=1):
         if json_file.name in results:
             logger.log(f"[{i}/{json_count}] Skipping {json_file}")
@@ -227,8 +233,9 @@ def start():
                 logger.log(f"[{i}/{json_count}] Processing {json_file}")
                 regraph_exporter = RegraphExporter(
                     json_file, logger=logger, mode="PerFace")
-                regraph_exporter.export(output_dir, results_file, results)
-
+                result = regraph_exporter.export(output_dir, results_file, results)
+                if result:
+                    success_count += 1
             except Exception as ex:
                 logger.log(f"Error exporting: {ex}")
                 logger.log(traceback.format_exc())
@@ -237,6 +244,8 @@ def start():
                 # Fusion automatically opens a new window
                 # after the last one is closed
                 app.activeDocument.close(False)
+    logger.log("----------------------------")
+    logger.log(f"[{success_count}/{json_count}] designs processed successfully")
 
 
 def run(context):
