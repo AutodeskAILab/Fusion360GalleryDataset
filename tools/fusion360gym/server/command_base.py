@@ -5,6 +5,8 @@ Base Command Class
 """
 
 import adsk.core
+from pathlib import Path
+import tempfile
 
 
 class CommandBase():
