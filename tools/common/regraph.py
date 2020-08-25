@@ -98,8 +98,8 @@ class Regraph():
                     break
                 # Populate the cache again
                 self.add_extrude_to_cache(extrude)
-                self.add_extrude_edges_to_cache()
-                self.generate_extrude(extrude)
+                self.add_edges_to_cache()
+                self.generate_from_extrude(extrude)
                 prev_extrude_index = self.timeline.markerPosition
         if skip_reason is None:
             self.generate_last()
@@ -107,7 +107,7 @@ class Regraph():
             self.data["status"].append(skip_reason)
         return self.data
 
-    def generate_extrude(self, extrude):
+    def generate_from_extrude(self, extrude):
         """Generate a graph after each extrude as reconstruction takes place"""
         # If we are exporting per face
         if self.mode == "PerFace":
@@ -153,6 +153,13 @@ class Regraph():
                 }
                 self.data["sequences"].append(seq_data)
 
+    def generate_from_bodies(self, bodies):
+        """Generate a single graph from a collection of bodies"""
+        self.set_face_uuids(bodies)
+        self.add_edges_to_cache(bodies)
+        graph = self.get_graph_from_bodies(bodies)
+        return graph
+
     # -------------------------------------------------------------------------
     # DATA CACHING
     # -------------------------------------------------------------------------
@@ -190,13 +197,15 @@ class Regraph():
                 "last_operation_label": True
             }
 
-    def add_extrude_edges_to_cache(self):
+    def add_edges_to_cache(self, bodies=None):
         """Update the edge cache with the latest extrude"""
+        if bodies is None:
+            bodies = self.target_component.bRepBodies
         concave_edge_cache = set()
-        for body in self.target_component.bRepBodies:
+        for body in bodies:
             temp_ids = name.get_temp_ids_from_collection(body.concaveEdges)
             concave_edge_cache.update(temp_ids)
-        for body in self.target_component.bRepBodies:
+        for body in bodies:
             for face in body.faces:
                 for edge in face.edges:
                     assert edge.faces.count == 2
@@ -350,6 +359,12 @@ class Regraph():
             end_face = self.get_coplanar_face(end_plane, body)
         return end_face
 
+    def set_face_uuids(self, bodies):
+        """Set the face uuids for a collection of bodies"""
+        for body in bodies:
+            for face in body.faces:
+                face_uuid = name.set_uuid(face)
+
     # -------------------------------------------------------------------------
     # FEATURES
     # -------------------------------------------------------------------------
@@ -492,7 +507,7 @@ class Regraph():
             self.logger.log(f"Skipping {json_data['metadata']['parent_project']} early: {reason}")
             return False, reason
         else:
-            return True, None 
+            return True, None
 
     def is_extrude_tapered(self, extrude):
         if extrude.extentOne is not None:
@@ -556,15 +571,32 @@ class Regraph():
                 graph["links"].append(edge_data)
         return graph
 
+    def get_graph_from_bodies(self, bodies):
+        """Get a graph from a set of bodies
+            without using any cache data"""
+        graph = self.get_empty_graph()
+        for body in bodies:
+            # TODO: Figure out why the body.faces array is empty??
+            for face in body.faces:
+                if face is not None:
+                    face_data = self.get_face_data(face)
+                    graph["nodes"].append(face_data)
+        for body in bodies:
+            for edge in body.edges:
+                if edge is not None:
+                    edge_data = self.get_edge_data(edge)
+                    graph["links"].append(edge_data)
+        return graph
+
     def get_face_data(self, face):
         """Get the features for a face"""
         face_uuid = name.get_uuid(face)
         assert face_uuid is not None
-        face_metadata = self.face_cache[face_uuid]
         if self.mode == "PerExtrude":
+            face_metadata = self.face_cache[face_uuid]
             return self.get_face_data_per_extrude(face, face_uuid, face_metadata)
         elif self.mode == "PerFace":
-            return self.get_face_data_per_face(face, face_uuid, face_metadata)
+            return self.get_face_data_per_face(face, face_uuid)
 
     def get_common_face_data(self, face, face_uuid):
         """Get common edge data"""
@@ -599,7 +631,7 @@ class Regraph():
         face_data["last_operation_label"] = face_metadata["last_operation_label"]
         return face_data
 
-    def get_face_data_per_face(self, face, face_uuid, face_metadata):
+    def get_face_data_per_face(self, face, face_uuid):
         """Get the features for a face for a per curve graph"""
         face_data = self.get_common_face_data(face, face_uuid)
         face_data["surface_type"] = serialize.surface_type(face.geometry)

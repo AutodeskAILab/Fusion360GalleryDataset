@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .command_export import CommandExport
 from .command_increment import CommandIncrement
+from .command_target import CommandTarget
 
 
 class CommandRunner():
@@ -25,11 +26,13 @@ class CommandRunner():
         self.last_command = ""
         self.export = CommandExport(self)
         self.increment = CommandIncrement(self)
+        self.target = CommandTarget(self)
 
     def set_logger(self, logger):
         self.logger = logger
         self.export.set_logger(logger)
         self.increment.set_logger(logger)
+        self.target.set_logger(logger)
 
     def run_command(self, command, data=None):
         """Run a command and route it to the right method"""
@@ -62,6 +65,8 @@ class CommandRunner():
                 result = self.increment.close_profile(data)
             elif command == "add_extrude":
                 result = self.increment.add_extrude(data)
+            elif command == "set_target":
+                result = self.target.set_target(data)
             else:
                 return self.return_failure("Unknown command")
             return result
@@ -86,6 +91,7 @@ class CommandRunner():
             # Save without closing
             doc.close(False)
         self.increment.clear()
+        self.target.clear()
         return self.return_success()
 
     def return_success(self, data=None):

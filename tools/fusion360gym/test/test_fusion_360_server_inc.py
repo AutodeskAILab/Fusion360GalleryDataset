@@ -27,7 +27,7 @@ HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
 
 
-class TestFusion360Server(unittest.TestCase):
+class TestFusion360ServerInc(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
