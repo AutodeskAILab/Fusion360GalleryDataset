@@ -1,5 +1,6 @@
 import adsk.core
 import adsk.fusion
+import math
 
 
 def get_bounding_box(entity):
@@ -131,36 +132,64 @@ def get_vertex_count(entity):
 
 def intersection_over_union(component_one, component_two):
     """Calculate the intersection over union between two components"""
-    # TODO: Union
-    # We union all bodies together and take the volume
+    all_bodies = adsk.core.ObjectCollection.create()
+    for body in component_one.bRepBodies:
+        all_bodies.add(body)
+    for body in component_two.bRepBodies:
+        all_bodies.add(body)
+    union_volume = get_union_volume(all_bodies)
+    intersect_volume = get_intersect_volume(all_bodies)
+    return intersect_volume / union_volume
 
-    # TODO: Intersect
-    # We union the bodies for each component
-    # then find the intersection of each body, with all bodies
-    # in the other component
-    pass
 
-
-def join_temp_brep_bodies(bodies):
-    """Try to join multiple brep bodies into a single temp body"""
+def get_union_volume(bodies):
+    """Get the unioned volume of a set of bodies"""
     if len(bodies) == 0:
-        return None
-    temp_brep_manager = adsk.fusion.TemporaryBRepManager.get()
-    first_brep = temp_brep_manager.copy(bodies[0])
+        return 0.0
     if len(bodies) == 1:
-        return first_brep
-    union = adsk.fusion.BooleanTypes.UnionBooleanType
+        return bodies[0].volume
+
+    app = adsk.core.Application.get()
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    timeline = app.activeProduct.timeline
+    prev_timeline_position = timeline.markerPosition
+    # We use combine here as it handles multiple tools
+    # we could use TemporaryBRepManager.booleanOperation
+    # for a speed up if we add handling for multiple bodies
+    combines = design.rootComponent.features.combineFeatures
+    first_body = bodies[0]
+    tools = adsk.core.ObjectCollection.create()
     for index in range(1, len(bodies)):
-        # TODO: Check if the volume of first_brep
-        # has changed before/after boolean
-        # if it hasn't changed add that tool to the list to return
-        result = temp_brep_manager.booleanOperation(
-            first_brep,
-            bodies[index],
-            union
-        )
-        # result will be true if successful
-    return first_brep
+        tools.add(body[index])
+    combine_input = combines.createInput(first_body, tools)
+    # combine_input.isKeepToolBodies = True
+    # combine_input.isNewComponent = True
+    combine = combines.add(combine_input)
+    volume = 0
+    for body in combine.bodies:
+        volume += body.volume
+    # Revert the timeline
+    timeline.markerPosition = prev_timeline_position
+    timeline.deleteAllAfterMarker()
+    return volume
+
+
+def get_intersect_volume(bodies):
+    """Get the intersection volume of a set of bodies"""
+    if len(bodies) == 0:
+        return 0.0
+    if len(bodies) == 1:
+        return bodies[0].volume
+    app = adsk.core.Application.get()
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    # Analyze interference
+    input = design.createInterferenceInput(bodies)
+    results = design.analyzeInterference(input)
+    # Calculate the interference volumes
+    volume = 0
+    for result in results:
+        volume += result.interferenceBody.volume
+    return volume
 
 
 def __get_bodies_from_entity(entity):
