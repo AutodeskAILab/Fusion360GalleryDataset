@@ -10,6 +10,12 @@ class Fusion360Client():
 
     def __init__(self, url="http://127.0.0.1:8080"):
         self.url = url
+        self.feature_operations = [
+            "JoinFeatureOperation",
+            "CutFeatureOperation",
+            "IntersectFeatureOperation",
+            "NewBodyFeatureOperation"
+        ]
 
     def send_command(self, command, data=None, stream=False):
         command_data = {
@@ -125,13 +131,13 @@ class Fusion360Client():
         if (sketch_name is None or profile_id is None or
                 distance is None or operation is None):
             return self.__return_error(f"Missing arguments")
-        if not isinstance(sketch_name, str):
+        if not isinstance(sketch_name, str) or len(sketch_name) == 0:
             return self.__return_error(f"Invalid sketch_name value")
-        if not isinstance(profile_id, str):
+        if not isinstance(profile_id, str) or len(profile_id) == 0:
             return self.__return_error(f"Invalid profile_id value")
         if not isinstance(distance, (int, float, complex)):
             return self.__return_error(f"Invalid distance value")
-        if not isinstance(operation, str):
+        if operation not in self.feature_operations:
             return self.__return_error(f"Invalid operation value")
         command_data = {
             "sketch_name": sketch_name,
@@ -167,7 +173,18 @@ class Fusion360Client():
 
     def add_extrude_by_face(self, start_face, end_face, operation):
         """Add an extrude between two faces of the target"""
-        pass
+        if not isinstance(start_face, str) or len(start_face) == 0:
+            return self.__return_error(f"Invalid start_face value")
+        if not isinstance(end_face, str) or len(end_face) == 0:
+            return self.__return_error(f"Invalid end_face value")
+        if operation not in self.feature_operations:
+            return self.__return_error(f"Invalid operation value")
+        command_data = {
+            "start_face": start_face,
+            "end_face": end_face,
+            "operation": operation
+        }
+        return self.send_command("add_extrude_by_face", command_data)
 
     # -------------------------------------------------------------------------
     # EXPORT

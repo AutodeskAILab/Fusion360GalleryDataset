@@ -67,6 +67,8 @@ class CommandRunner():
                 result = self.increment.add_extrude(data)
             elif command == "set_target":
                 result = self.target.set_target(data)
+            elif command == "add_extrude_by_face":
+                result = self.target.add_extrude_by_face(data)                
             else:
                 return self.return_failure("Unknown command")
             return result

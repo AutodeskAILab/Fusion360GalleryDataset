@@ -18,15 +18,16 @@ if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
 # import name
 # import match
-# import deserialize
+import deserialize
 # import serialize
 # importlib.reload(name)
 # importlib.reload(match)
-# importlib.reload(deserialize)
+importlib.reload(deserialize)
 # importlib.reload(serialize)
 import regraph
 importlib.reload(regraph)
 from regraph import Regraph
+from regraph import RegraphReconstructor
 
 
 class CommandTarget(CommandBase):
@@ -82,6 +83,53 @@ class CommandTarget(CommandBase):
         regraph = Regraph(logger=self.logger, mode="PerFace")
         graph = regraph.generate_from_bodies(self.state["target_bodies"])
         temp_file.unlink()
+        # Setup the reconstructor
+        self.state["reconstructor"] = RegraphReconstructor()
+        self.state["reconstructor"].setup()
         return self.runner.return_success({
             "graph": graph
         })
+
+    def add_extrude_by_face(self, data):
+        """Add an extrude from target faces"""
+        # Check we have set a target
+        if "reconstructor" not in self.state:
+            return self.runner.return_failure("Target not set")
+        if self.design.rootComponent.bRepBodies.count == 0:
+            return self.runner.return_failure("Target not set")
+        # Start face data checks
+        start_face = self.state["reconstructor"].get_face_from_uuid(data["start_face"])
+        if start_face is None:
+            return self.runner.return_failure("Start face not in target")
+        if start_face.geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
+            return self.runner.return_failure("Start face is not a plane")
+        # End face data checks
+        end_face = self.state["reconstructor"].get_face_from_uuid(data["end_face"])
+        if end_face is None:
+            return self.runner.return_failure("End face not in target")
+        if end_face.geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
+            return self.runner.return_failure("End face is not a plane")
+        # End face geometric checks
+        if not end_face.geometry.isParallelToPlane(start_face.geometry):
+            return self.runner.return_failure("End face is not parallel to start face")
+        if end_face.geometry.isCoPlanarTo(start_face.geometry):
+            return self.runner.return_failure("End face is coplanar to start face")
+        operation = deserialize.feature_operations(data["operation"])
+        if operation is None:
+            return self.runner.return_failure("Extrude operation is not valid")
+        # Add the extrude
+        extrude = self.state["reconstructor"].add_extrude(
+            start_face,
+            end_face,
+            operation
+        )
+        # If this is the first extrude, we initialize regraph
+        if "regraph" not in self.state:
+            self.state["regraph"] = Regraph(logger=self.logger, mode="PerFace")
+        # Generate the graph from the reconstruction component
+        graph = self.state["regraph"].generate_from_bodies(
+            self.state["reconstructor"].reconstruction.bRepBodies
+        )
+        
+
+

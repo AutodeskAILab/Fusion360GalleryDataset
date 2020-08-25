@@ -129,6 +129,40 @@ def get_vertex_count(entity):
     return count
 
 
+def intersection_over_union(component_one, component_two):
+    """Calculate the intersection over union between two components"""
+    # TODO: Union
+    # We union all bodies together and take the volume
+
+    # TODO: Intersect
+    # We union the bodies for each component
+    # then find the intersection of each body, with all bodies
+    # in the other component
+    pass
+
+
+def join_temp_brep_bodies(bodies):
+    """Try to join multiple brep bodies into a single temp body"""
+    if len(bodies) == 0:
+        return None
+    temp_brep_manager = adsk.fusion.TemporaryBRepManager.get()
+    first_brep = temp_brep_manager.copy(bodies[0])
+    if len(bodies) == 1:
+        return first_brep
+    union = adsk.fusion.BooleanTypes.UnionBooleanType
+    for index in range(1, len(bodies)):
+        # TODO: Check if the volume of first_brep
+        # has changed before/after boolean
+        # if it hasn't changed add that tool to the list to return
+        result = temp_brep_manager.booleanOperation(
+            first_brep,
+            bodies[index],
+            union
+        )
+        # result will be true if successful
+    return first_brep
+
+
 def __get_bodies_from_entity(entity):
     """Return a collection of bodies from a Component, Instance, or BRepBody"""
     bodies = []

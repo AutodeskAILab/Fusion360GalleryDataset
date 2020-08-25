@@ -576,7 +576,6 @@ class Regraph():
             without using any cache data"""
         graph = self.get_empty_graph()
         for body in bodies:
-            # TODO: Figure out why the body.faces array is empty??
             for face in body.faces:
                 if face is not None:
                     face_data = self.get_face_data(face)
@@ -783,8 +782,8 @@ class RegraphTester(unittest.TestCase):
 
     def reconstruct(self, graph_data, target_component=None):
         """Reconstruct and test it matches the target"""
-        regraph_reconstructor = RegraphReconstructor(graph_data, target_component)
-        regraph_reconstructor.reconstruct()
+        regraph_reconstructor = RegraphReconstructor(target_component)
+        regraph_reconstructor.reconstruct(graph_data)
         # Compare the ground truth with the reconstruction
         gt = regraph_reconstructor.target_component
         rc = regraph_reconstructor.reconstruction.component
@@ -950,32 +949,40 @@ class RegraphTester(unittest.TestCase):
 class RegraphReconstructor():
     """Reconstruct the graph to test it matches the target"""
 
-    def __init__(self, graph_data, target_component=None):
+    def __init__(self, target_component=None):
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         self.target_component = target_component
         if self.target_component is None:
             self.target_component = self.design.rootComponent
-        self.sequence = graph_data["sequences"][0]
+        self.uuid_to_face_map = {}
 
-    def reconstruct(self):
+    def reconstruct(self, graph_data):
         """Reconstruct from the sequence of faces"""
+        self.sequence = graph_data["sequences"][0]
+        self.setup()
+        for seq in self.sequence["sequence"]:
+            self.add_extrude_from_uuid(
+                seq["start_face"],
+                seq["end_face"],
+                seq["operation"]
+            )
+
+    def setup(self):
+        """Setup for reconstruction"""
         # Create a reconstruction component that we create geometry in
         self.reconstruction = self.design.rootComponent.occurrences.addNewComponent(
             adsk.core.Matrix3D.create()
         )
         self.reconstruction.component.name = "Reconstruction"
-        uuid_to_face_map = self.get_uuid_to_face_map()
-        for seq in self.sequence["sequence"]:
-            start_face = self.get_face_from_sequence_index(seq, "start_face", uuid_to_face_map)
-            end_face = self.get_face_from_sequence_index(seq, "end_face", uuid_to_face_map)
-            operation = deserialize.feature_operations(seq["operation"])
-            self.add_extrude(start_face, end_face, operation)
+        # Populate the cache with a map from uuids to face indices
+        self.uuid_to_face_map = self.get_uuid_to_face_map()
 
-    def get_face_from_sequence_index(self, seq, seq_key, uuid_to_face_map):
+    def get_face_from_uuid(self, face_uuid):
         """Get a face from an index in the sequence"""
-        face_uuid = seq[seq_key]
-        indices = uuid_to_face_map[face_uuid]
+        if face_uuid not in self.uuid_to_face_map:
+            return None
+        indices = self.uuid_to_face_map[face_uuid]
         body_index = indices["body_index"]
         face_index = indices["face_index"]
         body = self.target_component.bRepBodies[body_index]
@@ -995,6 +1002,13 @@ class RegraphReconstructor():
                     "face_index": face_index
                 }
         return uuid_to_face_map
+
+    def add_extrude_from_uuid(self, start_face_uuid, end_face_uuid, operation):
+        """Create an extrude from a start face uuid to an end face uuid"""
+        start_face = self.get_face_from_uuid(start_face_uuid)
+        end_face = self.get_face_from_uuid(end_face_uuid)
+        operation = deserialize.feature_operations(operation)
+        return self.add_extrude(start_face, end_face, operation)
 
     def add_extrude(self, start_face, end_face, operation):
         """Create an extrude from a start face to an end face"""
