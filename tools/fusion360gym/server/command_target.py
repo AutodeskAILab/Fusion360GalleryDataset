@@ -66,6 +66,7 @@ class CommandTarget(CommandBase):
                 f"Error importing target {suffix} file")
         # Store references to the target bodies
         self.state["target_bodies"] = []
+
         # We do a little bit of clean up here so the target design
         # is in the root of the document
         for occ in imported_designs:
@@ -74,8 +75,13 @@ class CommandTarget(CommandBase):
                 moved_body = body.moveToComponent(self.design.rootComponent)
                 moved_body.name = f"Target-{moved_body.name}"
                 self.state["target_bodies"].append(moved_body)
-            occ.deleteMe()
+            # We can't seem to delete the occurrence
+            # as it seems to be referenced...
+            # occ.deleteMe()
+        adsk.doEvents()
         regraph = Regraph(logger=self.logger, mode="PerFace")
         graph = regraph.generate_from_bodies(self.state["target_bodies"])
         temp_file.unlink()
-        return self.runner.return_success(graph)
+        return self.runner.return_success({
+            "graph": graph
+        })

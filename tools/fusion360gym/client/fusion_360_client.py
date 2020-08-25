@@ -163,7 +163,6 @@ class Fusion360Client():
             "file": file.name,
             "file_data": file_data
         }
-        print(command_data)
         return self.send_command("set_target", command_data)
 
     def add_extrude_by_face(self, start_face, end_face, operation):

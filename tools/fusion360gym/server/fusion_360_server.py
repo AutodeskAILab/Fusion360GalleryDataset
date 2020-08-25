@@ -78,8 +78,8 @@ class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
                     self.respond_binary_file(status_code, return_data)
             else:
                 self.logger.log(f"[{status_code}] {message}")
-                if return_data is not None:
-                    self.logger.log(f"\t{return_data}")
+                # if return_data is not None:
+                #     self.logger.log(f"\t{return_data}")
                 self.respond(status_code, message, return_data)
 
         except Exception as ex:
