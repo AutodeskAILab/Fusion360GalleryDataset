@@ -160,26 +160,25 @@ class CommandIncrement():
                 sketch_uuid = entity
         if sketch_uuid is None:
             return self.runner.return_failure("reconstruct sketch id doesn't exist")
-        if sketch_plane is not None:
-            sketch_plane = match.sketch_plane(sketch_plane)
-            # create an identical matrix 
-            if transform is None:
-                scale = adsk.core.Vector3D.create(1, 1, 1)
-                translation = adsk.core.Vector3D.create(0, 0, 0)
-                transform = self.__get_scale_translation_matrix(scale, translation)
         if transform is not None:
             if sketch_plane is not None:
                 scale = adsk.core.Vector3D.create(transform[0][0], transform[0][1], transform[0][2])
                 translation = adsk.core.Vector3D.create(transform[1][0], transform[1][1], transform[1][2])
                 transform = self.__get_scale_translation_matrix(scale, translation)
             else:
-                return self.runner.return_failure("sketch plane is not assigned")    
+                return self.runner.return_failure("sketch plane is not assigned")  
+        if sketch_plane is not None:
+            sketch_plane = match.sketch_plane(sketch_plane)
+            if transform is None:
+                # create an identical matrix 
+                transform = adsk.core.Matrix3D.create()  
         importer = SketchExtrudeImporter(json_data)
         sketch = importer.reconstruct_sketch(sketch_uuid, sketch_plane=sketch_plane, transform=transform)
         # Serialize the data and return
         profile_data = serialize.sketch_profiles(sketch.profiles)
         return self.runner.return_success({
             "sketch_id": sketch_uuid,
+            "sketch_name": sketch.name,
             "profiles": profile_data
         })
 
