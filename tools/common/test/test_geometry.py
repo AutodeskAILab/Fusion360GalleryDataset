@@ -35,9 +35,27 @@ class TestGeometry(CommonTestBase):
         self.test_get_union_volume_adjacent()
         self.test_get_union_volume_separate()
         self.test_get_union_volume_overlap_component()
+        self.test_get_union_volume_exact_overlap()
+        
         self.test_get_intersect_volume_overlap()
         self.test_get_intersect_volume_overlap_self_intersect()
-
+        self.test_get_intersect_volume_separate()
+        self.test_get_intersect_volume_multi_overlap()
+        self.test_get_intersect_volume_multi_tool()
+        self.test_get_intersect_volume_contained()
+        self.test_get_intersect_volume_double()
+        self.test_get_intersect_volume_exact_overlap()
+        
+        self.test_iou_overlap()
+        self.test_iou_overlap_self_intersect()
+        self.test_iou_exact_overlap()
+        self.test_iou_intersect_separate()
+        self.test_iou_multi_overlap()
+        self.test_iou_multi_tool()
+        self.test_iou_contained()
+        self.test_iou_double()
+        
+        print("All tests complete!")
 
     def load_f3d(self, file):
         self.clear()
@@ -110,7 +128,19 @@ class TestGeometry(CommonTestBase):
             bodies.append(body)
         volume = geometry.get_union_volume(bodies)
         self.assertAlmostEqual(volume, 3, places=self.places)
-    
+
+    def test_get_union_volume_exact_overlap(self):
+        f3d = self.testdata_dir / "common/BooleanExactOverlap.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        bodies = []
+        for body in self.design.rootComponent.bRepBodies:
+            bodies.append(body)
+        for body in tool_comp.bRepBodies:
+            bodies.append(body)
+        volume = geometry.get_union_volume(bodies)
+        self.assertAlmostEqual(volume, 1, places=self.places)
+
     # -------------------------------------------------------------------------
     # INTERSECT
     # -------------------------------------------------------------------------
@@ -134,3 +164,155 @@ class TestGeometry(CommonTestBase):
             tool_comp.bRepBodies
         )
         self.assertAlmostEqual(volume, 1, places=self.places)
+
+    def test_get_intersect_volume_separate(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectSeparate.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        volume = geometry.get_intersect_volume(
+            self.design.rootComponent.bRepBodies,
+            tool_comp.bRepBodies
+        )
+        self.assertAlmostEqual(volume, 0, places=self.places)
+    
+    def test_get_intersect_volume_multi_overlap(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectMultiOverlap.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        volume = geometry.get_intersect_volume(
+            self.design.rootComponent.bRepBodies,
+            tool_comp.bRepBodies
+        )
+        self.assertAlmostEqual(volume, 2, places=self.places)
+    
+    def test_get_intersect_volume_multi_tool(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectMultiTool.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        volume = geometry.get_intersect_volume(
+            self.design.rootComponent.bRepBodies,
+            tool_comp.bRepBodies
+        )
+        self.assertAlmostEqual(volume, 2, places=self.places)
+
+    def test_get_intersect_volume_contained(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectContained.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        volume = geometry.get_intersect_volume(
+            self.design.rootComponent.bRepBodies,
+            tool_comp.bRepBodies
+        )
+        self.assertAlmostEqual(volume, 1, places=self.places)
+
+    def test_get_intersect_volume_double(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectDouble.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        volume = geometry.get_intersect_volume(
+            self.design.rootComponent.bRepBodies,
+            tool_comp.bRepBodies
+        )
+        self.assertAlmostEqual(volume, 2, places=self.places)
+
+    def test_get_intersect_volume_exact_overlap(self):
+        f3d = self.testdata_dir / "common/BooleanExactOverlap.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        volume = geometry.get_intersect_volume(
+            self.design.rootComponent.bRepBodies,
+            tool_comp.bRepBodies
+        )
+        self.assertAlmostEqual(volume, 1, places=self.places)
+    
+    # -------------------------------------------------------------------------
+    # INTERSECT OVER UNION
+    # -------------------------------------------------------------------------
+
+    def test_iou_overlap(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectOverlap.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        iou = geometry.intersection_over_union(
+            self.design.rootComponent,
+            tool_comp
+        )
+        iou_target = 1.0 / 3.0
+        self.assertAlmostEqual(iou, iou_target, places=self.places)
+
+    def test_iou_overlap_self_intersect(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectOverlapSelfIntersect.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        iou = geometry.intersection_over_union(
+            self.design.rootComponent,
+            tool_comp
+        )
+        iou_target = 1.0 / 4.0
+        self.assertAlmostEqual(iou, iou_target, places=self.places)
+        
+    def test_iou_exact_overlap(self):
+        f3d = self.testdata_dir / "common/BooleanExactOverlap.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        iou = geometry.intersection_over_union(
+            self.design.rootComponent,
+            tool_comp
+        )
+        iou_target = 1.0 / 1.0
+        self.assertAlmostEqual(iou, iou_target, places=self.places)
+
+    def test_iou_intersect_separate(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectSeparate.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        iou = geometry.intersection_over_union(
+            self.design.rootComponent,
+            tool_comp
+        )
+        iou_target = 0.0 / 2.0
+        self.assertAlmostEqual(iou, iou_target, places=self.places)
+
+    def test_iou_multi_overlap(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectMultiOverlap.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        iou = geometry.intersection_over_union(
+            self.design.rootComponent,
+            tool_comp
+        )
+        iou_target = 2.0 / 8.0
+        self.assertAlmostEqual(iou, iou_target, places=self.places)
+    
+    def test_iou_multi_tool(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectMultiTool.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        iou = geometry.intersection_over_union(
+            self.design.rootComponent,
+            tool_comp
+        )
+        iou_target = 2.0 / 9.0
+        self.assertAlmostEqual(iou, iou_target, places=self.places)
+
+    def test_iou_contained(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectContained.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        iou = geometry.intersection_over_union(
+            self.design.rootComponent,
+            tool_comp
+        )
+        iou_target = 1.0 / 2.0
+        self.assertAlmostEqual(iou, iou_target, places=self.places)
+
+    def test_iou_double(self):
+        f3d = self.testdata_dir / "common/BooleanIntersectDouble.f3d"
+        self.load_f3d(f3d)
+        tool_comp = self.get_component("Tool")
+        iou = geometry.intersection_over_union(
+            self.design.rootComponent,
+            tool_comp
+        )
+        iou_target = 2.0 / 6.0
+        self.assertAlmostEqual(iou, iou_target, places=self.places)

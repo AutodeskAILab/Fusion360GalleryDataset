@@ -131,13 +131,20 @@ def get_vertex_count(entity):
 
 def intersection_over_union(component_one, component_two):
     """Calculate the intersection over union between two components"""
-    all_bodies = adsk.core.ObjectCollection.create()
-    for body in component_one.bRepBodies:
-        all_bodies.add(body)
-    for body in component_two.bRepBodies:
-        all_bodies.add(body)
+    all_bodies = []
+    all_bodies.extend(component_one.bRepBodies)
+    all_bodies.extend(component_two.bRepBodies)
     union_volume = get_union_volume(all_bodies)
-    intersect_volume = get_intersect_volume(all_bodies)
+    # Boolean failure
+    if union_volume is None:
+        return None
+    # Avoid divide by zero
+    if union_volume <= 0:
+        return 0.0
+    intersect_volume = get_intersect_volume(
+        component_one.bRepBodies,
+        component_two.bRepBodies
+    )
     return intersect_volume / union_volume
 
 
@@ -188,14 +195,14 @@ def get_union_volume(bodies, copy=True):
                     bodies_copy[j] = None
                 # If the volume has not changed there is either:
                 # 1. No overlap, so we want to count that volume
-                # 2. Direct overlap, so we don't want to count it
+                # 2. Direct overlap/containment, so we don't want to count it
                 else:
                     keep_tool = False
                     # We check that points on all tool faces are within the target
                     for face in tool.faces:
                         containment = target.pointContainment(face.pointOnFace)
                         # If any of these points is outside of the target
-                        # we can break and keep the tool to have the volume counter
+                        # we can break and keep the tool to have the volume count
                         if containment == adsk.fusion.PointContainment.PointOutsidePointContainment:
                             keep_tool = True
                             break
@@ -210,30 +217,6 @@ def get_union_volume(bodies, copy=True):
             continue
         volume += body_copy.volume
     return volume
-
-    # Combine approach
-    # timeline = app.activeProduct.timeline
-    # prev_timeline_position = timeline.markerPosition
-    # # We use combine here as it handles multiple tools
-    # # we could use TemporaryBRepManager.booleanOperation
-    # # for a speed up if we add handling for multiple bodies
-    # combines = design.rootComponent.features.combineFeatures
-    # first_body = bodies[0]
-    # tools = adsk.core.ObjectCollection.create()
-    # for index in range(1, len(bodies)):
-    #     tools.add(bodies[index])
-    # combine_input = combines.createInput(first_body, tools)
-    # combine_input.isKeepToolBodies = True
-    # combine_input.isNewComponent = True
-    # combine = combines.add(combine_input)
-    # volume = 0
-    # for body in combine.parentComponent.bRepBodies:
-    #     volume += body.volume
-    # # Revert the timeline
-    # # timeline.markerPosition = prev_timeline_position
-    # # timeline.deleteAllAfterMarker()
-    # return volume
-
 
 def get_intersect_volume(bodies_one, bodies_two):
     """Get the intersection volume of two lists of bodies"""
@@ -276,22 +259,7 @@ def get_intersect_volume(bodies_one, bodies_two):
     elif num_intersection_bodies == 1:
         return intersection_bodies[0].volume
     else:
-        return get_union_volume(intersection_bodies, copy=False)  
-
-    # if len(bodies) == 0:
-    #     return 0.0
-    # if len(bodies) == 1:
-    #     return bodies[0].volume
-    # app = adsk.core.Application.get()
-    # design = adsk.fusion.Design.cast(app.activeProduct)
-    # # Analyze interference
-    # input = design.createInterferenceInput(bodies)
-    # results = design.analyzeInterference(input)
-    # # Calculate the interference volumes
-    # volume = 0
-    # for result in results:
-    #     volume += result.interferenceBody.volume
-    # return volume
+        return get_union_volume(intersection_bodies, copy=False)
 
 
 def __get_bodies_from_entity(entity):
