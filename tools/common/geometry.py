@@ -45,7 +45,6 @@ def get_brep_bodies_bounding_box(bodies):
     bbox = adsk.core.BoundingBox3D.create(min_point, max_point)
     return bbox
 
-
 def get_face_normal(face):
     """Get the normal at the center of the face"""
     point_on_face = face.pointOnFace
@@ -142,54 +141,157 @@ def intersection_over_union(component_one, component_two):
     return intersect_volume / union_volume
 
 
-def get_union_volume(bodies):
+def get_union_volume(bodies, copy=True):
     """Get the unioned volume of a set of bodies"""
-    if len(bodies) == 0:
+    num_bodies = len(bodies)
+    if num_bodies == 0:
         return 0.0
-    if len(bodies) == 1:
+    if num_bodies == 1:
         return bodies[0].volume
 
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
-    timeline = app.activeProduct.timeline
-    prev_timeline_position = timeline.markerPosition
-    # We use combine here as it handles multiple tools
-    # we could use TemporaryBRepManager.booleanOperation
-    # for a speed up if we add handling for multiple bodies
-    combines = design.rootComponent.features.combineFeatures
-    first_body = bodies[0]
-    tools = adsk.core.ObjectCollection.create()
-    for index in range(1, len(bodies)):
-        tools.add(bodies[index])
-    combine_input = combines.createInput(first_body, tools)
-    combine_input.isKeepToolBodies = True
-    combine_input.isNewComponent = True
-    combine = combines.add(combine_input)
+    temp_brep_manager = adsk.fusion.TemporaryBRepManager.get()
+    operation = adsk.fusion.BooleanTypes.UnionBooleanType 
+
+    bodies_copy = []
+    # We make a transient copy of the bodies if we need to
+    if copy:
+        for body in bodies:
+            body_copy = temp_brep_manager.copy(body)
+            bodies_copy.append(body_copy)
+    else:
+        bodies_copy = bodies
+
+    # Loop over all pairs of bodies
+    for i in range(num_bodies):
+        for j in range(i):
+            # Get the target and tool bodies to try.   Check if we already accumulated
+            # the target or tool into another body 
+            target = bodies_copy[i]
+            if target is None:
+                continue
+            tool = bodies_copy[j]
+            if tool is None:
+                continue
+            # Store the previous volume of the target
+            prev_target_volume = target.volume
+            # Do the boolean
+            boolean_success = temp_brep_manager.booleanOperation(target, tool, operation)
+            if not boolean_success:
+                return None
+            else:
+                volume_diff = math.fabs(prev_target_volume - target.volume)
+                # If the volume has changed, we know there was an overlap
+                if volume_diff > app.pointTolerance:
+                    # Mark that the tool was accumulated into the target
+                    bodies_copy[j] = None
+                # If the volume has not changed there is either:
+                # 1. No overlap, so we want to count that volume
+                # 2. Direct overlap, so we don't want to count it
+                else:
+                    keep_tool = False
+                    # We check that points on all tool faces are within the target
+                    for face in tool.faces:
+                        containment = target.pointContainment(face.pointOnFace)
+                        # If any of these points is outside of the target
+                        # we can break and keep the tool to have the volume counter
+                        if containment == adsk.fusion.PointContainment.PointOutsidePointContainment:
+                            keep_tool = True
+                            break
+                    # The tool is inside of the target, so remove it
+                    if not keep_tool:
+                        bodies_copy[j] = None
+
+    # Now find the volume of the disjoint bodies remaining
     volume = 0
-    for body in combine.parentComponent.bRepBodies:
-        volume += body.volume
-    # Revert the timeline
-    # timeline.markerPosition = prev_timeline_position
-    # timeline.deleteAllAfterMarker()
+    for body_copy in bodies_copy:
+        if body_copy is None:
+            continue
+        volume += body_copy.volume
     return volume
 
+    # Combine approach
+    # timeline = app.activeProduct.timeline
+    # prev_timeline_position = timeline.markerPosition
+    # # We use combine here as it handles multiple tools
+    # # we could use TemporaryBRepManager.booleanOperation
+    # # for a speed up if we add handling for multiple bodies
+    # combines = design.rootComponent.features.combineFeatures
+    # first_body = bodies[0]
+    # tools = adsk.core.ObjectCollection.create()
+    # for index in range(1, len(bodies)):
+    #     tools.add(bodies[index])
+    # combine_input = combines.createInput(first_body, tools)
+    # combine_input.isKeepToolBodies = True
+    # combine_input.isNewComponent = True
+    # combine = combines.add(combine_input)
+    # volume = 0
+    # for body in combine.parentComponent.bRepBodies:
+    #     volume += body.volume
+    # # Revert the timeline
+    # # timeline.markerPosition = prev_timeline_position
+    # # timeline.deleteAllAfterMarker()
+    # return volume
 
-def get_intersect_volume(bodies):
-    """Get the intersection volume of a set of bodies"""
-    if len(bodies) == 0:
+
+def get_intersect_volume(bodies_one, bodies_two):
+    """Get the intersection volume of two lists of bodies"""
+    if len(bodies_one) == 0 or len(bodies_two) == 0:
         return 0.0
-    if len(bodies) == 1:
-        return bodies[0].volume
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
+
+    # Store which bodies are in each list
+    bodies_group = {}
+    for body in bodies_one:
+        bodies_group[body.revisionId] = 1
+    for body in bodies_two:
+        bodies_group[body.revisionId] = 2
+    
+    # Create a collection of all bodies
+    bodies = adsk.core.ObjectCollection.create()
+    for body in bodies_one:
+        bodies.add(body)
+    for body in bodies_two:
+        bodies.add(body)
+    
     # Analyze interference
     input = design.createInterferenceInput(bodies)
     results = design.analyzeInterference(input)
     # Calculate the interference volumes
-    volume = 0
+    # where the intersection is between the lists
+    # not self-intersection within the list
+    intersection_bodies = []
     for result in results:
-        volume += result.interferenceBody.volume
-    return volume
+        group_one = bodies_group[result.entityOne.revisionId]
+        group_two = bodies_group[result.entityTwo.revisionId]
+        # Make sure the intersection comes from between the groups
+        if group_one != group_two:
+            intersection_bodies.append(result.interferenceBody)
+    
+    num_intersection_bodies = len(intersection_bodies)
+    if num_intersection_bodies == 0:
+        return 0.0
+    elif num_intersection_bodies == 1:
+        return intersection_bodies[0].volume
+    else:
+        return get_union_volume(intersection_bodies, copy=False)  
+
+    # if len(bodies) == 0:
+    #     return 0.0
+    # if len(bodies) == 1:
+    #     return bodies[0].volume
+    # app = adsk.core.Application.get()
+    # design = adsk.fusion.Design.cast(app.activeProduct)
+    # # Analyze interference
+    # input = design.createInterferenceInput(bodies)
+    # results = design.analyzeInterference(input)
+    # # Calculate the interference volumes
+    # volume = 0
+    # for result in results:
+    #     volume += result.interferenceBody.volume
+    # return volume
 
 
 def __get_bodies_from_entity(entity):
