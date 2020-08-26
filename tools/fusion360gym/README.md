@@ -114,7 +114,7 @@ Incremental construction of new designs. Currently only a small subset of the Fu
 #### Target Reconstruction
 Reconstruct from a target design.
 - `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design.
-- `add_extrude_by_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
+- `add_extrude_by_target_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
     - `start_face`: is the uuid of the start face in the target
     - `end_face`: is the uuid of the end face in the target
     - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.

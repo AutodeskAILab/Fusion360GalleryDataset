@@ -171,7 +171,7 @@ class Fusion360Client():
         }
         return self.send_command("set_target", command_data)
 
-    def add_extrude_by_face(self, start_face, end_face, operation):
+    def add_extrude_by_target_face(self, start_face, end_face, operation):
         """Add an extrude between two faces of the target"""
         if not isinstance(start_face, str) or len(start_face) == 0:
             return self.__return_error(f"Invalid start_face value")
@@ -184,7 +184,7 @@ class Fusion360Client():
             "end_face": end_face,
             "operation": operation
         }
-        return self.send_command("add_extrude_by_face", command_data)
+        return self.send_command("add_extrude_by_target_face", command_data)
 
     # -------------------------------------------------------------------------
     # EXPORT

@@ -16,15 +16,12 @@ from .command_base import CommandBase
 COMMON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "common"))
 if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
-# import name
-# import match
+
 import deserialize
-# import serialize
-# importlib.reload(name)
-# importlib.reload(match)
-importlib.reload(deserialize)
-# importlib.reload(serialize)
+import geometry
 import regraph
+importlib.reload(deserialize)
+importlib.reload(geometry)
 importlib.reload(regraph)
 from regraph import Regraph
 from regraph import RegraphReconstructor
@@ -47,7 +44,7 @@ class CommandTarget(CommandBase):
             f.write(data["file_data"])
         # We clear the design before importing
         self.runner.clear()
-        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
+        existing_document = self.app.activeDocument
         # Import the geometry
         if suffix == ".step" or suffix == ".stp":
             import_options = self.app.importManager.createSTEPImportOptions(
@@ -58,27 +55,20 @@ class CommandTarget(CommandBase):
                 str(temp_file.resolve())
             )
         import_options.isViewFit = False
-        imported_designs = self.app.importManager.importToTarget2(
-            import_options,
-            self.design.rootComponent
-        )
-        if imported_designs is None:
+        # Import to a new document so the bodies land in the rootComponent
+        new_document = self.app.importManager.importToNewDocument(import_options)
+        if new_document is None:
             return self.runner.return_failure(
                 f"Error importing target {suffix} file")
+        existing_document.close(False)
+        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
+        self.design.designType = adsk.fusion.DesignTypes.ParametricDesignType
         # Store references to the target bodies
         self.state["target_bodies"] = []
-
-        # We do a little bit of clean up here so the target design
-        # is in the root of the document
-        for occ in imported_designs:
-            for body in occ.bRepBodies:
-                # Rename it as the goal so we don't get confused
-                moved_body = body.moveToComponent(self.design.rootComponent)
-                moved_body.name = f"Target-{moved_body.name}"
-                self.state["target_bodies"].append(moved_body)
-            # We can't seem to delete the occurrence
-            # as it seems to be referenced...
-            # occ.deleteMe()
+        # Rename the bodies with Target-*
+        for body in self.design.rootComponent.bRepBodies:
+            body.name = f"Target-{body.name}"
+            self.state["target_bodies"].append(body)
         adsk.doEvents()
         regraph = Regraph(logger=self.logger, mode="PerFace")
         graph = regraph.generate_from_bodies(self.state["target_bodies"])
@@ -90,8 +80,8 @@ class CommandTarget(CommandBase):
             "graph": graph
         })
 
-    def add_extrude_by_face(self, data):
-        """Add an extrude from target faces"""
+    def add_extrude_by_target_face(self, data):
+        """Add an extrude by target faces"""
         # Check we have set a target
         if "reconstructor" not in self.state:
             return self.runner.return_failure("Target not set")
@@ -130,6 +120,14 @@ class CommandTarget(CommandBase):
         graph = self.state["regraph"].generate_from_bodies(
             self.state["reconstructor"].reconstruction.bRepBodies
         )
-        
-
-
+        # Calculate the IoU
+        iou = geometry.intersection_over_union(
+            self.design.rootComponent,
+            self.state["reconstructor"].reconstruction
+        )
+        if iou is None:
+            logger.log("Warning! IoU calculation returned None")
+        return self.runner.return_success({
+            "graph": graph,
+            "iou": iou
+        })

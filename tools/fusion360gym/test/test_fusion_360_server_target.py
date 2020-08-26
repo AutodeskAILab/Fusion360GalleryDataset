@@ -36,10 +36,10 @@ class TestFusion360ServerTarget(unittest.TestCase):
         # TEST FILES
         cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
         couch_design = "Couch"
-        # Box json reconstruction file
         cls.couch_design_json_file = cls.data_dir / f"{couch_design}.json"
         cls.couch_design_smt_file = cls.data_dir / f"{couch_design}.smt"
         cls.couch_design_step_file = cls.data_dir / f"{couch_design}.step"
+        cls.box_design_smt_file = cls.data_dir / "Box.smt"
 
     def test_set_target_invalid_file_suffix(self):
         r = self.client.set_target(self.couch_design_json_file)
@@ -56,7 +56,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertIsNotNone(r, msg="set_target response is not None")
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
-        self.check_graph_format(response_json["data"])
+        self.__check_graph_format(response_json["data"])
         r = self.client.clear()
 
     def test_set_target_step(self):
@@ -64,10 +64,72 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertIsNotNone(r, msg="set_target response is not None")
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
-        self.check_graph_format(response_json["data"])
+        self.__check_graph_format(response_json["data"])
         r = self.client.clear()
 
-    def check_graph_format(self, response_data):
+    def test_add_extrude_by_target_face(self):
+        r = self.client.set_target(self.box_design_smt_file)
+        self.assertIsNotNone(r, msg="set_target response is not None")
+        self.assertEqual(r.status_code, 200, msg="set_target status code")
+        response_json = r.json()
+        graph = response_json["data"]["graph"]
+        nodes = graph["nodes"]
+        # Guessing these based on the order
+        start_face = nodes[0]["id"]
+        end_face = nodes[2]["id"]
+        r = self.client.add_extrude_by_target_face(
+            start_face,
+            end_face,
+            "NewBodyFeatureOperation"
+        )
+        self.assertIsNotNone(r, msg="add_extrude_by_target_face response is not None")
+        self.assertEqual(r.status_code, 200, msg="add_extrude_by_target_face status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.__check_graph_format(response_data)
+        self.assertIn("iou", response_data, msg="response has iou")
+        self.assertIsInstance(response_data["iou"], float, msg="iou is float")
+        self.assertAlmostEqual(response_data["iou"], 1, places=4, msg="iou ~= 1")
+
+    def test_add_extrude_by_target_face_invalid_end_face(self):
+        r = self.client.set_target(self.box_design_smt_file)
+        self.assertIsNotNone(r, msg="set_target response is not None")
+        self.assertEqual(r.status_code, 200, msg="set_target status code")
+        response_json = r.json()
+        graph = response_json["data"]["graph"]
+        nodes = graph["nodes"]
+        # Choose an invalid end face that is not parallel to start face
+        start_face = nodes[0]["id"]
+        end_face = nodes[1]["id"]
+        r = self.client.add_extrude_by_target_face(
+            start_face,
+            end_face,
+            "NewBodyFeatureOperation"
+        )
+        self.assertIsNotNone(r, msg="add_extrude_by_target_face response is not None")
+        self.assertEqual(r.status_code, 500, msg="add_extrude_by_target_face status code")
+
+    def test_add_extrude_by_target_face_invalid_inputs(self):
+        r = self.client.add_extrude_by_target_face(
+            "",
+            "okok",
+            "NewBodyFeatureOperation"
+        )
+        self.assertIsNone(r, msg="add_extrude_by_target_face response is None")
+        r = self.client.add_extrude_by_target_face(
+            "ok",
+            1,
+            "NewBodyFeatureOperation"
+        )
+        self.assertIsNone(r, msg="add_extrude_by_target_face response is None")
+        r = self.client.add_extrude_by_target_face(
+            "ok",
+            "yo",
+            "ss"
+        )
+        self.assertIsNone(r, msg="add_extrude_by_target_face response is None")
+
+    def __check_graph_format(self, response_data):
         """Check the graph data that comes back is in the right format"""
         self.assertIn("graph", response_data, msg="graph in response_data")
         graph = response_data["graph"]
