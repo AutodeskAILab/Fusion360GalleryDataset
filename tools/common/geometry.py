@@ -160,17 +160,17 @@ def get_union_volume(bodies):
     first_body = bodies[0]
     tools = adsk.core.ObjectCollection.create()
     for index in range(1, len(bodies)):
-        tools.add(body[index])
+        tools.add(bodies[index])
     combine_input = combines.createInput(first_body, tools)
-    # combine_input.isKeepToolBodies = True
-    # combine_input.isNewComponent = True
+    combine_input.isKeepToolBodies = True
+    combine_input.isNewComponent = True
     combine = combines.add(combine_input)
     volume = 0
-    for body in combine.bodies:
+    for body in combine.parentComponent.bRepBodies:
         volume += body.volume
     # Revert the timeline
-    timeline.markerPosition = prev_timeline_position
-    timeline.deleteAllAfterMarker()
+    # timeline.markerPosition = prev_timeline_position
+    # timeline.deleteAllAfterMarker()
     return volume
 
 
