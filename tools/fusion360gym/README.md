@@ -82,6 +82,13 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 #### Reconstruction
 Reconstruct entire designs from json files provided with the reconstruction subset.
 - `reconstruct(file)`: Reconstruct a design from the provided json file
+- `reconstruct_sketch(json_data, sketch_name, sketch_plane, scale, translate)`: Reconstruct a sketch from the provided json data and a sketch name
+    - `sketch_name`: is the string name of a sketch in the json data 
+    - `sketch_plane` (optional): can be either one of:
+        - string value representing a construction plane: `XY`, `XZ`, or `YZ`
+        - BRep planar face id
+        - point3d on a planar face of a BRep
+    - `scale` and `translate` (optional): scale and translate the sketch in 3D coords e.g. `{"x": 1, "y": 1, "z":1}` 
 - `clear()`: Clear (i.e. close) all open designs in Fusion
 
 #### Incremental Construction

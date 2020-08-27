@@ -16,6 +16,7 @@ class Fusion360Client():
             "IntersectFeatureOperation",
             "NewBodyFeatureOperation"
         ]
+        self.construction_planes = ["XY", "XZ", "YZ"]
 
     def send_command(self, command, data=None, stream=False):
         command_data = {
@@ -42,6 +43,68 @@ class Fusion360Client():
         with open(file, encoding="utf8") as file_handle:
             json_data = json.load(file_handle)
         return self.send_command("reconstruct", json_data)
+
+    def reconstruct_sketch(self, json_data, sketch_name, sketch_plane=None, scale=None, translate=None):
+        """Reconstruct a sketch from the provided json data and sketch name"""
+        if not isinstance(json_data, dict) or not bool(json_data):
+            return self.__return_error("JSON data is invalid")
+        if "timeline" not in json_data or "entities" not in json_data:
+            return self.__return_error("JSON data is invalid")
+        if not isinstance(sketch_name, str):
+            return self.__return_error("Sketch name is not string")
+        # check if the sketch name exists in the JSON data
+        sketches = []
+        timeline = json_data["timeline"]
+        entities = json_data["entities"]
+        for timeline_object in timeline:
+            entity_uuid = timeline_object["entity"]
+            entity_index = timeline_object["index"]
+            entity = entities[entity_uuid]
+            if entity["type"] == "Sketch":
+                sketches.append(entity["name"])
+        if sketch_name not in sketches:
+            return self.__return_error("Sketch name doesn't exist")
+        if sketch_plane is not None:
+            is_str = isinstance(sketch_plane, str)
+            is_int = isinstance(sketch_plane, int)
+            is_dict = isinstance(sketch_plane, dict)
+            if not is_str and not is_int and not is_dict:
+                return self.__return_error(f"Invalid sketch_plane value")
+            if is_str and sketch_plane not in self.construction_planes:
+                    return self.__return_error(f"Invalid sketch_plane value")
+            if is_dict:
+                if ("x" not in sketch_plane or
+                        "y" not in sketch_plane or
+                        "z" not in sketch_plane):
+                    return self.__return_error(f"Invalid sketch_plane value")
+        if scale is not None:
+            if not isinstance(scale, dict):
+                return self.__return_error("Invalid scale dtype")
+            if ("x" not in scale or
+                "y" not in scale or
+                "z" not in scale):
+                return self.__return_error(f"Invalid key in scale")
+            scale["type"] = "Vector3D"
+        if translate is not None:
+            if not isinstance(translate, dict):
+                return self.__return_error("Invalid translate dtype")
+            if ("x" not in translate or
+                "y" not in translate or
+                "z" not in translate):
+                return self.__return_error(f"Invalid key in translate")
+            translate["type"] = "Vector3D"
+        command_data = {
+            "json_data": json_data,
+            "sketch_name": sketch_name
+        }
+        # Add optional args if they are defined
+        if sketch_plane is not None:
+            command_data["sketch_plane"] = sketch_plane
+        if scale is not None:
+            command_data["scale"] = scale
+        if translate is not None:
+            command_data["translate"] = translate
+        return self.send_command("reconstruct_sketch", data=command_data)
 
     def clear(self):
         """Clear (i.e. close) all open designs in Fusion"""

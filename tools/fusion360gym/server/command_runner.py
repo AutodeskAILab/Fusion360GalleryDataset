@@ -65,6 +65,8 @@ class CommandRunner():
                 result = self.increment.close_profile(data)
             elif command == "add_extrude":
                 result = self.increment.add_extrude(data)
+            elif command == "reconstruct_sketch":
+                result = self.increment.reconstruct_sketch(data)
             elif command == "set_target":
                 result = self.target.set_target(data)
             elif command == "add_extrude_by_target_face":
