@@ -113,6 +113,7 @@ class CommandTarget(CommandBase):
             end_face,
             operation
         )
+        adsk.doEvents()
         # If this is the first extrude, we initialize regraph
         if "regraph" not in self.state:
             self.state["regraph"] = Regraph(logger=self.logger, mode="PerFace")
