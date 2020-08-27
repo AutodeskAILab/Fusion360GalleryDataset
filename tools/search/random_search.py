@@ -31,7 +31,7 @@ class RandomSearch(BaseSearch):
             end_face = faces[1]
             operation = self.get_operation()
             graph, iou = self.extrude(start_face, end_face, operation)
-            print(f"Start: {start_face} \tEnd: {end_face} \tOperation: {operation} \tIoU: {iou}")
+            print(f"Start: {start_face} \tEnd: {end_face} \tOperation: {operation:20} \tIoU: {iou}")
             if iou is not None:
                 if math.isclose(iou, 1.0, abs_tol=0.0001):
                     break

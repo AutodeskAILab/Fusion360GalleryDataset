@@ -2,6 +2,7 @@
 import sys
 import os
 import json
+import time
 from pathlib import Path
 
 # Add the client folder to sys.path
@@ -85,6 +86,7 @@ class BaseSearch():
     def save_log(self):
         """Save out a log of the search sequence"""
         if self.log is not None and len(self.log) > 0:
-            log_file = self.log_dir / f"{self.target_file.name}_log.json"
+            time_stamp = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+            log_file = self.log_dir / f"{self.target_file.stem}_{time_stamp}_log.json"
             with open(log_file, "w", encoding="utf8") as f:
                 json.dump(self.log, f, indent=4)
