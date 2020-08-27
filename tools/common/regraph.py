@@ -40,7 +40,6 @@ class Regraph():
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         self.product = self.app.activeProduct
-        self.timeline = self.app.activeProduct.timeline
         # Data structure to return
         self.data = {
             "graphs": [],
@@ -71,6 +70,7 @@ class Regraph():
 
     def generate(self, target_component=None):
         """Generate graphs from the design in the timeline"""
+        self.timeline = self.app.activeProduct.timeline
         self.target_component = target_component
         if self.target_component is None:
             self.target_component = self.design.rootComponent
@@ -983,12 +983,12 @@ class RegraphReconstructor():
         """Get a face from an index in the sequence"""
         if face_uuid not in self.uuid_to_face_map:
             return None
-        indices = self.uuid_to_face_map[face_uuid]
-        body_index = indices["body_index"]
-        face_index = indices["face_index"]
-        body = self.target_component.bRepBodies[body_index]
-        face = body.faces[face_index]
-        return face
+        uuid_data = self.uuid_to_face_map[face_uuid]
+        # body_index = indices["body_index"]
+        # face_index = indices["face_index"]
+        # body = self.target_component.bRepBodies[body_index]
+        # face = body.faces[face_index]
+        return uuid_data["face"]
 
     def get_uuid_to_face_map(self):
         """As we have to find faces multiple times we first
@@ -1000,7 +1000,9 @@ class RegraphReconstructor():
                 assert face_uuid is not None
                 uuid_to_face_map[face_uuid] = {
                     "body_index": body_index,
-                    "face_index": face_index
+                    "face_index": face_index,
+                    "body": body,
+                    "face": face
                 }
         return uuid_to_face_map
 
@@ -1031,7 +1033,7 @@ class RegraphReconstructor():
         extrude = extrudes.add(extrude_input)
         # The Fusion API  doesn't seem to be able to do join extrudes
         # that don't join to the goal body
-        # so we make the bodies separate and then join them after the fact
+        # so we make the bodies separate and then join them after the fact to the reconstruction body
         if post_process_operation is not None:
             if self.reconstruction.component.bRepBodies.count > 1:
                 combines = self.reconstruction.component.features.combineFeatures
