@@ -20,12 +20,7 @@ import name
 import match
 import deserialize
 import serialize
-importlib.reload(name)
-importlib.reload(match)
-importlib.reload(deserialize)
-importlib.reload(serialize)
 
-from sketch_extrude_importer import SketchExtrudeImporter
 
 class CommandIncrement(CommandBase):
 
@@ -126,69 +121,6 @@ class CommandIncrement(CommandBase):
         # Serialize the data and return
         extrude_feature_data = serialize.extrude_feature_brep(extrude_feature)
         return self.runner.return_success(extrude_feature_data)
-
-    def reconstruct_sketch(self, data):
-        if (data is None or "json_data" not in data or
-           "sketch_name" not in data):
-            return self.runner.return_failure("reconstruct_sketch data not specified")
-        json_data = data["json_data"]
-        sketch_name = data["sketch_name"]
-        if json_data is None:
-            return self.runner.return_failure("reconstruct json not found")
-        if sketch_name is None:
-            return self.runner.return_failure("reconstruct sketch not found")
-        entities = json_data["entities"]
-        if entities is None:
-            return self.runner.return_failure("reconstruct entities not found")
-        # retrieve sketch id from sketch name
-        sketch_uuid = None
-        for entity in entities:
-            if entities[entity]["name"] == sketch_name:
-                sketch_uuid = entity
-        if sketch_uuid is None:
-            return self.runner.return_failure("reconstruct sketch id doesn't exist")
-        # Optional sketch plane
-        sketch_plane = None
-        if "sketch_plane" in data:
-            sketch_plane = match.sketch_plane(data["sketch_plane"])
-        # Optional transform
-        scale = None
-        translate = None
-        if "scale" in data:
-            scale = deserialize.vector3d(data["scale"])
-        if "translate" in data:
-            translate = deserialize.vector3d(data["translate"])
-        transform = None
-        if scale is not None or translate is not None or sketch_plane is not None:
-            # Get the transform or an identity matrix
-            transform = self.__get_scale_translation_matrix(scale, translate)
-        # Create the sketch
-        importer = SketchExtrudeImporter(json_data)
-        sketch = importer.reconstruct_sketch(sketch_uuid, sketch_plane=sketch_plane, transform=transform)
-        # Serialize the data and return
-        profile_data = serialize.sketch_profiles(sketch.profiles)
-        return self.runner.return_success({
-            "sketch_id": sketch_uuid,
-            "sketch_name": sketch.name,
-            "profiles": profile_data
-        })
-
-    def __get_scale_translation_matrix(self, scale=None, translation=None):
-        """Get a transformation matrix that scales and translates"""
-        transform = adsk.core.Matrix3D.create()
-        if scale is not None:
-            # We don't have a Matrix3D.scale() function
-            # so we set this manually
-            transform.setWithArray([
-                scale.x, 0, 0, 0,
-                0, scale.y, 0, 0,
-                0, 0, scale.z, 0,
-                0, 0, 0, 1
-            ])
-        if translation is not None:
-            # We do have a shortcut to set the translation
-            transform.translation = translation
-        return transform
 
     def __add_line(self, sketch, sketch_uuid, pt1, pt2, transform=None):
         start_point = deserialize.point3d(pt1)
