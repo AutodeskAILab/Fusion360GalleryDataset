@@ -62,7 +62,8 @@ class CommandTarget(CommandBase):
                 f"Error importing target {suffix} file")
         existing_document.close(False)
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        self.design.designType = adsk.fusion.DesignTypes.ParametricDesignType
+        self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
+        # self.design.designType = adsk.fusion.DesignTypes.ParametricDesignType
         # Store references to the target bodies
         self.state["target_bodies"] = []
         # Rename the bodies with Target-*
