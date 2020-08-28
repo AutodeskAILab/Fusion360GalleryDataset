@@ -65,3 +65,8 @@ class ReplEnv():
                 return_graph = response_json["data"]["graph"]
                 return_iou = response_json["data"]["iou"]
         return return_graph, return_iou
+
+    def screenshot(self, file):
+        """Save out a screenshot"""
+        r = self.client.screenshot(file)
+        return r is not None and r.status_code == 200

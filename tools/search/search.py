@@ -9,7 +9,7 @@ class Search:
 
     def __init__(self, env):
         self.env = env
-        self.log = Log()
+        self.log = Log(env)
 
     def set_target(self, target_file):
         """Set the target we are searching for"""
@@ -19,7 +19,7 @@ class Search:
         self.target_graph = self.env.set_target(self.target_file)
         return self.target_graph
 
-    def search(self, agent, budget, score_function=None):
+    def search(self, agent, budget, score_function=None, screenshot=False):
         """Given a particular agent, a search budget
             (measured in number of repl invocations, specifically,
             the number of "extrude" function calls),

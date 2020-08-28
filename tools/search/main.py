@@ -20,7 +20,7 @@ def main():
     target_graph = random_search.set_target(target_file)
 
     random_agent = RandomAgent(target_graph)
-    best_score_over_time = random_search.search(random_agent, search_budget)
+    best_score_over_time = random_search.search(random_agent, search_budget, screenshot=True)
 
 
 if __name__ == "__main__":
