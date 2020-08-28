@@ -135,6 +135,11 @@ Export the existing design in a number of formats.
 - `sketches(dir, format)`: Retreive each sketch in a given format.
     - `dir`: the local directory where the output will be saved
     - `format`: a string with the values `.png` or `.dxf`
+- `screenshot(file, width, height)`: Retreive a screenshot of the current design as a png image. 
+    - `file`: The local file to save the png image to.
+    - `width` (optional): The width of the image, default is 512.
+    - `height` (optional): The height of the image, default is 512.
+    - `fit_camera` (optional): Fit the camera to the geometry in the design, default is True.
 
 #### Utility
 Various utility calls to interact with Fusion 360.

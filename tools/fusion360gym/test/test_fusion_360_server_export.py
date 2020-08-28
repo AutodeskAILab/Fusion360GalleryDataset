@@ -51,6 +51,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         cls.test_brep_step_file = cls.data_dir / f"{box_design}.step"
         # BRep smt file
         cls.test_brep_smt_file = cls.data_dir / f"{box_design}.smt"
+        # Screenshot png file
+        cls.test_screenshot_png_file = cls.data_dir / f"{box_design}.png"
         # Sketch temp folder
         cls.sketch_dir = cls.data_dir / "sketches"
         # Make sure it is empty first
@@ -218,6 +220,41 @@ class TestFusion360ServerExport(unittest.TestCase):
         test_invalid_dir = self.data_dir / "yo"
         r = self.client.sketches(test_invalid_dir)
         self.assertIsNone(r, msg="sketch response is None")
+        # Clear
+        r = self.client.clear()
+
+    def test_screenshot(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        # Save out the brep
+        r = self.client.screenshot(self.test_screenshot_png_file)
+        self.assertIsNotNone(r, msg="screenshot response is not None")
+        self.assertEqual(r.status_code, 200, msg="screenshot status code")
+        self.assertTrue(self.test_screenshot_png_file.exists(), msg="screenshot exists")
+        self.assertGreater(self.test_screenshot_png_file.stat().st_size, 0, msg="screenshot file size greater than 0")
+        # Clear
+        r = self.client.clear()
+        self.test_screenshot_png_file.unlink()
+
+    def test_screenshot_with_args(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        # Save out the brep
+        r = self.client.screenshot(self.test_screenshot_png_file, 100, 100, False)
+        self.assertIsNotNone(r, msg="screenshot response is not None")
+        self.assertEqual(r.status_code, 200, msg="screenshot status code")
+        self.assertTrue(self.test_screenshot_png_file.exists(), msg="screenshot exists")
+        self.assertGreater(self.test_screenshot_png_file.stat().st_size, 0, msg="screenshot file size greater than 0")
+        # Clear
+        r = self.client.clear()
+        self.test_screenshot_png_file.unlink()
+
+    def test_screenshot_invalid_format(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        test_invalid_file = self.data_dir / "file.gif"
+        r = self.client.screenshot(test_invalid_file)
+        self.assertIsNone(r, msg="screenshot response is None")
         # Clear
         r = self.client.clear()
 

@@ -99,6 +99,34 @@ class CommandExport(CommandBase):
             zip_file = self.__export_sketch_dxfs(dest_dir, use_zip)
         return self.runner.return_success(zip_file)
 
+    def screenshot(self, data, dest_dir=None):
+        """Retreive a screenshot of the current design as a png image"""
+        error, suffix = self.check_file(data, [".png"])
+        if error is not None:
+            return self.runner.return_failure(error)
+        width = 512
+        if "width" in data:
+            width = data["width"]
+        height = 512
+        if "height" in data:
+            height = data["height"]
+        fit_camera = True
+        if "fit_camera" in data:
+            fit_camera = data["fit_camera"]
+
+        temp_file = self.get_temp_file(data["file"], dest_dir)
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+        if fit_camera:
+            self.app.activeViewport.fit()
+        export_result = self.app.activeViewport.saveAsImageFile(
+            str(temp_file.resolve()), width, height)
+        file_exists = temp_file.exists()
+        if export_result and file_exists:
+            self.logger.log(f"Screenshot temp file written to: {temp_file}")
+            return self.runner.return_success(temp_file)
+        else:
+            return self.runner.return_failure(f"{suffix} export failure")
+
     def commands(self, data):
         """Run a series of commands one after the other"""
         if not isinstance(data, list) or len(data) == 0:

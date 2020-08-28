@@ -260,6 +260,8 @@ class Fusion360Client():
     def mesh(self, file):
         """Retreive a mesh in .obj or .stl format
             and write it to a local file"""
+        if isinstance(file, str):
+            file = Path(file)            
         suffix = file.suffix
         valid_formats = [".obj", ".stl"]
         if suffix not in valid_formats:
@@ -274,6 +276,8 @@ class Fusion360Client():
     def brep(self, file):
         """Retreive a brep in a .step or .smt format
             and write it to a local file"""
+        if isinstance(file, str):
+            file = Path(file)
         suffix = file.suffix
         valid_formats = [".step", ".smt"]
         if suffix not in valid_formats:
@@ -307,6 +311,27 @@ class Fusion360Client():
         with ZipFile(zip_file, "r") as zipObj:
             zipObj.extractall(dir)
         zip_file.unlink()
+        return r
+
+    def screenshot(self, file, width=512, height=512, fit_camera=True):
+        """Retreive a screenshot of the current design as a png image"""
+        if isinstance(file, str):
+            file = Path(file)
+        suffix = file.suffix
+        if suffix != ".png":
+            return self.__return_error(f"Invalid file format: {suffix}")
+        if not isinstance(width, int) or not isinstance(height, int):
+            return self.__return_error("Invalid width/height")
+        if not isinstance(fit_camera, bool):
+            return self.__return_error("Invalid value for fit_camera")
+        command_data = {
+            "file": file.name,
+            "width": width,
+            "height": height,
+            "fit_camera": fit_camera
+        }
+        r = self.send_command("screenshot", data=command_data, stream=True)
+        self.__write_file(r, file)
         return r
 
     # -------------------------------------------------------------------------
