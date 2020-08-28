@@ -3,60 +3,58 @@ import os
 import random
 import math
 from pathlib import Path
+import numpy as np
 
-from base_search import BaseSearch
+
+from search import Search
 
 
-class RandomSearch(BaseSearch):
+class RandomSearch(Search):
 
-    def __init__(self, host, port):
-        BaseSearch.__init__(self, host, port)
-        self.target_faces = None
-        self.operations = ["JoinFeatureOperation", "CutFeatureOperation"]
+    def __init__(self, env):
+        super().__init__(env)
 
-    def setup(self, target_file):
-        super().setup(target_file)
-        assert self.target_graph is not None
-        # Store a list of the planar faces we can choose from
-        self.target_faces = []
+    def search(self, agent, budget, score_function=None):
+        super().search(agent, budget, score_function)
+        # the length of rollout is the same as the number of planar faces as a maximum
+        rollout_length = 0
         for node in self.target_graph["nodes"]:
             if node["surface_type"] == "PlaneSurfaceType":
-                self.target_faces.append(node["id"])
-        assert len(self.target_faces) >= 2
+                rollout_length += 1
+        rollout_attempt = 0
+        used_budget = 0
+        max_score = 0
+        max_scores = []
 
-    def run(self):
-        while self.steps < 100:
-            faces = self.get_random_faces()
-            start_face = faces[0]
-            end_face = faces[1]
-            operation = self.get_operation()
-            graph, iou = self.extrude(start_face, end_face, operation)
-            print(f"Start: {start_face} \tEnd: {end_face} \tOperation: {operation:20} \tIoU: {iou}")
-            if iou is not None:
-                if math.isclose(iou, 1.0, abs_tol=0.0001):
-                    break
-        self.save_log()
-
-    def get_random_faces(self):
-        """Get a random face from the target graph"""
-        assert self.target_faces is not None
-        return random.sample(self.target_faces, 2)
-
-    def get_operation(self):
-        """Get a semi-random extrude operation"""
-        if not self.first_extrude_complete:
-            return "NewBodyFeatureOperation"
-        else:
-            return random.choice(self.operations)
-
-
-def main():
-    # Connects to FusionGym when initialzied
-    search = RandomSearch(host="127.0.0.1", port=8080)
-    # Setup with the target file we are trying to recreate
-    target_file = search.testdata_dir / "Couch.smt"
-    search.setup(target_file)
-    search.run()
-
-if __name__ == "__main__":
-    main()
+        while used_budget < budget:
+            # We begin each rollout an empty graph
+            cur_graph = self.env.get_empty_graph()
+            for i in range(rollout_length):
+                actions, action_probabilities = agent.get_actions_probabilities(cur_graph, self.target_graph)
+                # Filter for clearly bad actions
+                action_probabilities = self.filter_bad_actions(cur_graph, actions, action_probabilities)
+                action = np.random.choice(actions, 1, p=action_probabilities)[0]
+                new_graph, cur_iou = self.env.extrude(action["start_face"], action["end_face"], action["operation"])
+                if cur_iou is not None:
+                    max_score = max(max_score, cur_iou)
+                if new_graph is not None:
+                    cur_graph = new_graph
+                self.log.log({
+                    "rollout_attempt": rollout_attempt,
+                    "rollout_step": i,
+                    "rollout_length": rollout_length,
+                    "used_budget": used_budget,
+                    "budget": budget,
+                    "start_face": action["start_face"],
+                    "end_face": action["end_face"],
+                    "operation": action["operation"],
+                    "current_iou": cur_iou,
+                    "max_iou": max_score
+                })
+                max_scores.append(max_score)
+                used_budget += 1
+            # Revert to the target and remove all reconstruction
+            self.env.revert_to_target()
+            rollout_attempt += 1
+        self.log.save()
+        return max_scores

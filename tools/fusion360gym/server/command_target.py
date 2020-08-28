@@ -88,7 +88,8 @@ class CommandTarget(CommandBase):
         if "reconstructor" not in self.state:
             return self.runner.return_failure("Target not set")
         self.state["reconstructor"].reset()
-        del self.state["regraph"]
+        if "regraph" in self.state:
+            del self.state["regraph"]
         return self.runner.return_success({
             "graph": self.state["target_graph"]
         })

@@ -39,6 +39,16 @@ class ReplEnv():
         assert "graph" in response_json["data"]
         return response_json["data"]["graph"]
 
+    def get_empty_graph(self):
+        """Get an empty graph to kick things off"""
+        return {
+            "directed": False,
+            "multigraph": False,
+            "graph": {},
+            "nodes": [],
+            "links": []
+        }
+
     def extrude(self, start_face, end_face, operation):
         """Extrude wrapper around the gym client"""
         assert self.client is not None

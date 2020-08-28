@@ -1039,6 +1039,9 @@ class RegraphReconstructor():
         elif operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
             operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
             post_process_operation = adsk.fusion.FeatureOperations.CutFeatureOperation
+        elif operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
+            operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+            post_process_operation = adsk.fusion.FeatureOperations.IntersectFeatureOperation
 
         extrude_input = extrudes.createInput(start_face, operation)
         extent = adsk.fusion.ToEntityExtentDefinition.create(end_face, False)

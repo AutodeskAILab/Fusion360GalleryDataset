@@ -11,7 +11,7 @@ class Agent:
             "IntersectFeatureOperation"
         ]
 
-    def get_actions_prob(current_graph, target_graph):
+    def get_actions_probabilities(self, current_graph, target_graph):
         """Given the current graph, and the target graph, give two lists:
             1) a list of all possible actions,
                 where each action is a triple (start_face, end_face, operation)
