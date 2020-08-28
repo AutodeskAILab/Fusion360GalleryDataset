@@ -172,7 +172,7 @@ def start_server():
     logger.log(f"Connecting on: {host_name}:{port_number}")
     server = HTTPServer((host_name, port_number), handler)
     try:
-        server.serve_forever(poll_interval=1.0)
+        server.serve_forever(poll_interval=0.5)
     except KeyboardInterrupt:
         pass
     except Exception as ex:
