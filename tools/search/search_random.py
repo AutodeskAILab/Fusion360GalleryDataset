@@ -9,10 +9,10 @@ import numpy as np
 from search import Search
 
 
-class RandomSearch(Search):
+class SearchRandom(Search):
 
-    def __init__(self, env):
-        super().__init__(env)
+    def __init__(self, env, log_dir=None):
+        super().__init__(env, log_dir)
 
     def search(self, agent, budget, score_function=None, screenshot=False):
         super().search(agent, budget, score_function, screenshot)
@@ -59,11 +59,9 @@ class RandomSearch(Search):
                 max_scores.append(max_score)
                 # Stop early if we find a solution
                 if math.isclose(max_score, 1, abs_tol=0.00001):
-                    print(f"Solution found for {self.target_file.stem} in {used_budget}/{budget} steps!")
                     return max_scores
                 used_budget += 1
             # Revert to the target and remove all reconstruction
             self.env.revert_to_target()
             rollout_attempt += 1
-        print(f"Solution not found for {self.target_file.stem} in {budget} steps")
         return max_scores

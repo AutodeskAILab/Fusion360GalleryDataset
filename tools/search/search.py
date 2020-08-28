@@ -7,9 +7,9 @@ from log import Log
 
 class Search:
 
-    def __init__(self, env):
+    def __init__(self, env, log_dir=None):
         self.env = env
-        self.log = Log(env)
+        self.log = Log(env, log_dir)
 
     def set_target(self, target_file):
         """Set the target we are searching for"""

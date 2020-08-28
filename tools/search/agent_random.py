@@ -4,7 +4,7 @@ import math
 from agent import Agent
 
 
-class RandomAgent(Agent):
+class AgentRandom(Agent):
 
     def __init__(self, target_graph):
         super().__init__(target_graph)
