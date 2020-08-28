@@ -121,6 +121,7 @@ Incremental construction of new designs. Currently only a small subset of the Fu
 #### Target Reconstruction
 Reconstruct from a target design using extrude operations from face to face.
 - `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. Returns a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph).
+- `revert_to_target()`: Reverts to the target design, removing all reconstruction geometry added with `add_extrude_by_target_face()`.
 - `add_extrude_by_target_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
     - `start_face`: is the uuid of the start face in the target
     - `end_face`: is the uuid of the end face in the target

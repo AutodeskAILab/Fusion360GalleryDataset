@@ -234,6 +234,10 @@ class Fusion360Client():
         }
         return self.send_command("set_target", command_data)
 
+    def revert_to_target(self):
+        """Reverts to the target design, removing all reconstruction"""
+        return self.send_command("revert_to_target")
+
     def add_extrude_by_target_face(self, start_face, end_face, operation):
         """Add an extrude between two faces of the target"""
         if not isinstance(start_face, str) or len(start_face) == 0:

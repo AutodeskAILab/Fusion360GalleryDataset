@@ -129,6 +129,41 @@ class TestFusion360ServerTarget(unittest.TestCase):
         )
         self.assertIsNone(r, msg="add_extrude_by_target_face response is None")
 
+    def test_set_extrude_reset_extrude(self):
+        r = self.client.set_target(self.box_design_smt_file)
+        self.assertIsNotNone(r, msg="set_target response is not None")
+        self.assertEqual(r.status_code, 200, msg="set_target status code")
+        response_json = r.json()
+        graph = response_json["data"]["graph"]
+        nodes = graph["nodes"]
+        # Guessing these based on the order
+        start_face = nodes[0]["id"]
+        end_face = nodes[2]["id"]
+        r = self.client.add_extrude_by_target_face(
+            start_face,
+            end_face,
+            "NewBodyFeatureOperation"
+        )
+        # Revert to target
+        r = self.client.revert_to_target()
+        self.assertIsNotNone(r, msg="revert_to_target response is not None")
+        self.assertEqual(r.status_code, 200, msg="revert_to_target status code")
+        start_face = nodes[0]["id"]
+        end_face = nodes[2]["id"]
+        r = self.client.add_extrude_by_target_face(
+            start_face,
+            end_face,
+            "NewBodyFeatureOperation"
+        )
+        self.assertIsNotNone(r, msg="add_extrude_by_target_face response is not None")
+        self.assertEqual(r.status_code, 200, msg="add_extrude_by_target_face status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.__check_graph_format(response_data)
+        self.assertIn("iou", response_data, msg="response has iou")
+        self.assertIsInstance(response_data["iou"], float, msg="iou is float")
+        self.assertAlmostEqual(response_data["iou"], 1, places=4, msg="iou ~= 1")
+
     def __check_graph_format(self, response_data):
         """Check the graph data that comes back is in the right format"""
         self.assertIn("graph", response_data, msg="graph in response_data")

@@ -72,21 +72,31 @@ class CommandTarget(CommandBase):
             self.state["target_bodies"].append(body)
         adsk.doEvents()
         regraph = Regraph(logger=self.logger, mode="PerFace")
-        graph = regraph.generate_from_bodies(self.state["target_bodies"])
+        self.state["target_graph"] = regraph.generate_from_bodies(self.state["target_bodies"])
         temp_file.unlink()
         # Setup the reconstructor
         self.state["reconstructor"] = RegraphReconstructor()
         self.state["reconstructor"].setup()
         return self.runner.return_success({
-            "graph": graph
+            "graph": self.state["target_graph"]
+        })
+
+    def revert_to_target(self, data):
+        """Reverts to the target design, removing all reconstruction"""
+        if "target_graph" not in self.state:
+            return self.runner.return_failure("Target not set")
+        if "reconstructor" not in self.state:
+            return self.runner.return_failure("Target not set")
+        self.state["reconstructor"].reset()
+        del self.state["regraph"]
+        return self.runner.return_success({
+            "graph": self.state["target_graph"]
         })
 
     def add_extrude_by_target_face(self, data):
         """Add an extrude by target faces"""
         # Check we have set a target
         if "reconstructor" not in self.state:
-            return self.runner.return_failure("Target not set")
-        if self.design.rootComponent.bRepBodies.count == 0:
             return self.runner.return_failure("Target not set")
         # Start face data checks
         start_face = self.state["reconstructor"].get_face_from_uuid(data["start_face"])

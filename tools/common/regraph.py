@@ -955,7 +955,31 @@ class RegraphReconstructor():
         self.target_component = target_component
         if self.target_component is None:
             self.target_component = self.design.rootComponent
-        self.uuid_to_face_map = {}
+        self.target_uuid_to_face_map = {}
+
+    def setup(self):
+        """Setup for reconstruction"""
+        # Create a reconstruction component that we create geometry in
+        self.create_component()
+        # Populate the cache with a map from uuids to face indices
+        self.target_uuid_to_face_map = self.get_target_uuid_to_face_map()
+
+    def reset(self):
+        """Reset the reconstructor"""
+        self.remove()
+        self.create_component()
+
+    def remove(self):
+        """Remove the reconstructed component"""
+        self.reconstruction.deleteMe()
+
+    def create_component(self):
+        """Create the reconstruction component"""
+        self.reconstruction = self.design.rootComponent.occurrences.addNewComponent(
+            adsk.core.Matrix3D.create()
+        )
+        self.reconstruction.activate()
+        self.reconstruction.component.name = "Reconstruction"
 
     def reconstruct(self, graph_data):
         """Reconstruct from the sequence of faces"""
@@ -968,43 +992,32 @@ class RegraphReconstructor():
                 seq["operation"]
             )
 
-    def setup(self):
-        """Setup for reconstruction"""
-        # Create a reconstruction component that we create geometry in
-        self.reconstruction = self.design.rootComponent.occurrences.addNewComponent(
-            adsk.core.Matrix3D.create()
-        )
-        self.reconstruction.activate()
-        self.reconstruction.component.name = "Reconstruction"
-        # Populate the cache with a map from uuids to face indices
-        self.uuid_to_face_map = self.get_uuid_to_face_map()
-
     def get_face_from_uuid(self, face_uuid):
         """Get a face from an index in the sequence"""
-        if face_uuid not in self.uuid_to_face_map:
+        if face_uuid not in self.target_uuid_to_face_map:
             return None
-        uuid_data = self.uuid_to_face_map[face_uuid]
+        uuid_data = self.target_uuid_to_face_map[face_uuid]
         # body_index = indices["body_index"]
         # face_index = indices["face_index"]
         # body = self.target_component.bRepBodies[body_index]
         # face = body.faces[face_index]
         return uuid_data["face"]
 
-    def get_uuid_to_face_map(self):
+    def get_target_uuid_to_face_map(self):
         """As we have to find faces multiple times we first
             make a map between uuids and face indices"""
-        uuid_to_face_map = {}
+        target_uuid_to_face_map = {}
         for body_index, body in enumerate(self.target_component.bRepBodies):
             for face_index, face in enumerate(body.faces):
                 face_uuid = name.get_uuid(face)
                 assert face_uuid is not None
-                uuid_to_face_map[face_uuid] = {
+                target_uuid_to_face_map[face_uuid] = {
                     "body_index": body_index,
                     "face_index": face_index,
                     "body": body,
                     "face": face
                 }
-        return uuid_to_face_map
+        return target_uuid_to_face_map
 
     def add_extrude_from_uuid(self, start_face_uuid, end_face_uuid, operation):
         """Create an extrude from a start face uuid to an end face uuid"""
@@ -1045,7 +1058,3 @@ class RegraphReconstructor():
                 combine_input.operation = post_process_operation
                 combine = combines.add(combine_input)
         return extrude
-
-    def remove(self):
-        """Remove the reconstructed component"""
-        self.reconstruction.deleteMe()
