@@ -15,6 +15,7 @@ import importlib
 from zipfile import ZipFile
 from pathlib import Path
 
+from .command_base import CommandBase
 
 # Add the common folder to sys.path
 COMMON_DIR = os.path.abspath(
@@ -22,20 +23,13 @@ COMMON_DIR = os.path.abspath(
 )
 if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
+
 import exporter
 import view_control
 from sketch_extrude_importer import SketchExtrudeImporter
 
 
-class CommandExport():
-
-    def __init__(self, runner):
-        self.runner = runner
-        self.logger = None
-        self.app = adsk.core.Application.get()
-
-    def set_logger(self, logger):
-        self.logger = logger
+class CommandExport(CommandBase):
 
     def reconstruct(self, data):
         """Reconstruct a design from the provided json data"""
@@ -46,10 +40,10 @@ class CommandExport():
     def mesh(self, data, dest_dir=None):
         """Create a mesh in the given format (either .obj or .stl)
             and send it back as a binary file"""
-        error, suffix = self.__check_file(data, [".obj", ".stl"])
+        error, suffix = self.check_file(data, [".obj", ".stl"])
         if error is not None:
             return self.runner.return_failure(error)
-        temp_file = self.__get_temp_file(data["file"], dest_dir)
+        temp_file = self.get_temp_file(data["file"], dest_dir)
         design = adsk.fusion.Design.cast(self.app.activeProduct)
         if suffix == ".obj":
             export_result = exporter.export_obj_from_component(
@@ -69,10 +63,10 @@ class CommandExport():
     def brep(self, data, dest_dir=None):
         """Create a brep in the given format (.step, smt)
             and send it back as a binary file"""
-        error, suffix = self.__check_file(data, [".step", ".smt"])
+        error, suffix = self.check_file(data, [".step", ".smt"])
         if error is not None:
             return self.runner.return_failure(error)
-        temp_file = self.__get_temp_file(data["file"], dest_dir)
+        temp_file = self.get_temp_file(data["file"], dest_dir)
         design = adsk.fusion.Design.cast(self.app.activeProduct)
         if suffix == ".step":
             export_result = exporter.export_step_from_component(
@@ -237,23 +231,3 @@ class CommandExport():
             # Clean up the folder after outselves
             shutil.rmtree(src_dir)
         return zip_file
-
-    def __check_file(self, data, valid_formats):
-        """Check that the data has a valid file value"""
-        if data is None or "file" not in data:
-            return "file not specified"
-        suffix = Path(data["file"]).suffix
-        if suffix not in valid_formats:
-            return "invalid file extension specified"
-        return None, suffix
-
-    def __get_temp_file(self, file, dest_dir=None):
-        """Return a file with a given name in a temp directory"""
-        if dest_dir is None:
-            dest_dir = Path(tempfile.mkdtemp())
-        # Make the dir if we need to
-        if not dest_dir.exists():
-            dest_dir.mkdir(parents=True)
-
-        temp_file = dest_dir / file
-        return temp_file

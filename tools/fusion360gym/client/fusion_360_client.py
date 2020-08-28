@@ -10,6 +10,12 @@ class Fusion360Client():
 
     def __init__(self, url="http://127.0.0.1:8080"):
         self.url = url
+        self.feature_operations = [
+            "JoinFeatureOperation",
+            "CutFeatureOperation",
+            "IntersectFeatureOperation",
+            "NewBodyFeatureOperation"
+        ]
         self.construction_planes = ["XY", "XZ", "YZ"]
 
     def send_command(self, command, data=None, stream=False):
@@ -24,13 +30,9 @@ class Fusion360Client():
             stream=stream
         )
 
-    def ping(self):
-        """Ping for debugging"""
-        return self.send_command("ping")
-
-    def refresh(self):
-        """Refresh the active viewport"""
-        return self.send_command("refresh")
+    # -------------------------------------------------------------------------
+    # RECONSTRUCTION
+    # -------------------------------------------------------------------------
 
     def reconstruct(self, file):
         """Reconstruct a design from the provided json file"""
@@ -38,7 +40,7 @@ class Fusion360Client():
             file = Path(file)
         if not file.exists():
             return self.__return_error("JSON file does not exist")
-        with open(file) as file_handle:
+        with open(file, encoding="utf8") as file_handle:
             json_data = json.load(file_handle)
         return self.send_command("reconstruct", json_data)
 
@@ -108,97 +110,9 @@ class Fusion360Client():
         """Clear (i.e. close) all open designs in Fusion"""
         return self.send_command("clear")
 
-    def mesh(self, file):
-        """Retreive a mesh in .obj or .stl format
-            and write it to a local file"""
-        suffix = file.suffix
-        valid_formats = [".obj", ".stl"]
-        if suffix not in valid_formats:
-            return self.__return_error(f"Invalid file format: {suffix}")
-        command_data = {
-            "file": file.name
-        }
-        r = self.send_command("mesh", data=command_data, stream=True)
-        self.__write_file(r, file)
-        return r
-
-    def brep(self, file):
-        """Retreive a brep in a .step or .smt format
-            and write it to a local file"""
-        suffix = file.suffix
-        valid_formats = [".step", ".smt"]
-        if suffix not in valid_formats:
-            return self.__return_error(f"Invalid file format: {suffix}")
-        command_data = {
-            "file": file.name
-        }
-        r = self.send_command("brep", data=command_data, stream=True)
-        self.__write_file(r, file)
-        return r
-
-    def sketches(self, dir, format=".png"):
-        """Retreive each sketch in a given format (e.g. .png, .dxf)
-            and save to a local directory"""
-        if not dir.is_dir():
-            return self.__return_error(f"Not an existing directory")
-        valid_formats = [".png", ".dxf"]
-        if format not in valid_formats:
-            return self.__return_error(f"Invalid file format: {format}")
-        command_data = {
-            "format": format
-        }
-        r = self.send_command("sketches", data=command_data, stream=True)
-        if r.status_code != 200:
-            return r
-        # Save out the zip file with the sketch data
-        temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
-        zip_file = Path(temp_file_path)
-        self.__write_file(r, zip_file)
-        # Extract all the files to the given directory
-        with ZipFile(zip_file, "r") as zipObj:
-            zipObj.extractall(dir)
-        zip_file.unlink()
-        return r
-
-    def detach(self):
-        """Detach the server from Fusion, taking it offline,
-            allowing the Fusion UI to become responsive again"""
-        return self.send_command("detach")
-
-    def commands(self, command_list, dir=None):
-        """Send a series of commands to the server"""
-        if dir is not None:
-            if not dir.is_dir():
-                return self.__return_error(f"Not an existing directory")
-        if (command_list is None or not isinstance(command_list, list) or
-           len(command_list) == 0):
-            return self.__return_error(
-                "Command list argument missing or not a populated list")
-        # Flag to mark down if we will get a binary back
-        binary_response = False
-        # Check that each command_set has a command
-        for command_set in command_list:
-            if "command" not in command_set:
-                return self.__return_error(
-                    "Command list command argument missing")
-            command = command_set["command"]
-            if command in ["mesh", "brep", "sketches"]:
-                binary_response = True
-        # We are getting a file back
-        if binary_response:
-            r = self.send_command("commands", data=command_list, stream=True)
-            if r.status_code != 200:
-                return r
-            temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
-            zip_file = Path(temp_file_path)
-            self.__write_file(r, zip_file)
-            # Extract all the files to the given directory
-            with ZipFile(zip_file, "r") as zipObj:
-                zipObj.extractall(dir)
-            zip_file.unlink()
-            return r
-        else:
-            return self.send_command("commands", command_list)
+    # -------------------------------------------------------------------------
+    # INCREMENTAL CONSTRUCTION
+    # -------------------------------------------------------------------------
 
     def add_sketch(self, sketch_plane):
         """Add a sketch to the design"""
@@ -280,13 +194,13 @@ class Fusion360Client():
         if (sketch_name is None or profile_id is None or
                 distance is None or operation is None):
             return self.__return_error(f"Missing arguments")
-        if not isinstance(sketch_name, str):
+        if not isinstance(sketch_name, str) or len(sketch_name) == 0:
             return self.__return_error(f"Invalid sketch_name value")
-        if not isinstance(profile_id, str):
+        if not isinstance(profile_id, str) or len(profile_id) == 0:
             return self.__return_error(f"Invalid profile_id value")
         if not isinstance(distance, (int, float, complex)):
             return self.__return_error(f"Invalid distance value")
-        if not isinstance(operation, str):
+        if operation not in self.feature_operations:
             return self.__return_error(f"Invalid operation value")
         command_data = {
             "sketch_name": sketch_name,
@@ -295,6 +209,157 @@ class Fusion360Client():
             "operation": operation
         }
         return self.send_command("add_extrude", data=command_data)
+
+    # -------------------------------------------------------------------------
+    # TARGET RECONSTRUCTION
+    # -------------------------------------------------------------------------
+
+    def set_target(self, file):
+        """Set the target that we want to reconstruct with a .step or .smt file.
+            This call will clear the current design"""
+        if isinstance(file, str):
+            file = Path(file)
+        if not file.exists():
+            return self.__return_error("Target file does not exist")
+        suffix = file.suffix
+        valid_formats = [".step", ".stp", ".smt"]
+        if suffix not in valid_formats:
+            return self.__return_error(f"Invalid file format: {suffix}")
+        # Open the file and load the text
+        with open(file, "r") as f:
+            file_data = f.read()
+        command_data = {
+            "file": file.name,
+            "file_data": file_data
+        }
+        return self.send_command("set_target", command_data)
+
+    def add_extrude_by_target_face(self, start_face, end_face, operation):
+        """Add an extrude between two faces of the target"""
+        if not isinstance(start_face, str) or len(start_face) == 0:
+            return self.__return_error(f"Invalid start_face value")
+        if not isinstance(end_face, str) or len(end_face) == 0:
+            return self.__return_error(f"Invalid end_face value")
+        if operation not in self.feature_operations:
+            return self.__return_error(f"Invalid operation value")
+        command_data = {
+            "start_face": start_face,
+            "end_face": end_face,
+            "operation": operation
+        }
+        return self.send_command("add_extrude_by_target_face", command_data)
+
+    # -------------------------------------------------------------------------
+    # EXPORT
+    # -------------------------------------------------------------------------
+
+    def mesh(self, file):
+        """Retreive a mesh in .obj or .stl format
+            and write it to a local file"""
+        suffix = file.suffix
+        valid_formats = [".obj", ".stl"]
+        if suffix not in valid_formats:
+            return self.__return_error(f"Invalid file format: {suffix}")
+        command_data = {
+            "file": file.name
+        }
+        r = self.send_command("mesh", data=command_data, stream=True)
+        self.__write_file(r, file)
+        return r
+
+    def brep(self, file):
+        """Retreive a brep in a .step or .smt format
+            and write it to a local file"""
+        suffix = file.suffix
+        valid_formats = [".step", ".smt"]
+        if suffix not in valid_formats:
+            return self.__return_error(f"Invalid file format: {suffix}")
+        command_data = {
+            "file": file.name
+        }
+        r = self.send_command("brep", data=command_data, stream=True)
+        self.__write_file(r, file)
+        return r
+
+    def sketches(self, dir, format=".png"):
+        """Retreive each sketch in a given format (e.g. .png, .dxf)
+            and save to a local directory"""
+        if not dir.is_dir():
+            return self.__return_error(f"Not an existing directory")
+        valid_formats = [".png", ".dxf"]
+        if format not in valid_formats:
+            return self.__return_error(f"Invalid file format: {format}")
+        command_data = {
+            "format": format
+        }
+        r = self.send_command("sketches", data=command_data, stream=True)
+        if r.status_code != 200:
+            return r
+        # Save out the zip file with the sketch data
+        temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
+        zip_file = Path(temp_file_path)
+        self.__write_file(r, zip_file)
+        # Extract all the files to the given directory
+        with ZipFile(zip_file, "r") as zipObj:
+            zipObj.extractall(dir)
+        zip_file.unlink()
+        return r
+
+    # -------------------------------------------------------------------------
+    # UTILITY
+    # -------------------------------------------------------------------------
+
+    def ping(self):
+        """Ping for debugging"""
+        return self.send_command("ping")
+
+    def refresh(self):
+        """Refresh the active viewport"""
+        return self.send_command("refresh")
+
+    def detach(self):
+        """Detach the server from Fusion, taking it offline,
+            allowing the Fusion UI to become responsive again"""
+        return self.send_command("detach")
+
+    def commands(self, command_list, dir=None):
+        """Send a series of commands to the server"""
+        if dir is not None:
+            if not dir.is_dir():
+                return self.__return_error(f"Not an existing directory")
+        if (command_list is None or not isinstance(command_list, list) or
+           len(command_list) == 0):
+            return self.__return_error(
+                "Command list argument missing or not a populated list")
+        # Flag to mark down if we will get a binary back
+        binary_response = False
+        # Check that each command_set has a command
+        for command_set in command_list:
+            if "command" not in command_set:
+                return self.__return_error(
+                    "Command list command argument missing")
+            command = command_set["command"]
+            if command in ["mesh", "brep", "sketches"]:
+                binary_response = True
+        # We are getting a file back
+        if binary_response:
+            r = self.send_command("commands", data=command_list, stream=True)
+            if r.status_code != 200:
+                return r
+            temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
+            zip_file = Path(temp_file_path)
+            self.__write_file(r, zip_file)
+            # Extract all the files to the given directory
+            with ZipFile(zip_file, "r") as zipObj:
+                zipObj.extractall(dir)
+            zip_file.unlink()
+            return r
+        else:
+            return self.send_command("commands", command_list)
+
+    # -------------------------------------------------------------------------
+    # PRIVATE
+    # -------------------------------------------------------------------------
 
     def __return_error(self, message):
         print(message)

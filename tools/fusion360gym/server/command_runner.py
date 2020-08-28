@@ -15,6 +15,8 @@ from pathlib import Path
 
 from .command_export import CommandExport
 from .command_increment import CommandIncrement
+from .command_target import CommandTarget
+from .command_reconstruct import CommandReconstruct
 
 
 class CommandRunner():
@@ -24,12 +26,16 @@ class CommandRunner():
         self.app = adsk.core.Application.get()
         self.last_command = ""
         self.export = CommandExport(self)
+        self.export = CommandExport(self)
         self.increment = CommandIncrement(self)
+        self.target = CommandTarget(self)
+        self.reconstruct = CommandReconstruct(self)
 
     def set_logger(self, logger):
         self.logger = logger
         self.export.set_logger(logger)
         self.increment.set_logger(logger)
+        self.target.set_logger(logger)
 
     def run_command(self, command, data=None):
         """Run a command and route it to the right method"""
@@ -41,7 +47,9 @@ class CommandRunner():
             elif command == "refresh":
                 result = self.refresh()
             elif command == "reconstruct":
-                result = self.export.reconstruct(data)
+                result = self.reconstruct.reconstruct(data)
+            elif command == "reconstruct_sketch":
+                result = self.reconstruct.reconstruct_sketch(data)
             elif command == "clear":
                 result = self.clear()
             elif command == "mesh":
@@ -62,8 +70,10 @@ class CommandRunner():
                 result = self.increment.close_profile(data)
             elif command == "add_extrude":
                 result = self.increment.add_extrude(data)
-            elif command == "reconstruct_sketch":
-                result = self.increment.reconstruct_sketch(data)
+            elif command == "set_target":
+                result = self.target.set_target(data)
+            elif command == "add_extrude_by_target_face":
+                result = self.target.add_extrude_by_target_face(data)
             else:
                 return self.return_failure("Unknown command")
             return result
@@ -88,6 +98,7 @@ class CommandRunner():
             # Save without closing
             doc.close(False)
         self.increment.clear()
+        self.target.clear()
         return self.return_success()
 
     def return_success(self, data=None):

@@ -1,5 +1,5 @@
 # Fusion 360 Gym
-A 'gym' environment for training ML models to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
+A 'gym' environment for training ML models locally to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
 
 ![Drawing a couch](https://i.gyazo.com/f667c274c2542ddd7ee5aef81af0614a.gif)
 
@@ -80,6 +80,7 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 
 
 #### Reconstruction
+Reconstruct entire designs from json files provided with the reconstruction subset.
 - `reconstruct(file)`: Reconstruct a design from the provided json file
 - `reconstruct_sketch(json_data, sketch_name, sketch_plane, scale, translate)`: Reconstruct a sketch from the provided json data and a sketch name
     - `sketch_name`: is the string name of a sketch in the json data 
@@ -89,7 +90,9 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
         - point3d on a planar face of a BRep
     - `scale` and `translate` (optional): scale and translate the sketch in 3D coords e.g. `{"x": 1, "y": 1, "z":1}` 
 - `clear()`: Clear (i.e. close) all open designs in Fusion
+
 #### Incremental Construction
+Incremental construction of new designs. Currently only a small subset of the Fusion API is supported, but we will expand this over time.
 - `add_sketch(sketch_plane)`: Adds a sketch to the design.
     - `sketch_plane`: can be either one of:
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
@@ -112,10 +115,20 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
     - `profile_id`: is the uuid of the profile returned by `add_line()`
     - `distance`: is the extrude distance perpendicular to the profile plane
-    - `operation`: a string with the values: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
+    - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
     - Returns BRep vertices of the resulting body, BRep face information
 
+#### Target Reconstruction
+Reconstruct from a target design using extrude operations from face to face.
+- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. Returns a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph).
+- `add_extrude_by_target_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
+    - `start_face`: is the uuid of the start face in the target
+    - `end_face`: is the uuid of the end face in the target
+    - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
+    - Returns a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph), and an intersection over union value calculated between the target and the reconstruction.
+
 #### Export
+Export the existing design in a number of formats.
 - `mesh(file)`: Retreive a mesh in .obj or .stl format and write it to the local file provided.
 - `brep(file)`: Retreive a brep in .step or .smt format and write it to a local file provided.
 - `sketches(dir, format)`: Retreive each sketch in a given format.
@@ -123,6 +136,7 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
     - `format`: a string with the values `.png` or `.dxf`
 
 #### Utility
+Various utility calls to interact with Fusion 360.
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
@@ -154,6 +168,6 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
     `dir`: is the (optional) local directory where files will be saved
 
 ## Test
-See [test/test_fusion_360_server.py](test/test_fusion_360_server.py) for test coverage and additional usage examples.
+See the [test directory](test/) for test coverage and additional usage examples.
 
 

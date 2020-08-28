@@ -40,7 +40,6 @@ class Regraph():
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         self.product = self.app.activeProduct
-        self.timeline = self.app.activeProduct.timeline
         # Data structure to return
         self.data = {
             "graphs": [],
@@ -71,6 +70,7 @@ class Regraph():
 
     def generate(self, target_component=None):
         """Generate graphs from the design in the timeline"""
+        self.timeline = self.app.activeProduct.timeline
         self.target_component = target_component
         if self.target_component is None:
             self.target_component = self.design.rootComponent
@@ -98,8 +98,8 @@ class Regraph():
                     break
                 # Populate the cache again
                 self.add_extrude_to_cache(extrude)
-                self.add_extrude_edges_to_cache()
-                self.generate_extrude(extrude)
+                self.add_edges_to_cache()
+                self.generate_from_extrude(extrude)
                 prev_extrude_index = self.timeline.markerPosition
         if skip_reason is None:
             self.generate_last()
@@ -107,7 +107,7 @@ class Regraph():
             self.data["status"].append(skip_reason)
         return self.data
 
-    def generate_extrude(self, extrude):
+    def generate_from_extrude(self, extrude):
         """Generate a graph after each extrude as reconstruction takes place"""
         # If we are exporting per face
         if self.mode == "PerFace":
@@ -153,6 +153,13 @@ class Regraph():
                 }
                 self.data["sequences"].append(seq_data)
 
+    def generate_from_bodies(self, bodies):
+        """Generate a single graph from a collection of bodies"""
+        self.set_face_uuids(bodies)
+        self.add_edges_to_cache(bodies)
+        graph = self.get_graph_from_bodies(bodies)
+        return graph
+
     # -------------------------------------------------------------------------
     # DATA CACHING
     # -------------------------------------------------------------------------
@@ -190,13 +197,15 @@ class Regraph():
                 "last_operation_label": True
             }
 
-    def add_extrude_edges_to_cache(self):
+    def add_edges_to_cache(self, bodies=None):
         """Update the edge cache with the latest extrude"""
+        if bodies is None:
+            bodies = self.target_component.bRepBodies
         concave_edge_cache = set()
-        for body in self.target_component.bRepBodies:
+        for body in bodies:
             temp_ids = name.get_temp_ids_from_collection(body.concaveEdges)
             concave_edge_cache.update(temp_ids)
-        for body in self.target_component.bRepBodies:
+        for body in bodies:
             for face in body.faces:
                 for edge in face.edges:
                     assert edge.faces.count == 2
@@ -350,6 +359,12 @@ class Regraph():
             end_face = self.get_coplanar_face(end_plane, body)
         return end_face
 
+    def set_face_uuids(self, bodies):
+        """Set the face uuids for a collection of bodies"""
+        for body in bodies:
+            for face in body.faces:
+                face_uuid = name.set_uuid(face)
+
     # -------------------------------------------------------------------------
     # FEATURES
     # -------------------------------------------------------------------------
@@ -492,7 +507,7 @@ class Regraph():
             self.logger.log(f"Skipping {json_data['metadata']['parent_project']} early: {reason}")
             return False, reason
         else:
-            return True, None 
+            return True, None
 
     def is_extrude_tapered(self, extrude):
         if extrude.extentOne is not None:
@@ -556,15 +571,31 @@ class Regraph():
                 graph["links"].append(edge_data)
         return graph
 
+    def get_graph_from_bodies(self, bodies):
+        """Get a graph from a set of bodies
+            without using any cache data"""
+        graph = self.get_empty_graph()
+        for body in bodies:
+            for face in body.faces:
+                if face is not None:
+                    face_data = self.get_face_data(face)
+                    graph["nodes"].append(face_data)
+        for body in bodies:
+            for edge in body.edges:
+                if edge is not None:
+                    edge_data = self.get_edge_data(edge)
+                    graph["links"].append(edge_data)
+        return graph
+
     def get_face_data(self, face):
         """Get the features for a face"""
         face_uuid = name.get_uuid(face)
         assert face_uuid is not None
-        face_metadata = self.face_cache[face_uuid]
         if self.mode == "PerExtrude":
+            face_metadata = self.face_cache[face_uuid]
             return self.get_face_data_per_extrude(face, face_uuid, face_metadata)
         elif self.mode == "PerFace":
-            return self.get_face_data_per_face(face, face_uuid, face_metadata)
+            return self.get_face_data_per_face(face, face_uuid)
 
     def get_common_face_data(self, face, face_uuid):
         """Get common edge data"""
@@ -599,7 +630,7 @@ class Regraph():
         face_data["last_operation_label"] = face_metadata["last_operation_label"]
         return face_data
 
-    def get_face_data_per_face(self, face, face_uuid, face_metadata):
+    def get_face_data_per_face(self, face, face_uuid):
         """Get the features for a face for a per curve graph"""
         face_data = self.get_common_face_data(face, face_uuid)
         face_data["surface_type"] = serialize.surface_type(face.geometry)
@@ -751,8 +782,8 @@ class RegraphTester(unittest.TestCase):
 
     def reconstruct(self, graph_data, target_component=None):
         """Reconstruct and test it matches the target"""
-        regraph_reconstructor = RegraphReconstructor(graph_data, target_component)
-        regraph_reconstructor.reconstruct()
+        regraph_reconstructor = RegraphReconstructor(target_component)
+        regraph_reconstructor.reconstruct(graph_data)
         # Compare the ground truth with the reconstruction
         gt = regraph_reconstructor.target_component
         rc = regraph_reconstructor.reconstruction.component
@@ -918,37 +949,46 @@ class RegraphTester(unittest.TestCase):
 class RegraphReconstructor():
     """Reconstruct the graph to test it matches the target"""
 
-    def __init__(self, graph_data, target_component=None):
+    def __init__(self, target_component=None):
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         self.target_component = target_component
         if self.target_component is None:
             self.target_component = self.design.rootComponent
-        self.sequence = graph_data["sequences"][0]
+        self.uuid_to_face_map = {}
 
-    def reconstruct(self):
+    def reconstruct(self, graph_data):
         """Reconstruct from the sequence of faces"""
+        self.sequence = graph_data["sequences"][0]
+        self.setup()
+        for seq in self.sequence["sequence"]:
+            self.add_extrude_from_uuid(
+                seq["start_face"],
+                seq["end_face"],
+                seq["operation"]
+            )
+
+    def setup(self):
+        """Setup for reconstruction"""
         # Create a reconstruction component that we create geometry in
         self.reconstruction = self.design.rootComponent.occurrences.addNewComponent(
             adsk.core.Matrix3D.create()
         )
+        self.reconstruction.activate()
         self.reconstruction.component.name = "Reconstruction"
-        uuid_to_face_map = self.get_uuid_to_face_map()
-        for seq in self.sequence["sequence"]:
-            start_face = self.get_face_from_sequence_index(seq, "start_face", uuid_to_face_map)
-            end_face = self.get_face_from_sequence_index(seq, "end_face", uuid_to_face_map)
-            operation = deserialize.feature_operations(seq["operation"])
-            self.add_extrude(start_face, end_face, operation)
+        # Populate the cache with a map from uuids to face indices
+        self.uuid_to_face_map = self.get_uuid_to_face_map()
 
-    def get_face_from_sequence_index(self, seq, seq_key, uuid_to_face_map):
+    def get_face_from_uuid(self, face_uuid):
         """Get a face from an index in the sequence"""
-        face_uuid = seq[seq_key]
-        indices = uuid_to_face_map[face_uuid]
-        body_index = indices["body_index"]
-        face_index = indices["face_index"]
-        body = self.target_component.bRepBodies[body_index]
-        face = body.faces[face_index]
-        return face
+        if face_uuid not in self.uuid_to_face_map:
+            return None
+        uuid_data = self.uuid_to_face_map[face_uuid]
+        # body_index = indices["body_index"]
+        # face_index = indices["face_index"]
+        # body = self.target_component.bRepBodies[body_index]
+        # face = body.faces[face_index]
+        return uuid_data["face"]
 
     def get_uuid_to_face_map(self):
         """As we have to find faces multiple times we first
@@ -960,34 +1000,50 @@ class RegraphReconstructor():
                 assert face_uuid is not None
                 uuid_to_face_map[face_uuid] = {
                     "body_index": body_index,
-                    "face_index": face_index
+                    "face_index": face_index,
+                    "body": body,
+                    "face": face
                 }
         return uuid_to_face_map
+
+    def add_extrude_from_uuid(self, start_face_uuid, end_face_uuid, operation):
+        """Create an extrude from a start face uuid to an end face uuid"""
+        start_face = self.get_face_from_uuid(start_face_uuid)
+        end_face = self.get_face_from_uuid(end_face_uuid)
+        operation = deserialize.feature_operations(operation)
+        return self.add_extrude(start_face, end_face, operation)
 
     def add_extrude(self, start_face, end_face, operation):
         """Create an extrude from a start face to an end face"""
         # We generate the extrude bodies in the reconstruction component
         extrudes = self.reconstruction.component.features.extrudeFeatures
-        # Workaround for a fusion bug that joins to the root component
-        join_post_process = False
+        # Workaround for a fusion bug that operates on the root component
+        # So we create a new body and combine later
+        post_process_operation = None
         if operation == adsk.fusion.FeatureOperations.JoinFeatureOperation:
             operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
-            join_post_process = True
+            post_process_operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+        elif operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
+            operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+            post_process_operation = adsk.fusion.FeatureOperations.CutFeatureOperation
+
         extrude_input = extrudes.createInput(start_face, operation)
         extent = adsk.fusion.ToEntityExtentDefinition.create(end_face, False)
         extrude_input.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
         extrude = extrudes.add(extrude_input)
         # The Fusion API  doesn't seem to be able to do join extrudes
         # that don't join to the goal body
-        # so we make the bodies separate and then join them after the fact
-        if join_post_process and self.reconstruction.component.bRepBodies.count > 1:
-            combines = self.reconstruction.component.features.combineFeatures
-            first_body = self.reconstruction.component.bRepBodies[0]
-            tools = adsk.core.ObjectCollection.create()
-            for body in extrude.bodies:
-                tools.add(body)
-            combine_input = combines.createInput(first_body, tools)
-            combine = combines.add(combine_input)
+        # so we make the bodies separate and then join them after the fact to the reconstruction body
+        if post_process_operation is not None:
+            if self.reconstruction.component.bRepBodies.count > 1:
+                combines = self.reconstruction.component.features.combineFeatures
+                first_body = self.reconstruction.component.bRepBodies[0]
+                tools = adsk.core.ObjectCollection.create()
+                for body in extrude.bodies:
+                    tools.add(body)
+                combine_input = combines.createInput(first_body, tools)
+                combine_input.operation = post_process_operation
+                combine = combines.add(combine_input)
         return extrude
 
     def remove(self):

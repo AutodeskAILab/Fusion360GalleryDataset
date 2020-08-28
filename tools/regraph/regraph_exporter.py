@@ -30,7 +30,8 @@ from regraph import RegraphTester
 
 
 # Set the graph mode to either PerExtrude or PerFace
-GRAPH_MODE = "PerExtrude"
+# GRAPH_MODE = "PerExtrude"
+GRAPH_MODE = "PerFace"
 
 # Event handlers
 handlers = []

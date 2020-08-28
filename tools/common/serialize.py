@@ -201,6 +201,7 @@ def sketch_profile_properties(profile):
 
 def extrude_feature_brep(extrude_feature):
     """Return a data structure representing a brep"""
+    # TODO: Change this to be consistent with something?
     data = {}
     data["type"] = object_type(extrude_feature)
     faces = []
