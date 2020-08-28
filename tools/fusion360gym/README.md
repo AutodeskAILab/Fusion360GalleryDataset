@@ -1,5 +1,5 @@
 # Fusion 360 Gym
-A 'gym' environment for training ML models to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
+A 'gym' environment for training ML models locally to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
 
 ![Drawing a couch](https://i.gyazo.com/f667c274c2542ddd7ee5aef81af0614a.gif)
 
@@ -119,13 +119,13 @@ Incremental construction of new designs. Currently only a small subset of the Fu
     - Returns BRep vertices of the resulting body, BRep face information
 
 #### Target Reconstruction
-Reconstruct from a target design.
-- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design.
+Reconstruct from a target design using extrude operations from face to face.
+- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. Returns a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph).
 - `add_extrude_by_target_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
     - `start_face`: is the uuid of the start face in the target
     - `end_face`: is the uuid of the end face in the target
     - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
-    - Returns TBD
+    - Returns a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph), and an intersection over union value calculated between the target and the reconstruction.
 
 #### Export
 Export the existing design in a number of formats.
@@ -168,6 +168,6 @@ Various utility calls to interact with Fusion 360.
     `dir`: is the (optional) local directory where files will be saved
 
 ## Test
-See [test/test_fusion_360_server.py](test/test_fusion_360_server.py) for test coverage and additional usage examples.
+See the [test directory](test/) for test coverage and additional usage examples.
 
 
