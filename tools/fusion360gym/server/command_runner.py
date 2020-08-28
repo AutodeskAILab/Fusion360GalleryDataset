@@ -58,6 +58,8 @@ class CommandRunner():
                 result = self.export.brep(data)
             elif command == "sketches":
                 result = self.export.sketches(data)
+            elif command == "screenshot":
+                result = self.export.screenshot(data)
             elif command == "commands":
                 result = self.export.commands(data)
             elif command == "add_sketch":
@@ -72,6 +74,8 @@ class CommandRunner():
                 result = self.increment.add_extrude(data)
             elif command == "set_target":
                 result = self.target.set_target(data)
+            elif command == "revert_to_target":
+                result = self.target.revert_to_target(data)                
             elif command == "add_extrude_by_target_face":
                 result = self.target.add_extrude_by_target_face(data)
             else:
