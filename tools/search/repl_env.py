@@ -19,24 +19,21 @@ class ReplEnv():
 
     def set_target(self, target_file):
         """Setup search and connect to the Fusion Gym"""
-        assert self.client is not None
         # Set the target
         r = self.client.set_target(target_file)
-        assert r is not None
-        assert r.status_code == 200
+        self.__check_response("set_target", r)
         response_json = r.json()
-        assert "data" in response_json
-        assert "graph" in response_json["data"]
+        if "data" not in response_json or "graph" not in response_json["data"]:
+            raise Exception("[set_target] response graph missing")
         return response_json["data"]["graph"]
 
     def revert_to_target(self):
         """Revert to the target to start the search again"""
         r = self.client.revert_to_target()
-        assert r is not None
-        assert r.status_code == 200
+        self.__check_response("revert_to_target", r)
         response_json = r.json()
-        assert "data" in response_json
-        assert "graph" in response_json["data"]
+        if "data" not in response_json or "graph" not in response_json["data"]:
+            raise Exception("[revert_to_target] response graph missing")
         return response_json["data"]["graph"]
 
     def get_empty_graph(self):
@@ -51,7 +48,6 @@ class ReplEnv():
 
     def extrude(self, start_face, end_face, operation):
         """Extrude wrapper around the gym client"""
-        assert self.client is not None
         is_invalid = False
         return_graph = None
         return_iou = None
@@ -70,3 +66,11 @@ class ReplEnv():
         """Save out a screenshot"""
         r = self.client.screenshot(file)
         return r is not None and r.status_code == 200
+
+    def __check_response(self, call, r):
+        """Check the response is valid and raise exceptions if not"""
+        if r is None:
+            raise Exception(f"[{call}] response is None")
+        if r.status_code != 200:
+            response_data = r.json()
+            raise Exception(f"[{call}] {r.status_code}: {response_data['message']}")

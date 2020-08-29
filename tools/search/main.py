@@ -1,6 +1,7 @@
 import json
 import random
 import argparse
+import traceback
 from pathlib import Path
 import matplotlib.pyplot as plt
 
@@ -19,6 +20,7 @@ parser.add_argument("--agent", type=str, default="random", help="Agent to use [d
 parser.add_argument("--search", type=str, default="random", help="Search to use [default: random]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
 args = parser.parse_args()
+
 
 
 def get_files():
@@ -89,23 +91,61 @@ def get_agent(target_graph):
         return AgentSupervised(target_graph)
 
 
+def load_results(output_dir):
+    """Load the results file"""
+    results_file = output_dir / "search_results.json"
+    if results_file.exists():
+        with open(results_file, encoding="utf8") as f:
+            return json.load(f)
+    else:
+        return {}
+
+
+def save_results(output_dir, results):
+    """Save the results file"""
+    results_file = output_dir / "search_results.json"
+    with open(results_file, "w", encoding="utf8") as f:
+        json.dump(results, f, indent=4)
+
+
 def main():
     files = get_files()
     output_dir = get_output_dir()
+    results = load_results(output_dir)
 
     # Random sample of a limited set for testing
     # files = random.sample(files, 5)
 
     # Setup the search and the environment that connects to FusionGym
     env = ReplEnv(host="127.0.0.1", port=8080)
-    for file in files:
-        print(f"Reconstructing {file.stem}")
-        search = get_search(env, output_dir)
-        target_graph = search.set_target(file)
-        agent = get_agent(target_graph)
-        best_score_over_time = search.search(agent, args.budget, screenshot=args.screenshot)
-        print(f"> Result: {best_score_over_time[-1]:.3f} in {len(best_score_over_time)}/{args.budget} steps")
+    for index, file in enumerate(files):
+        result = {
+            "status": "Success"
+        }
+        # If we already have processed this file, then skip it
+        if file.stem in results:
+            print(f"[{index}/{len(files)}] Skipping {file.stem}")
+            result["status"] = "Skip"
+        else:
+            print(f"[{index}/{len(files)}] Reconstructing {file.stem}")
+            try:
+                search = get_search(env, output_dir)
+                target_graph = search.set_target(file)
+                agent = get_agent(target_graph)
+                best_score_over_time = search.search(agent, args.budget, screenshot=args.screenshot)
+                print(f"> Result: {best_score_over_time[-1]:.3f} in {len(best_score_over_time)}/{args.budget} steps")
+            except Exception as ex:
+                ex_arg = str(ex.args).split("\\n")[0]
+                print(f"\tException! {type(ex).__name__}: {ex_arg}")
+                result["status"] = "Fail"
+                result["exception"] = type(ex).__name__
+                result["exception_args"] = str(ex.args)
+                result["trace"] = traceback.format_exc()
+        if file.stem not in results:
+            results[file.stem] = result
+            save_results(output_dir, results)
 
+            
 
 if __name__ == "__main__":
     main()
