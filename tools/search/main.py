@@ -117,7 +117,7 @@ def main():
     results = load_results(output_dir)
 
     # Random sample of a limited set for testing
-    files = random.sample(files, 10)
+    # files = random.sample(files, 10)
 
     # Setup the search and the environment that connects to FusionGym
     env = ReplEnv(host="127.0.0.1", port=8080, launch_gym=args.launch_gym)
