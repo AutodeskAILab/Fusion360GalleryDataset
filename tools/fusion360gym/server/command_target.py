@@ -103,18 +103,20 @@ class CommandTarget(CommandBase):
         start_face = self.state["reconstructor"].get_face_from_uuid(data["start_face"])
         if start_face is None:
             return self.runner.return_failure("Start face not in target")
-        if start_face.geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
+        start_face_geometry = start_face.geometry
+        if start_face_geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
             return self.runner.return_failure("Start face is not a plane")
         # End face data checks
         end_face = self.state["reconstructor"].get_face_from_uuid(data["end_face"])
         if end_face is None:
             return self.runner.return_failure("End face not in target")
-        if end_face.geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
+        end_face_geometry = end_face.geometry
+        if end_face_geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
             return self.runner.return_failure("End face is not a plane")
         # End face geometric checks
-        if not end_face.geometry.isParallelToPlane(start_face.geometry):
+        if not end_face_geometry.isParallelToPlane(start_face_geometry):
             return self.runner.return_failure("End face is not parallel to start face")
-        if end_face.geometry.isCoPlanarTo(start_face.geometry):
+        if end_face_geometry.isCoPlanarTo(start_face_geometry):
             return self.runner.return_failure("End face is coplanar to start face")
         operation = deserialize.feature_operations(data["operation"])
         if operation is None:
