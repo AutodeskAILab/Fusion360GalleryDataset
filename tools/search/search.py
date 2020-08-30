@@ -38,8 +38,9 @@ class Search:
             if node["surface_type"] == "PlaneSurfaceType":
                 valid_nodes.add(node["id"])
         # There exist some designs with no planar faces that we can't handle
-        if len(valid_nodes) == 0:
-            raise Exception("No valid planar faces in target")
+        # We need at least 2 faces
+        if len(valid_nodes) < 2:
+            raise Exception("Not enough valid planar faces in target")
         # Flag for if the current graph is empty
         is_current_graph_empty = len(current_graph["nodes"]) == 0
         # Adjust the probabilities of bad actions
