@@ -149,6 +149,8 @@ def main():
                 # Put the file back in the list to reprocess
                 files_to_process.append(file)
                 env.launch_gym()
+                # Continue to the next, which will be a repeat of the current
+                continue
             except Exception as ex:
                 ex_arg = str(ex.args).split("\\n")[0]
                 print(f"\tException! {type(ex).__name__}: {ex_arg}")

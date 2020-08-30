@@ -84,9 +84,15 @@ class ReplEnv():
 
     def launch_gym(self):
         """Launch the Fusion 360 Gym on the given host/port"""
+        print("Launching Gym...")
         if self.p is not None:
-            # Kill the process if it exists
-            self.p.kill()
+            # Give a second for Fusion to crash
+            time.sleep(2)
+            return_code = self.p.poll()
+            print(f"Poll response is: {return_code}")
+            # Kill the process if it is active
+            if return_code is None:
+                self.p.kill()
             self.p = None
         self.__write_launch_file()
         return self.__launch_gym()
@@ -105,6 +111,7 @@ class ReplEnv():
             "port": self.port,
             "connected": False
         }
+        print(f"Writing Launch file for: {url}")
         with open(launch_json_file, "w") as f:
             json.dump(launch_data, f, indent=4)
 
@@ -118,7 +125,7 @@ class ReplEnv():
             # Fusion is awake but not responding so restart
             self.p.kill()
             self.p = None
-            self.__launch_fusion()
+            self.__launch_gym()
         else:
             return result
 
@@ -140,9 +147,11 @@ class ReplEnv():
                 r = self.client.ping()
                 if r is not None and r.status_code == 200:
                     print("Ping response received")
+                    r.close()
                     return True
                 else:
                     print("No ping response received")
+                r.close()
             except ConnectionError as ex:
                 print(f"Ping raised {type(ex).__name__}")
             attempts += 1
