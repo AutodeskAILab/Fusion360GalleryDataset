@@ -41,12 +41,15 @@ args = parser.parse_args()
 
 def create_launch_json(host, start_port, instances):
     """Launch instruction file to be read by the server on startup"""
-    launch_data = {
-        "host": host,
-        "start_port": start_port,
-        "instances": instances,
-        "servers": []
-    }
+    launch_data = {}
+    for instance in range(instances):
+        port = start_port + instance
+        url = f"http://{host}:{port}"
+        launch_data[url] = {
+            "host": host,
+            "port": port,
+            "connected": False
+        }
     with open(LAUNCH_JSON_FILE, "w") as file_handle:
         json.dump(launch_data, file_handle, indent=4)
 
@@ -60,10 +63,9 @@ def launch_instances(host, start_port, instances):
         time.sleep(5)
 
 
-def detach_endpoint(host, port):
+def detach_endpoint(endpoint):
     """Detach an endpoint"""
     try:
-        endpoint = f"http://{host}:{port}"
         client = Fusion360Client(endpoint)
         print(f"Detaching {endpoint}...")
         client.detach()
@@ -76,16 +78,16 @@ def detach():
     if LAUNCH_JSON_FILE.exists():
         with open(LAUNCH_JSON_FILE) as file_handle:
             launch_data = json.load(file_handle)
-            for server in launch_data["servers"]:
-                detach_endpoint(server["host"], server["port"])
+            for endpoint, server in launch_data.items():
+                if server["connected"]:
+                    detach_endpoint(endpoint)
     else:
         detach_endpoint(DEFAULT_HOST, DEFAULT_PORT)
 
 
-def ping_endpoint(host, port):
+def ping_endpoint(endpoint):
     """Ping an endpoint"""
     try:
-        endpoint = f"http://{host}:{port}"
         client = Fusion360Client(endpoint)
         r = client.ping()
         print(f"Ping response from {endpoint}: {r.status_code}")
@@ -98,8 +100,8 @@ def ping():
     if LAUNCH_JSON_FILE.exists():
         with open(LAUNCH_JSON_FILE) as file_handle:
             launch_data = json.load(file_handle)
-            for server in launch_data["servers"]:
-                ping_endpoint(server["host"], server["port"])
+            for endpoint, server in launch_data.items():
+                ping_endpoint(endpoint)
     else:
         ping_endpoint(DEFAULT_HOST, DEFAULT_PORT)
 

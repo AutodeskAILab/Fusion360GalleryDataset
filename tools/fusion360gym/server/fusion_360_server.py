@@ -137,17 +137,19 @@ def get_launch_endpoint():
     if launch_json_file.exists():
         with open(launch_json_file) as file_handle:
             launch_data = json.load(file_handle)
-            host_name = launch_data["host"]
-            port_number = launch_data["start_port"] + len(launch_data["servers"])
-            launch_data["servers"].append({
-                "host": host_name,
-                "port": port_number,
-                "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            })
+            for endpoint, server in launch_data.items():
+                # If this server isn't connected, lets grab it and use it
+                if not server["connected"]:
+                    host_name = server["host"]
+                    port_number = server["port"]
+                    # Claim the server
+                    server["connected"] = True
+                    break
         # Write out the changes
-        # TODO: Handle possible issue if we don't launch each instance in sequence
-        with open(launch_json_file, "w") as file_handle:
-            json.dump(launch_data, file_handle, indent=4)
+        # TODO: Handle possible issue if we don't launch
+        # each instance in sequence
+        with open(launch_json_file, "w") as f:
+            json.dump(launch_data, f, indent=4)
     return host_name, port_number
 
 
