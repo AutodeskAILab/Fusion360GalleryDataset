@@ -82,7 +82,8 @@ def detach():
                 if server["connected"]:
                     detach_endpoint(endpoint)
     else:
-        detach_endpoint(DEFAULT_HOST, DEFAULT_PORT)
+        url = f"http://{args.host}:{args.start_port}"
+        detach_endpoint(url)
 
 
 def ping_endpoint(endpoint):

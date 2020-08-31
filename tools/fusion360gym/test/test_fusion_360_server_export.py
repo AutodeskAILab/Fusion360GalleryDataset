@@ -51,6 +51,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         cls.test_brep_step_file = cls.data_dir / f"{box_design}.step"
         # BRep smt file
         cls.test_brep_smt_file = cls.data_dir / f"{box_design}.smt"
+        # BRep f3d file
+        cls.test_brep_f3d_file = cls.data_dir / f"{box_design}.f3d"
         # Screenshot png file
         cls.test_screenshot_png_file = cls.data_dir / f"{box_design}.png"
         # Sketch temp folder
@@ -129,6 +131,19 @@ class TestFusion360ServerExport(unittest.TestCase):
         # Clear
         r = self.client.clear()
         self.test_brep_smt_file.unlink()
+
+    def test_brep_f3d(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        # Save out the brep
+        r = self.client.brep(self.test_brep_f3d_file)
+        self.assertIsNotNone(r, msg="brep response is not None")
+        self.assertEqual(r.status_code, 200, msg="brep status code")
+        self.assertTrue(self.test_brep_f3d_file.exists())
+        self.assertGreater(self.test_brep_f3d_file.stat().st_size, 0, msg="brep file size greater than 0")
+        # Clear
+        r = self.client.clear()
+        self.test_brep_f3d_file.unlink()
 
     def test_brep_invalid_format(self):
         # Reconstruct first
