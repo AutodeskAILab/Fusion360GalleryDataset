@@ -14,6 +14,7 @@ import sys
 import importlib
 from zipfile import ZipFile
 from pathlib import Path
+import importlib
 
 from .command_base import CommandBase
 
@@ -63,7 +64,7 @@ class CommandExport(CommandBase):
     def brep(self, data, dest_dir=None):
         """Create a brep in the given format (.step, smt)
             and send it back as a binary file"""
-        error, suffix = self.check_file(data, [".step", ".smt"])
+        error, suffix = self.check_file(data, [".step", ".smt", ".f3d"])
         if error is not None:
             return self.runner.return_failure(error)
         temp_file = self.get_temp_file(data["file"], dest_dir)
@@ -76,6 +77,8 @@ class CommandExport(CommandBase):
             export_result = exporter.export_smt_from_component(
                 temp_file, design.rootComponent
             )
+        elif suffix == ".f3d":
+            export_result = exporter.export_f3d(temp_file)
         file_exists = temp_file.exists()
         if export_result and file_exists:
             self.logger.log(f"BRep temp file written to: {temp_file}")

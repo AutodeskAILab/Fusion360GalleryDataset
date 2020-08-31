@@ -274,12 +274,12 @@ class Fusion360Client():
         return r
 
     def brep(self, file):
-        """Retreive a brep in a .step or .smt format
+        """Retreive a brep in a .step, .smt, or .f3d format
             and write it to a local file"""
         if isinstance(file, str):
             file = Path(file)
         suffix = file.suffix
-        valid_formats = [".step", ".smt"]
+        valid_formats = [".step", ".smt", ".f3d"]
         if suffix not in valid_formats:
             return self.__return_error(f"Invalid file format: {suffix}")
         command_data = {

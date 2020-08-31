@@ -84,13 +84,16 @@ def get_component_from_body(body):
 
 def export_smt_from_component(file, component):
     """Export a component as a SMT file"""
-    design = get_design_product()
-    design.fusionUnitsManager.distanceDisplayUnits = \
-        adsk.fusion.DistanceUnits.CentimeterDistanceUnits
-    smt_export_options = design.exportManager.createSMTExportOptions(
-        str(file.resolve()), component)
-    export_success = design.exportManager.execute(smt_export_options)
-    return export_success
+    try:
+        design = get_design_product()
+        design.fusionUnitsManager.distanceDisplayUnits = \
+            adsk.fusion.DistanceUnits.CentimeterDistanceUnits
+        smt_export_options = design.exportManager.createSMTExportOptions(
+            str(file.resolve()), component)
+        export_success = design.exportManager.execute(smt_export_options)
+        return export_success
+    except Exception as ex:
+        return False
 
 
 def export_smt_from_body(file, body):
@@ -117,7 +120,18 @@ def export_step_from_body(file, body):
     """Export a body as a STEP file"""
     component = get_component_from_body(body)
     if component:
-        export_step_from_component(file, component)
+        return export_step_from_component(file, component)
+    return False
+
+
+def export_f3d(file):
+    """Export a design as an f3d file"""
+    try:
+        design = get_design_product()
+        fusion_archive_options = design.exportManager.createFusionArchiveExportOptions(str(file.resolve()))
+        return design.exportManager.execute(fusion_archive_options)
+    except Exception as ex:
+        return False
 
 
 def export_json(file, data):

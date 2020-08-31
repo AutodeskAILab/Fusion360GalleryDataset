@@ -131,7 +131,7 @@ Reconstruct from a target design using extrude operations from face to face.
 #### Export
 Export the existing design in a number of formats.
 - `mesh(file)`: Retreive a mesh in .obj or .stl format and write it to the local file provided.
-- `brep(file)`: Retreive a brep in .step or .smt format and write it to a local file provided.
+- `brep(file)`: Retreive a brep in .step, .smt, or .f3d format and write it to a local file provided.
 - `sketches(dir, format)`: Retreive each sketch in a given format.
     - `dir`: the local directory where the output will be saved
     - `format`: a string with the values `.png` or `.dxf`
