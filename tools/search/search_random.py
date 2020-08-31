@@ -21,6 +21,10 @@ class SearchRandom(Search):
         for node in self.target_graph["nodes"]:
             if node["surface_type"] == "PlaneSurfaceType":
                 rollout_length += 1
+        if rollout_length < 2:
+            # There exist some designs with no planar faces that we can't handle
+            # We need at least 2 faces
+            raise Exception("Not enough valid planar faces in target")
         rollout_attempt = 0
         used_budget = 0
         max_score = 0

@@ -34,7 +34,9 @@ class Launcher():
             fusion_path = str(self.fusion_app.resolve())
             args = []
             if sys.platform == "darwin":
-                args = ["open", "-n", fusion_path]
+                # -W is to wait for the app to finish
+                # -n is to open a new app
+                args = ["open", "-W", "-n", fusion_path]
             elif sys.platform == "win32":
                 args = [fusion_path]
 

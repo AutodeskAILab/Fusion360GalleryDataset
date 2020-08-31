@@ -45,6 +45,7 @@ def get_brep_bodies_bounding_box(bodies):
     bbox = adsk.core.BoundingBox3D.create(min_point, max_point)
     return bbox
 
+
 def get_face_normal(face):
     """Get the normal at the center of the face"""
     point_on_face = face.pointOnFace
@@ -173,8 +174,9 @@ def get_union_volume(bodies, copy=True):
     # Loop over all pairs of bodies
     for i in range(num_bodies):
         for j in range(i):
-            # Get the target and tool bodies to try.   Check if we already accumulated
-            # the target or tool into another body 
+            # Get the target and tool bodies to try
+            # Check if we already accumulated
+            # the target or tool into another body
             target = bodies_copy[i]
             if target is None:
                 continue
@@ -194,20 +196,18 @@ def get_union_volume(bodies, copy=True):
                     # Mark that the tool was accumulated into the target
                     bodies_copy[j] = None
                 # If the volume has not changed there is either:
-                # 1. No overlap, so we want to count that volume
-                # 2. Direct overlap/containment, so we don't want to count it
+                # 1. OUTSIDE: No overlap, so we want to count that volume
+                # 2. INSIDE: Direct overlap/containment
+                #            so we don't want to count it
                 else:
                     keep_tool = False
-                    # We check that points on all tool faces are within the target
-                    for face in tool.faces:
-                        containment = target.pointContainment(face.pointOnFace)
-                        # If any of these points is outside of the target
-                        # we can break and keep the tool to have the volume count
-                        if containment == adsk.fusion.PointContainment.PointOutsidePointContainment:
-                            keep_tool = True
-                            break
-                    # The tool is inside of the target, so remove it
-                    if not keep_tool:
+                    # We check that the first point on the tool face
+                    # is within the target
+                    containment = target.pointContainment(tool.faces[0].pointOnFace)
+                    # If this points is outside of the target
+                    # we can keep the tool to have the volume count
+                    if containment != adsk.fusion.PointContainment.PointOutsidePointContainment:
+                        # The tool is inside of the target, so remove it
                         bodies_copy[j] = None
 
     # Now find the volume of the disjoint bodies remaining
@@ -217,6 +217,7 @@ def get_union_volume(bodies, copy=True):
             continue
         volume += body_copy.volume
     return volume
+
 
 def get_intersect_volume(bodies_one, bodies_two):
     """Get the intersection volume of two lists of bodies"""
@@ -231,14 +232,14 @@ def get_intersect_volume(bodies_one, bodies_two):
         bodies_group[body.revisionId] = 1
     for body in bodies_two:
         bodies_group[body.revisionId] = 2
-    
+
     # Create a collection of all bodies
     bodies = adsk.core.ObjectCollection.create()
     for body in bodies_one:
         bodies.add(body)
     for body in bodies_two:
         bodies.add(body)
-    
+
     # Analyze interference
     input = design.createInterferenceInput(bodies)
     results = design.analyzeInterference(input)
@@ -252,7 +253,7 @@ def get_intersect_volume(bodies_one, bodies_two):
         # Make sure the intersection comes from between the groups
         if group_one != group_two:
             intersection_bodies.append(result.interferenceBody)
-    
+
     num_intersection_bodies = len(intersection_bodies)
     if num_intersection_bodies == 0:
         return 0.0

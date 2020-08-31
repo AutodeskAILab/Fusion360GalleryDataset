@@ -14,6 +14,7 @@ python main.py --input ../testdata Couch.smt --screenshot
 - `--split` (optional): Train/test split file to filer which test files to process from the input folder 
 - `--output`(optional): Folder to save the output logs to [default: log]
 - `--screenshot`(optional): Save screenshots during reconstruction [default: False]
+- `--launch_gym` (optional): Launch the Fusion 360 Gym automatically, requires the gym to be set to run on startup within Fusion 360. Enabling this will also handle automatic restarting of Fusion if it crashes [default: False]
 - `--agent`(optional): Agent to use [default: random]
 - `--search`(optional): Search to use [default: random]
 - `--budget`(optional): The number of steps to search [default: 100]

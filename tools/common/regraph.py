@@ -208,16 +208,19 @@ class Regraph():
         for body in bodies:
             for face in body.faces:
                 for edge in face.edges:
-                    assert edge.faces.count == 2
+                    edge_faces = edge.faces
+                    assert edge_faces.count == 2
                     edge_uuid = name.set_uuid(edge)
-                    edge_concave = edge.tempId in concave_edge_cache
+                    edge_temp_id = edge.tempId
+                    edge_concave = edge_temp_id in concave_edge_cache
                     assert edge_uuid is not None
                     self.edge_cache[edge_uuid] = {
-                        "temp_id": edge.tempId,
-                        "convexity": self.get_edge_convexity(edge, edge_concave),
-                        "source": name.get_uuid(edge.faces[0]),
-                        "target": name.get_uuid(edge.faces[1])
+                        "temp_id": edge_temp_id,
+                        "source": name.get_uuid(edge_faces[0]),
+                        "target": name.get_uuid(edge_faces[1])
                     }
+                    if self.mode == "PerExtrude":
+                        self.edge_cache[edge_uuid]["convexity"] = self.get_edge_convexity(edge, edge_concave)
                     # TODO: Handle cases where an edge has more than 2 faces
                     # We have to connect each face to one another
                     # but currently we cache 1 graph edge for each brep edge
