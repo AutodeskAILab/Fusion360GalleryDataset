@@ -148,9 +148,13 @@ class Regraph():
                 seq_data = {
                     "sequence": self.sequence,
                     "properties": {
-                        "bounding_box": bbox_data
+                        "bounding_box": bbox_data,
+                        "extrude_count": self.current_extrude_index,
+                        "body_count": self.target_component.bRepBodies.count
                     }
                 }
+                if self.timeline is not None:
+                    seq_data["properties"]["timeline_count"] = self.timeline.count
                 self.data["sequences"].append(seq_data)
 
     def generate_from_bodies(self, bodies):
@@ -961,6 +965,8 @@ class RegraphTester(unittest.TestCase):
         # Properties
         self.assertIn("properties", sequence, msg="Sequence has properties")
         self.assertIn("bounding_box", sequence["properties"], msg="Properties has bounding_box")
+        self.assertIn("extrude_count", sequence["properties"], msg="Properties has extrude_count")
+        self.assertIn("body_count", sequence["properties"], msg="Properties has body_count")
 
     def test_reconstruction(self, gt, rc, places=1):
         """Test the reconstruction"""
