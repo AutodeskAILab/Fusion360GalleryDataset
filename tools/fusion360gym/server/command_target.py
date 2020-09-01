@@ -35,7 +35,8 @@ class CommandTarget(CommandBase):
 
     def set_target(self, data):
         """Set the target design"""
-        error, suffix = self.check_file(data, [".step", ".stp", ".smt"])
+        data_file, error = self.check_file(data, [".step", ".stp", ".smt"])
+        suffix = data_file.suffix
         if error is not None:
             return self.runner.return_failure(error)
         # Create the file locally

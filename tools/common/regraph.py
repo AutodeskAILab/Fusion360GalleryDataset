@@ -148,9 +148,13 @@ class Regraph():
                 seq_data = {
                     "sequence": self.sequence,
                     "properties": {
-                        "bounding_box": bbox_data
+                        "bounding_box": bbox_data,
+                        "extrude_count": self.current_extrude_index,
+                        "body_count": self.target_component.bRepBodies.count
                     }
                 }
+                if self.timeline is not None:
+                    seq_data["properties"]["timeline_count"] = self.timeline.count
                 self.data["sequences"].append(seq_data)
 
     def generate_from_bodies(self, bodies):
@@ -761,6 +765,99 @@ class Regraph():
         return None
 
 
+# -------------------------------------------------------------------------
+# REGRAPH WRITER
+# -------------------------------------------------------------------------
+
+
+class RegraphWriter():
+    """Reconstruction Graph Writer
+        Takes a design and writes out a graph
+        representing B-Rep topology"""
+
+    def __init__(self, logger=None, mode="PerExtrude"):
+        self.logger = logger
+        if self.logger is None:
+            self.logger = Logger()
+        # The mode we want
+        self.mode = mode
+
+    def write(self, file, output_dir, target_component=None, regraph=None):
+        """Reconstruct the design from the json file"""
+        self.output_dir = output_dir
+        self.file = file
+        if regraph is None:
+            regraph = Regraph(mode=self.mode)
+        # Use the target component or rootComponent if none
+        graph_data = regraph.generate(target_component)
+        # If we don't get any graphs back return None
+        if len(graph_data["graphs"]) <= 0:
+            return None
+        if self.mode == "PerFace":
+            self.update_sequence_data(graph_data)
+        # Perform tests on the graph data
+        regraph_tester = RegraphTester(mode=self.mode)
+        regraph_tester.test(graph_data)
+        if self.mode == "PerFace":
+            # Perform reconstruction to ensure the data is good
+            regraph_tester.reconstruct(graph_data)
+        return self.write_graph_data(graph_data)
+
+    def update_sequence_data(self, graph_data):
+        """Update the sequence with the correct graph file names"""
+        graph_files = []
+        for index, graph in enumerate(graph_data["graphs"]):
+            graph_file = self.get_write_path(f"{index:04}")
+            graph_files.append(graph_file)
+        # Add the names of the graphs to the sequence
+        seq_data = graph_data["sequences"][0]
+        for index, seq in enumerate(seq_data["sequence"]):
+            seq["graph"] = graph_files[index].name
+
+    def write_graph_data(self, graph_data):
+        """Write the graph data generated from regraph"""
+        write_data = {}
+        for index, graph in enumerate(graph_data["graphs"]):
+            status = graph_data["status"][index]
+            graph_file = self.write_extrude_graph(graph, index)
+            write_data[graph_file.name] = {
+                "graph": graph,
+                "status": status
+            }
+        if self.mode == "PerFace":
+            seq_data = graph_data["sequences"][0]
+            seq_file = self.write_sequence(seq_data)
+            write_data[seq_file.name] = seq_data
+        return write_data
+
+    def get_write_path(self, name):
+        """Get the write path from a name"""
+        return self.output_dir / f"{self.file.stem}_{name}.json"
+
+    def write_extrude_graph(self, graph, extrude_index):
+        """Write a graph from an extrude operation"""
+        graph_file = self.get_write_path(f"{extrude_index:04}")
+        self.write_graph(graph_file, graph)
+        return graph_file
+
+    def write_graph(self, graph_file, graph):
+        """Write a graph as json"""
+        self.logger.log(f"Exporting {graph_file}")
+        exporter.export_json(graph_file, graph)
+
+    def write_sequence(self, seq_data):
+        """Write the sequence data"""
+        seq_file = self.output_dir / f"{self.file.stem}_sequence.json"
+        with open(seq_file, "w", encoding="utf8") as f:
+            json.dump(seq_data, f, indent=4)
+        return seq_file
+
+
+# -------------------------------------------------------------------------
+# REGRAPH TESTER
+# -------------------------------------------------------------------------
+
+
 class RegraphTester(unittest.TestCase):
     """Reconstruction Graph tester to check for invalid data"""
 
@@ -868,6 +965,8 @@ class RegraphTester(unittest.TestCase):
         # Properties
         self.assertIn("properties", sequence, msg="Sequence has properties")
         self.assertIn("bounding_box", sequence["properties"], msg="Properties has bounding_box")
+        self.assertIn("extrude_count", sequence["properties"], msg="Properties has extrude_count")
+        self.assertIn("body_count", sequence["properties"], msg="Properties has body_count")
 
     def test_reconstruction(self, gt, rc, places=1):
         """Test the reconstruction"""
@@ -949,6 +1048,11 @@ class RegraphTester(unittest.TestCase):
         )
 
 
+# -------------------------------------------------------------------------
+# REGRAPH RECONSTRUCTOR
+# -------------------------------------------------------------------------
+
+
 class RegraphReconstructor():
     """Reconstruct the graph to test it matches the target"""
 
@@ -982,7 +1086,8 @@ class RegraphReconstructor():
             adsk.core.Matrix3D.create()
         )
         self.reconstruction.activate()
-        self.reconstruction.component.name = "Reconstruction"
+        # Avoid naming for now to avoid name clashes
+        # self.reconstruction.component.name = "Reconstruction"
 
     def reconstruct(self, graph_data):
         """Reconstruct from the sequence of faces"""

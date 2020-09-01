@@ -140,6 +140,11 @@ Export the existing design in a number of formats.
     - `width` (optional): The width of the image, default is 512.
     - `height` (optional): The height of the image, default is 512.
     - `fit_camera` (optional): Fit the camera to the geometry in the design, default is True.
+- `graph(file, dir, format)`: Retreive a face adjacency graph in a given format.
+    - `file`: the base json file name to be used for all graph files
+    - `dir`: the local directory where the output will be saved
+    - `format` (optional): a string with the values `PerFace` or `PerExtrude` see [here](../regraph) for a description of each format. Default is `PerFace`.
+
 
 #### Utility
 Various utility calls to interact with Fusion 360.

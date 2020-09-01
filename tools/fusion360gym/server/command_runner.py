@@ -60,6 +60,8 @@ class CommandRunner():
                 result = self.export.sketches(data)
             elif command == "screenshot":
                 result = self.export.screenshot(data)
+            elif command == "graph":
+                result = self.export.graph(data)                
             elif command == "commands":
                 result = self.export.commands(data)
             elif command == "add_sketch":
