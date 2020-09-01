@@ -31,7 +31,7 @@ def load_graph_pair(path_tar,path_cur):
     node_names=[x['id'] for x in data_tar['nodes']]
     return graph_pair_formatted,node_names,operation_names
 
-def inference(graph_pair_formatted,use_gpu=False):
+def inference(graph_pair_formatted,node_names,operation_names,use_gpu=False):
     model.eval()
     with torch.no_grad():
         output_node,output_op=model(graph_pair_formatted,use_gpu=use_gpu)
@@ -39,10 +39,22 @@ def inference(graph_pair_formatted,use_gpu=False):
         output_end=F.softmax(output_node[:,1].view(1,-1),dim=1)
         output_op=F.softmax(output_op,dim=1)
     if use_gpu:
-        probs=[output_start.data.cpu().numpy()[0,:],output_end.data.cpu().numpy()[0,:],output_op.data.cpu().numpy()[0,:]]
+        ps=[output_start.data.cpu().numpy()[0,:],output_end.data.cpu().numpy()[0,:],output_op.data.cpu().numpy()[0,:]]
     else:
-        probs=[output_start.data.numpy()[0,:],output_end.data.numpy()[0,:],output_op.data.numpy()[0,:]]
-    return probs
+        ps=[output_start.data.numpy()[0,:],output_end.data.numpy()[0,:],output_op.data.numpy()[0,:]]
+    # enumerate all actions
+    actions,probs=[],[]
+    for i in range(len(node_names)):
+        for j in range(len(node_names)):
+            for k in range(len(operation_names)):
+                actions.append([node_names[i],node_names[j],operation_names[k]])
+                probs.append(ps[0][i]*ps[1][j]*ps[2][k])
+    actions_sorted,probs_sorted=[],[]
+    idx=np.argsort(-np.array(probs))
+    for i in range(len(probs)):
+        actions_sorted.append(actions[idx[i]])
+        probs_sorted.append(probs[idx[i]])
+    return actions_sorted,probs_sorted
 
 if __name__=="__main__":
     # args
@@ -79,8 +91,8 @@ if __name__=="__main__":
                 for j in range(4):
                     graph_pair_formatted[j]=graph_pair_formatted[j].cuda()
             # inference
-            probs=inference(graph_pair_formatted,use_gpu=args.cuda)
-            print('---%s, t=%d'%(seq,t))
-            print('%s -> %s (%s)'%(node_names[np.argmax(probs[0])],node_names[np.argmax(probs[1])],operation_names[np.argmax(probs[2])]))
+            actions_sorted,probs_sorted=inference(graph_pair_formatted,node_names,operation_names,use_gpu=args.cuda)
+            print(actions_sorted)
+            print(probs_sorted)
     t2=time.time()
     print('%.5f seconds.'%(t2-t1))
