@@ -19,7 +19,7 @@ parser.add_argument("--output", type=str, help="Folder to save the output logs t
 parser.add_argument("--screenshot", dest="screenshot", default=False, action="store_true", help="Save screenshots during reconstruction [default: False]")
 parser.add_argument("--launch_gym", dest="launch_gym", default=False, action="store_true",
                     help="Launch the Fusion 360 Gym automatically, requires the gym to be set to run on startup [default: False]")
-parser.add_argument("--agent", type=str, default="random", help="Agent to use [default: random]")
+parser.add_argument("--agent", type=str, default="random", help="Agent to use, can be random, supervised [default: random]")
 parser.add_argument("--search", type=str, default="random", help="Search to use [default: random]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
 args = parser.parse_args()
@@ -82,7 +82,7 @@ def get_output_dir():
 
 def get_search(env, output_dir):
     """Get the agent based on user input"""
-    if args.agent == "random":
+    if args.search == "random":
         return SearchRandom(env, output_dir)
 
 

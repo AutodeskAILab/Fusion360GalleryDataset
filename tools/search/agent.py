@@ -5,10 +5,11 @@ class Agent:
     def __init__(self, target_graph):
         self.target_graph = target_graph
         self.operations = [
-            "NewBodyFeatureOperation",
             "JoinFeatureOperation",
             "CutFeatureOperation",
-            "IntersectFeatureOperation"
+            "IntersectFeatureOperation",
+            "NewBodyFeatureOperation",
+            "NewComponentFeatureOperation"
         ]
 
     def get_actions_probabilities(self, current_graph, target_graph):
