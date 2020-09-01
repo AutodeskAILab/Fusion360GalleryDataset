@@ -1,0 +1,39 @@
+{
+    "sequence": [
+        {
+            "start_face": "279bc088-e8ee-11ea-bc42-54bf646e7e1f",
+            "end_face": "279b9968-e8ee-11ea-bd53-54bf646e7e1f",
+            "operation": "NewBodyFeatureOperation",
+            "graph": "31962_e5291336_0054_0000.json"
+        },
+        {
+            "start_face": "279c0eae-e8ee-11ea-9037-54bf646e7e1f",
+            "end_face": "279b9968-e8ee-11ea-bd53-54bf646e7e1f",
+            "operation": "JoinFeatureOperation",
+            "graph": "31962_e5291336_0054_0001.json"
+        },
+        {
+            "start_face": "279c5cc6-e8ee-11ea-a227-54bf646e7e1f",
+            "end_face": "279bc088-e8ee-11ea-bc42-54bf646e7e1f",
+            "operation": "CutFeatureOperation",
+            "graph": "31962_e5291336_0054_0002.json"
+        }
+    ],
+    "properties": {
+        "bounding_box": {
+            "type": "BoundingBox3D",
+            "max_point": {
+                "type": "Point3D",
+                "x": 0.2999999999999998,
+                "y": -7.333841812473256,
+                "z": 22.516315822017432
+            },
+            "min_point": {
+                "type": "Point3D",
+                "x": -2.0,
+                "y": -7.883841812473253,
+                "z": 21.966315822017435
+            }
+        }
+    }
+}
