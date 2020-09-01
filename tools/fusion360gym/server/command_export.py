@@ -26,8 +26,12 @@ if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
 
 import exporter
+import regraph
+importlib.reload(regraph)
 import view_control
 from sketch_extrude_importer import SketchExtrudeImporter
+from regraph import Regraph
+from regraph import RegraphWriter
 
 
 class CommandExport(CommandBase):
@@ -41,7 +45,8 @@ class CommandExport(CommandBase):
     def mesh(self, data, dest_dir=None):
         """Create a mesh in the given format (either .obj or .stl)
             and send it back as a binary file"""
-        error, suffix = self.check_file(data, [".obj", ".stl"])
+        data_file, error = self.check_file(data, [".obj", ".stl"])
+        suffix = data_file.suffix
         if error is not None:
             return self.runner.return_failure(error)
         temp_file = self.get_temp_file(data["file"], dest_dir)
@@ -64,7 +69,8 @@ class CommandExport(CommandBase):
     def brep(self, data, dest_dir=None):
         """Create a brep in the given format (.step, smt)
             and send it back as a binary file"""
-        error, suffix = self.check_file(data, [".step", ".smt", ".f3d"])
+        data_file, error = self.check_file(data, [".step", ".smt", ".f3d"])
+        suffix = data_file.suffix
         if error is not None:
             return self.runner.return_failure(error)
         temp_file = self.get_temp_file(data["file"], dest_dir)
@@ -104,7 +110,8 @@ class CommandExport(CommandBase):
 
     def screenshot(self, data, dest_dir=None):
         """Retreive a screenshot of the current design as a png image"""
-        error, suffix = self.check_file(data, [".png"])
+        data_file, error = self.check_file(data, [".png"])
+        suffix = data_file.suffix
         if error is not None:
             return self.runner.return_failure(error)
         width = 512
@@ -129,6 +136,25 @@ class CommandExport(CommandBase):
             return self.runner.return_success(temp_file)
         else:
             return self.runner.return_failure(f"{suffix} export failure")
+
+    def graph(self, data, dest_dir=None, use_zip=True):
+        """Generate graphs in a given format
+            and return as a binary zip file"""
+        data_file, error = self.check_file(data, [".json"])
+        if error is not None:
+            return self.runner.return_failure(error)
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+        if "format" not in data:
+            return self.runner.return_failure("format not specified")
+        mode = data["format"]
+        valid_formats = ["PerFace", "PerExtrude"]
+        if mode not in valid_formats:
+            return self.runner.return_failure("invalid format specified")
+        zip_file, error = self.__export_graph(data_file, mode, dest_dir, use_zip)
+        if error is None:
+            return self.runner.return_success(zip_file)
+        else:
+            return self.runner.return_failure(error)
 
     def commands(self, data):
         """Run a series of commands one after the other"""
@@ -210,6 +236,34 @@ class CommandExport(CommandBase):
                             valid_command_set["data"] = data
                         command_list.append(valid_command_set)
         return command_list, return_data_count
+
+    def __export_graph(self, file, mode, dest_dir=None, use_zip=True):
+        """Export the current design as a graph and return a zip file"""
+        if dest_dir is None:
+            dest_dir = Path(tempfile.mkdtemp())
+        design = adsk.fusion.Design.cast(self.app.activeProduct)
+        regraph_writer = RegraphWriter(self.logger, mode)
+        # By default regraph_writer assumes the geometry is in the rootComponent
+        writer_data = regraph_writer.write(file, dest_dir)
+        # writer_data returns a dict of the form
+        # [filename] = [{
+        #   "graph": graph data
+        #   "status": Success or some other reason for failure
+        # }]
+        return_error = None
+        for graph_file_name, data in writer_data.items():
+            if "status" in data:
+                if data["status"] != "Success":
+                    return_error = data["status"]
+                    break
+            graph_file = dest_dir / graph_file_name
+            if not graph_file.exists():
+                return_error = "Graph file does not exists"
+                break
+        if use_zip:
+            return self.__zip_dir(dest_dir), return_error
+        else:
+            return dest_dir, return_error
 
     def __export_sketch_pngs(self, dest_dir=None, use_zip=True):
         """Export all sketches as png files and return a zip file"""

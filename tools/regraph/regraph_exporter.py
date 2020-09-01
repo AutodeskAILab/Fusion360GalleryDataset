@@ -27,6 +27,7 @@ from logger import Logger
 from sketch_extrude_importer import SketchExtrudeImporter
 from regraph import Regraph
 from regraph import RegraphTester
+from regraph import RegraphWriter
 
 
 # Set the graph mode to either PerExtrude or PerFace
@@ -56,21 +57,8 @@ class RegraphExporter():
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
-        # References to the Fusion design
-        self.app = adsk.core.Application.get()
-        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        self.product = self.app.activeProduct
-        self.timeline = self.app.activeProduct.timeline
-        # Current extrude index
-        self.current_extrude_index = 0
-        # Current overall action index
-        self.current_action_index = 0
         # The mode we want
         self.mode = mode
-
-    # -------------------------------------------------------------------------
-    # EXPORT
-    # -------------------------------------------------------------------------
 
     def export(self, output_dir, results_file, results):
         """Reconstruct the design from the json file"""
@@ -98,21 +86,19 @@ class RegraphExporter():
                 })
                 return_result = False
             else:
+                # Reconstruct from json
                 importer = SketchExtrudeImporter(json_data)
                 importer.reconstruct()
-
-                # By default regraph assumes the geometry is in the rootComponent
-                graph_data = regraph.generate()
-                if len(graph_data["graphs"]) > 0:
-                    if self.mode == "PerFace":
-                        self.update_sequence_data(graph_data)
-                    regraph_tester = RegraphTester(mode=self.mode)
-                    regraph_tester.test(graph_data)
-                    if self.mode == "PerFace":
-                        regraph_tester.reconstruct(graph_data)
-                    self.export_graph_data(graph_data)
-                self.update_results_status(graph_data)
-                return_result = True
+                # Generate and write out the graph
+                regraph_writer = RegraphWriter(self.logger, self.mode)
+                # By default regraph_writer assumes the geometry is in the rootComponent
+                writer_data = regraph_writer.write(self.json_file, output_dir, regraph=regraph)
+                # writer_data returns a dict of the form
+                # [filename] = [{
+                #   "graph": graph data
+                #   "status": Success or some other reason for failure
+                # }]
+                return_result = self.update_results_status(output_dir, writer_data)                
         except Exception as ex:
             self.logger.log(f"Exception: {ex.__class__.__name__}")
             trace = traceback.format_exc()
@@ -126,66 +112,33 @@ class RegraphExporter():
         self.save_results()
         return return_result
 
-    def update_sequence_data(self, graph_data):
-        """Update the sequence with the correct graph file names"""
-        graph_files = []
-        for index, graph in enumerate(graph_data["graphs"]):
-            graph_file = self.get_export_path(f"{index:04}")
-            graph_files.append(graph_file)
-        # Add the names of the graphs to the sequence
-        seq_data = graph_data["sequences"][0]
-        for index, seq in enumerate(seq_data["sequence"]):
-            seq["graph"] = graph_files[index].name
-
-    def export_graph_data(self, graph_data):
-        """Export the graph data generated from regraph"""
-        for index, graph in enumerate(graph_data["graphs"]):
-            self.export_extrude_graph(graph, index)
-        if self.mode == "PerFace":
-            seq_data = graph_data["sequences"][0]
-            self.export_sequence(seq_data)
-
-    def get_export_path(self, name):
-        """Get the export path from a name"""
-        return self.output_dir / f"{self.json_file.stem}_{name}.json"
-
-    def export_extrude_graph(self, graph, extrude_index):
-        """Export a graph from an extrude operation"""
-        graph_file = self.get_export_path(f"{extrude_index:04}")
-        self.export_graph(graph_file, graph)
-
-    def export_graph(self, graph_file, graph):
-        """Export a graph as json"""
-        self.logger.log(f"Exporting {graph_file}")
-        exporter.export_json(graph_file, graph)
-        if graph_file.exists():
-            self.results[self.json_file.name].append({
-                "file": graph_file.name
-            })
-            self.save_results()
-        else:
-            self.logger.log(f"Error exporting {graph_file}")
-
-    def export_sequence(self, seq_data):
-        """Export the sequence data"""
-        seq_file = self.output_dir / f"{self.json_file.stem}_sequence.json"
-        with open(seq_file, "w", encoding="utf8") as f:
-            json.dump(seq_data, f, indent=4)
-
-    def update_results_status(self, graph_data):
+    def update_results_status(self, output_dir, writer_data):
         """Update the results status"""
-        for index, status in enumerate(graph_data["status"]):
-            reason = status
-            if status != "Success":
-                status = "Skip"
-            if index < len(self.results[self.json_file.name]):
-                self.results[self.json_file.name][index]["status"] = status
-                self.results[self.json_file.name][index]["reason"] = reason
-            else:
-                self.results[self.json_file.name].append({
-                    "status": status,
-                    "reason": reason
-                })
+        return_result = True
+        if writer_data is None:
+            self.results[self.json_file.name].append({
+                "status": "Skip",
+                "reason": "No graph data returned"
+            })
+            return_result = False
+        else:
+            for graph_file_name, data in writer_data.items():
+                result = {
+                    "status": "Success",
+                    "file": graph_file_name
+                }
+                if "status" in data:
+                    if data["status"] != "Success":
+                        result["status"] = "Skip"
+                        result["reason"] = data["status"]
+                        return_result = False
+                graph_file = output_dir / graph_file_name
+                if not graph_file.exists():
+                    result["status"] = "Skip"
+                    result["reason"] = "Graph file does not exists"
+                    return_result = False
+                self.results[self.json_file.name].append(result)
+        return return_result
 
     def save_results(self):
         """Save out the results of conversion"""
@@ -212,7 +165,7 @@ def start():
     logger = Logger()
     # Fusion requires an absolute path
     current_dir = Path(__file__).resolve().parent
-    data_dir = current_dir.parent / "testdata"
+    data_dir = current_dir.parent / "testdata/regraph"
     output_dir = current_dir / "output"
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
@@ -221,12 +174,12 @@ def start():
     results = load_results(results_file)
 
     # Get all the files in the data folder
-    # json_files = [f for f in data_dir.glob("**/*.json")]
+    json_files = [f for f in data_dir.glob("**/*.json")]
     # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    json_files = [
-        data_dir / "Couch.json"
-        # data_dir / "SingleSketchExtrude_RootComponent.json"
-    ]
+    # json_files = [
+    #     data_dir / "Couch.json"
+    #     # data_dir / "SingleSketchExtrude_RootComponent.json"
+    # ]
 
     json_count = len(json_files)
     success_count = 0

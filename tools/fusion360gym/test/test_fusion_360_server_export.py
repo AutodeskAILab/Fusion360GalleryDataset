@@ -55,11 +55,11 @@ class TestFusion360ServerExport(unittest.TestCase):
         cls.test_brep_f3d_file = cls.data_dir / f"{box_design}.f3d"
         # Screenshot png file
         cls.test_screenshot_png_file = cls.data_dir / f"{box_design}.png"
-        # Sketch temp folder
-        cls.sketch_dir = cls.data_dir / "sketches"
+        # Test output temp folder
+        cls.test_output_dir = cls.data_dir / "test_output"
         # Make sure it is empty first
-        if cls.sketch_dir.exists():
-            shutil.rmtree(cls.sketch_dir)
+        if cls.test_output_dir.exists():
+            shutil.rmtree(cls.test_output_dir)
         # ------------------------------------------
 
     def test_mesh_invalid_format(self):
@@ -159,74 +159,74 @@ class TestFusion360ServerExport(unittest.TestCase):
         # Reconstruct first
         r = self.client.reconstruct(self.box_design_json_file)
         # Make the folder
-        if not self.sketch_dir.exists():
-            self.sketch_dir.mkdir()
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
         # Save out the sketches
-        r = self.client.sketches(self.sketch_dir)
+        r = self.client.sketches(self.test_output_dir)
         self.assertIsNotNone(r, msg="sketches response is not None")
         self.assertEqual(r.status_code, 200, msg="sketch status code")
         for i in range(1):
-            sketch_file = self.sketch_dir / f"Sketch{i+1}.png"
+            sketch_file = self.test_output_dir / f"Sketch{i+1}.png"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch image file size greater than 0")
         # Clear
         r = self.client.clear()
-        shutil.rmtree(self.sketch_dir)
+        shutil.rmtree(self.test_output_dir)
 
     def test_sketches_png_multiple(self):
         # Reconstruct first
         r = self.client.reconstruct(self.hex_design_json_file)
         # Make the folder
-        if not self.sketch_dir.exists():
-            self.sketch_dir.mkdir()
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
         # Save out the sketches
-        r = self.client.sketches(self.sketch_dir)
+        r = self.client.sketches(self.test_output_dir)
         self.assertIsNotNone(r, msg="sketches response is not None")
         self.assertEqual(r.status_code, 200, msg="sketch status code")
         for i in range(3):
-            sketch_file = self.sketch_dir / f"Sketch{i+1}.png"
+            sketch_file = self.test_output_dir / f"Sketch{i+1}.png"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch image file size greater than 0")
             sketch_file.unlink()
         # Clear
         r = self.client.clear()
-        self.sketch_dir.rmdir()
+        self.test_output_dir.rmdir()
 
     def test_sketches_dxf(self):
         # Reconstruct first
         r = self.client.reconstruct(self.box_design_json_file)
         # Make the folder
-        if not self.sketch_dir.exists():
-            self.sketch_dir.mkdir()
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
         # Save out the sketches
-        r = self.client.sketches(self.sketch_dir, ".dxf")
+        r = self.client.sketches(self.test_output_dir, ".dxf")
         self.assertIsNotNone(r, msg="sketches response is not None")
         self.assertEqual(r.status_code, 200, msg="sketch status code")
         for i in range(1):
-            sketch_file = self.sketch_dir / f"Sketch{i+1}.dxf"
+            sketch_file = self.test_output_dir / f"Sketch{i+1}.dxf"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch dxf file size greater than 0")
         # Clear
         r = self.client.clear()
-        shutil.rmtree(self.sketch_dir)
+        shutil.rmtree(self.test_output_dir)
 
     def test_sketches_dxf_multiple(self):
         # Reconstruct first
         r = self.client.reconstruct(self.hex_design_json_file)
         # Make the folder
-        if not self.sketch_dir.exists():
-            self.sketch_dir.mkdir()
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
         # Save out the sketches
-        r = self.client.sketches(self.sketch_dir, ".dxf")
+        r = self.client.sketches(self.test_output_dir, ".dxf")
         self.assertIsNotNone(r, msg="sketches response is not None")
         self.assertEqual(r.status_code, 200, msg="sketch status code")
         for i in range(3):
-            sketch_file = self.sketch_dir / f"Sketch{i+1}.dxf"
+            sketch_file = self.test_output_dir / f"Sketch{i+1}.dxf"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch dxf file size greater than 0")
         # Clear
         r = self.client.clear()
-        shutil.rmtree(self.sketch_dir)
+        shutil.rmtree(self.test_output_dir)
 
     def test_sketches_invalid_format(self):
         # Reconstruct first
@@ -272,6 +272,43 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertIsNone(r, msg="screenshot response is None")
         # Clear
         r = self.client.clear()
+
+    def test_graph_per_face(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        # Make the folder
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
+        # Save out the graphs
+        r = self.client.graph(self.box_design_json_file, self.test_output_dir, format="PerFace")
+        self.assertIsNotNone(r, msg="graph response is not None")
+        self.assertEqual(r.status_code, 200, msg="graph status code")
+        graph_file = self.test_output_dir / f"{self.box_design_json_file.stem}_0000.json"
+        seq_file = self.test_output_dir / f"{self.box_design_json_file.stem}_sequence.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        self.assertTrue(seq_file.exists(), msg="sequence file exists")
+        self.assertGreater(seq_file.stat().st_size, 0, msg="sequence file size greater than 0")
+        # Clear
+        r = self.client.clear()
+        shutil.rmtree(self.test_output_dir)
+
+    def test_graph_per_extrude(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.box_design_json_file)
+        # Make the folder
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
+        # Save out the graphs
+        r = self.client.graph(self.box_design_json_file, self.test_output_dir, format="PerExtrude")
+        self.assertIsNotNone(r, msg="graph response is not None")
+        self.assertEqual(r.status_code, 200, msg="graph status code")
+        graph_file = self.test_output_dir / f"{self.box_design_json_file.stem}_0000.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        # Clear
+        r = self.client.clear()
+        shutil.rmtree(self.test_output_dir)
 
     def __test_box_mesh(self, mesh_file):
         # Check the mesh data

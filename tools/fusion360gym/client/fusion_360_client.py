@@ -334,6 +334,32 @@ class Fusion360Client():
         self.__write_file(r, file)
         return r
 
+    def graph(self, file, dir, format="PerFace"):
+        """Retreive a face adjacency graph in a given format"""
+        if isinstance(file, str):
+            file = Path(file)
+        if not dir.is_dir():
+            return self.__return_error(f"Not an existing directory")
+        valid_formats = ["PerFace", "PerExtrude"]
+        if format not in valid_formats:
+            return self.__return_error(f"Invalid graph format: {format}")
+        command_data = {
+            "file": file.name,
+            "format": format
+        }
+        r = self.send_command("graph", data=command_data, stream=True)
+        if r.status_code != 200:
+            return r
+        # Save out the zip file with the graph data
+        temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
+        zip_file = Path(temp_file_path)
+        self.__write_file(r, zip_file)
+        # Extract all the files to the given directory
+        with ZipFile(zip_file, "r") as zipObj:
+            zipObj.extractall(dir)
+        zip_file.unlink()
+        return r
+
     # -------------------------------------------------------------------------
     # UTILITY
     # -------------------------------------------------------------------------

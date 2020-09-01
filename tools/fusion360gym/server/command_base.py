@@ -39,8 +39,8 @@ class CommandBase():
     def check_file(self, data, valid_formats):
         """Check that the data has a valid file value"""
         if data is None or "file" not in data:
-            return "file not specified", None
-        suffix = Path(data["file"]).suffix
-        if suffix not in valid_formats:
-            return "invalid file extension specified", None
-        return None, suffix
+            return None, "file not specified"
+        data_file = Path(data["file"])
+        if data_file.suffix not in valid_formats:
+            return None, "invalid file extension specified"
+        return data_file, None
