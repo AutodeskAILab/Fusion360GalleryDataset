@@ -18,7 +18,7 @@ The following data subsets are available to download:
 | Data Subset | Download |
 | - | - |
 | [Segmentation](docs/segmentation.md) | [Version d5](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d5) |
-| [Reconstruction](docs/reconstruction.md) | [Version d6](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d6) |
+| [Reconstruction](docs/reconstruction.md) | [Version d7](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d7) |
 
 
 ## Documentation
