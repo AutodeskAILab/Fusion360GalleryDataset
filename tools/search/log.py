@@ -30,7 +30,7 @@ class Log:
         """Log data to the log array"""
         if screenshot:
             if isinstance(data, dict):
-                file_name = f"Screenshot_{data['used_budget']:04}_{data['current_iou']:.3f}.png"
+                file_name = f"Screenshot_{data['used_budget']:04}.png"
                 file = self.log_file_dir / file_name
             else:
                 time_stamp = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
