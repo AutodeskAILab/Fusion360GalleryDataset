@@ -19,6 +19,7 @@ class Log:
     def set_target(self, target_file):
         """Set the target file so the log can be named after it"""
         self.target_file = target_file
+        self.log_data = []
         # Create a log folder for this file
         # time_stamp = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
         self.log_file_dir = self.log_dir / self.target_file.stem
