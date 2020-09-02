@@ -65,6 +65,9 @@ class SearchRandom(Search):
                 if math.isclose(max_score, 1, abs_tol=0.00001):
                     return max_scores
                 used_budget += 1
+                # Stop if the rollout hits the budget
+                if used_budget >= budget:
+                    break
             # Revert to the target and remove all reconstruction
             self.env.revert_to_target()
             rollout_attempt += 1
