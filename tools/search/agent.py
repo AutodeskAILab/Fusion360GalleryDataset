@@ -2,14 +2,18 @@
 
 class Agent:
 
-    def __init__(self, target_graph):
-        self.target_graph = target_graph
+    def __init__(self):
         self.operations = [
-            "NewBodyFeatureOperation",
             "JoinFeatureOperation",
             "CutFeatureOperation",
-            "IntersectFeatureOperation"
+            "IntersectFeatureOperation",
+            "NewBodyFeatureOperation",
+            "NewComponentFeatureOperation"
         ]
+
+    def set_target(self, target_graph):
+        """Set the target graph"""
+        self.target_graph = target_graph
 
     def get_actions_probabilities(self, current_graph, target_graph):
         """Given the current graph, and the target graph, give two lists:

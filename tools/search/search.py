@@ -50,5 +50,8 @@ class Search:
             # If the current graph is empty, we want a new body operation
             elif is_current_graph_empty and action["operation"] != "NewBodyFeatureOperation":
                 action_probabilities[index] = 0.0
+            # This operation is not valid for the reconstruction task
+            elif action["operation"] == "NewComponentFeatureOperation":
+                action_probabilities[index] = 0.0
         action_probabilities = action_probabilities / sum(action_probabilities)
         return action_probabilities
