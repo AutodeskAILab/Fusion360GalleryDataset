@@ -47,15 +47,13 @@ class GymEnv():
         self.__write_launch_file()
         return self.__launch_gym()
 
-    # TODO: Further testing to get this to work
-    # def kill_gym(self):
-    #     """Kill this instance of the Fusion 360 Gym"""
-    #     print("Killing Gym...")
-    #     if self.p is not None:
-    #         r = self.client.detach()
-    #         self.p.kill()
-    #     else:
-    #         print("Warning: Gym process is None")
+    def kill_gym(self):
+        """Kill this instance of the Fusion 360 Gym"""
+        print("Killing Gym...")
+        if self.p is not None:
+            self.p.kill()
+        else:
+            print("Warning: Gym process is None")
 
     def __write_launch_file(self):
         """Write the launch file that the gym reads to connect"""

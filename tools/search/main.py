@@ -4,6 +4,7 @@ import argparse
 import traceback
 import copy
 from pathlib import Path
+from threading import Timer
 from requests.exceptions import ConnectionError
 
 from repl_env import ReplEnv
@@ -130,6 +131,9 @@ def main():
     while len(files_to_process) > 0:
         # Take the file at the end
         file = files_to_process.pop()
+        # We put a hard cap on the time it takes to execute
+        halt_delay = 30
+        halt_timer = Timer(env.kill_gym)
         result = {
             "status": "Success"
         }
@@ -149,6 +153,8 @@ def main():
             except ConnectionError as ex:
                 # This is thrown when the Fusion 360 Gym is down and we can't connect
                 print("ConnectionError communicating with Fusion 360 Gym")
+                # Cancel the timer as we will restart and try again
+                halt_timer.cancel()
                 # Put the file back in the list to reprocess
                 files_to_process.append(file)
                 env.launch_gym()
@@ -162,6 +168,7 @@ def main():
                 result["exception_args"] = str(ex.args)
                 result["trace"] = traceback.format_exc()
                 files_processed += 1
+        halt_timer.cancel()
         if file.stem not in results:
             results[file.stem] = result
             save_results(output_dir, results)
