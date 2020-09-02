@@ -10,6 +10,7 @@ import json
 import time
 from pathlib import Path
 from requests.exceptions import ConnectionError
+import psutil
 
 from fusion_360_client import Fusion360Client
 
@@ -47,11 +48,21 @@ class GymEnv():
         self.__write_launch_file()
         return self.__launch_gym()
 
-    def kill_gym(self):
+    def kill_gym(self, including_parent=True):
         """Kill this instance of the Fusion 360 Gym"""
         print("Killing Gym...")
         if self.p is not None:
-            self.p.kill()
+            try:
+                parent = psutil.Process(self.p.pid)
+                children = parent.children(recursive=True)
+                for child in children:
+                    child.kill()
+                gone, still_alive = psutil.wait_procs(children, timeout=5)
+                if including_parent:
+                    parent.kill()
+                    parent.wait(5)
+            except:
+                print("Warning: Failed to kill Gym process tree")
         else:
             print("Warning: Gym process is None")
 

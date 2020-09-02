@@ -111,8 +111,34 @@ def save_results(output_dir, results):
     with open(results_file, "w", encoding="utf8") as f:
         json.dump(results, f, indent=4)
 
+def add_result(results, file, result, output_dir):
+    """Add a result to the list"""
+    if file.stem not in results:
+        results[file.stem] = result
+        save_results(output_dir, results)
+
+# Global variable to indicated if we have timed out
+halted = False
+
+def halt(env, file):
+    """Halt search of the current file"""
+    global halted
+    print(f"Halting {file.name}")
+    halted = True
+    env.kill_gym()
+
+def setup_timer(env, file):
+    """Setup the timer to halt execution if needed"""
+    global halted
+    # We put a hard cap on the time it takes to execute
+    halt_delay = 60 * 10
+    halted = False
+    halt_timer = Timer(halt_delay, halt, [env, file])
+    halt_timer.start()
+    return halt_timer
 
 def main():
+    global halted
     files = get_files()
     output_dir = get_output_dir()
     results = load_results(output_dir)
@@ -131,9 +157,8 @@ def main():
     while len(files_to_process) > 0:
         # Take the file at the end
         file = files_to_process.pop()
-        # We put a hard cap on the time it takes to execute
-        halt_delay = 30
-        halt_timer = Timer(env.kill_gym)
+        halt_timer = setup_timer(env, file)
+
         result = {
             "status": "Success"
         }
@@ -151,14 +176,28 @@ def main():
                 print(f"> Result: {best_score_over_time[-1]:.3f} in {len(best_score_over_time)}/{args.budget} steps")
                 files_processed += 1
             except ConnectionError as ex:
-                # This is thrown when the Fusion 360 Gym is down and we can't connect
-                print("ConnectionError communicating with Fusion 360 Gym")
-                # Cancel the timer as we will restart and try again
-                halt_timer.cancel()
-                # Put the file back in the list to reprocess
-                files_to_process.append(file)
+                # ConnectionError is thrown when the Fusion 360 Gym is down and we can't connect
+                # If the timer has stopped, then we have killed Fusion
+                # after a time out
+                if halted:
+                    print("ConnectionError timeout...")
+                    # We want to log this file as not completing
+                    result["status"] = "Timeout"
+                    add_result(results, file, result, output_dir)
+                    files_processed += 1
+                else:
+                    print("ConnectionError due to Fusion crash...")
+                    # If the timer is still running Fusion has crashed
+                    # and we want to rerun the file again
+                    # Cancel the timer as we will restart and try again
+                    halt_timer.cancel()
+                    # Put the file back in the list to reprocess
+                    # we don't log this as done
+                    files_to_process.append(file)                
+
+                # Then we relaunch the gym and 
                 env.launch_gym()
-                # Continue to the next, which will be a repeat of the current
+                # Continue to the next
                 continue
             except Exception as ex:
                 ex_arg = str(ex.args).split("\\n")[0]
@@ -169,9 +208,7 @@ def main():
                 result["trace"] = traceback.format_exc()
                 files_processed += 1
         halt_timer.cancel()
-        if file.stem not in results:
-            results[file.stem] = result
-            save_results(output_dir, results)
+        add_result(results, file, result, output_dir)
 
 if __name__ == "__main__":
     main()
