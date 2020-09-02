@@ -20,8 +20,8 @@ from train_v4 import *
 
 class AgentSupervised(Agent):
 
-    def __init__(self, target_graph):
-        super().__init__(target_graph)
+    def __init__(self,):
+        super().__init__()
         self.model = NodePointer(nfeat=120, nhid=256)
         regraphnet_dir = Path(REGRAPHNET_DIR)
         checkpoint_file = regraphnet_dir / "ckpt/model_v4.ckpt"
@@ -73,10 +73,4 @@ class AgentSupervised(Agent):
                         "operation": self.operations[k]
                     })
                     probs.append(ps[0][i]*ps[1][j]*ps[2][k])
-        # actions_sorted, probs_sorted = [], []
-        # idx = np.argsort(-np.array(probs))
-        # for i in range(len(probs)):
-        #     actions_sorted.append(actions[idx[i]])
-        #     probs_sorted.append(probs[idx[i]])
-        # return actions_sorted, probs_sorted
         return actions, probs

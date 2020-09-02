@@ -86,12 +86,12 @@ def get_search(env, output_dir):
         return SearchRandom(env, output_dir)
 
 
-def get_agent(target_graph):
+def get_agent():
     """Get the agent based on user input"""
     if args.agent == "random":
-        return AgentRandom(target_graph)
+        return AgentRandom()
     elif args.agent == "supervised":
-        return AgentSupervised(target_graph)
+        return AgentSupervised()
 
 
 def load_results(output_dir):
@@ -121,6 +121,10 @@ def main():
 
     # Setup the search and the environment that connects to FusionGym
     env = ReplEnv(host="127.0.0.1", port=8080, launch_gym=args.launch_gym)
+    # Initialize these once and reuse them
+    search = get_search(env, output_dir)
+    agent = get_agent()
+
     files_to_process = copy.deepcopy(files)
     files_processed = 0
     while len(files_to_process) > 0:
@@ -137,9 +141,8 @@ def main():
         else:
             print(f"[{files_processed}/{len(files)}] Reconstructing {file.stem}")
             try:
-                search = get_search(env, output_dir)
                 target_graph = search.set_target(file)
-                agent = get_agent(target_graph)
+                agent.set_target(target_graph)
                 best_score_over_time = search.search(agent, args.budget, screenshot=args.screenshot)
                 print(f"> Result: {best_score_over_time[-1]:.3f} in {len(best_score_over_time)}/{args.budget} steps")
                 files_processed += 1
