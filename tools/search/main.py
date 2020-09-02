@@ -154,6 +154,7 @@ def main():
 
     files_to_process = copy.deepcopy(files)
     files_processed = 0
+    crash_counts = {}
     while len(files_to_process) > 0:
         # Take the file at the end
         file = files_to_process.pop()
@@ -191,9 +192,21 @@ def main():
                     # and we want to rerun the file again
                     # Cancel the timer as we will restart and try again
                     halt_timer.cancel()
-                    # Put the file back in the list to reprocess
-                    # we don't log this as done
-                    files_to_process.append(file)                
+                    if not file.stem in crash_counts:
+                        crash_counts[file.stem] = 1
+                    else:
+                        crash_counts[file.stem] += 1
+                    print("Crash count:", crash_counts[file.stem])
+                    # We only want to restart 3 times
+                    if crash_counts[file.stem] < 3:
+                        # Put the file back in the list to reprocess
+                        # we don't log this as done
+                        files_to_process.append(file)
+                    else:
+                        # Lets give up and move on
+                        result["status"] = "Crash"
+                        add_result(results, file, result, output_dir)
+                        files_processed += 1
 
                 # Then we relaunch the gym and 
                 env.launch_gym()
