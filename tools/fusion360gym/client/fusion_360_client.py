@@ -253,6 +253,32 @@ class Fusion360Client():
         }
         return self.send_command("add_extrude_by_target_face", command_data)
 
+    def add_extrudes_by_target_face(self, actions, revert=False):
+        """Executes multiple extrude operations,
+            between two faces of the target, in sequence"""
+        if (actions is None or not isinstance(actions, list) or
+           len(actions) == 0):
+            return self.__return_error(f"Invalid actions")
+        for action in actions:
+            if ("start_face" not in action or
+                    "end_face" not in action or
+                    "operation" not in action):
+                return self.__return_error(f"Invalid actions")
+            start_face = action["start_face"]
+            end_face = action["end_face"]
+            operation = action["operation"]
+            if not isinstance(start_face, str) or len(start_face) == 0:
+                return self.__return_error(f"Invalid start_face value")
+            if not isinstance(end_face, str) or len(end_face) == 0:
+                return self.__return_error(f"Invalid end_face value")
+            if operation not in self.feature_operations:
+                return self.__return_error(f"Invalid operation value")
+        command_data = {
+            "actions": actions,
+            "revert": revert
+        }
+        return self.send_command("add_extrudes_by_target_face", command_data)
+
     # -------------------------------------------------------------------------
     # EXPORT
     # -------------------------------------------------------------------------
