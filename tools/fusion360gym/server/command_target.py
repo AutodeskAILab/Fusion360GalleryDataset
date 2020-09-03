@@ -82,7 +82,7 @@ class CommandTarget(CommandBase):
             "graph": self.state["target_graph"]
         })
 
-    def revert_to_target(self, data):
+    def revert_to_target(self):
         """Reverts to the target design, removing all reconstruction"""
         if "target_graph" not in self.state:
             return self.runner.return_failure("Target not set")
@@ -96,39 +96,85 @@ class CommandTarget(CommandBase):
         })
 
     def add_extrude_by_target_face(self, data):
-        """Add an extrude by target faces"""
+        """Add an extrude between two faces of the target"""
         # Check we have set a target
         if "reconstructor" not in self.state:
             return self.runner.return_failure("Target not set")
-        # Start face data checks
-        start_face = self.state["reconstructor"].get_face_from_uuid(data["start_face"])
-        if start_face is None:
-            return self.runner.return_failure("Start face not in target")
-        start_face_geometry = start_face.geometry
-        if start_face_geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
-            return self.runner.return_failure("Start face is not a plane")
-        # End face data checks
-        end_face = self.state["reconstructor"].get_face_from_uuid(data["end_face"])
-        if end_face is None:
-            return self.runner.return_failure("End face not in target")
-        end_face_geometry = end_face.geometry
-        if end_face_geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
-            return self.runner.return_failure("End face is not a plane")
-        # End face geometric checks
-        if not end_face_geometry.isParallelToPlane(start_face_geometry):
-            return self.runner.return_failure("End face is not parallel to start face")
-        if end_face_geometry.isCoPlanarTo(start_face_geometry):
-            return self.runner.return_failure("End face is coplanar to start face")
-        operation = deserialize.feature_operations(data["operation"])
-        if operation is None:
-            return self.runner.return_failure("Extrude operation is not valid")
+        action, error = self.__check_extrude_actions(
+            data["start_face"], data["end_face"], data["operation"])
+        if error is not None:
+            return self.runner.return_failure(error)
         # Add the extrude
         extrude = self.state["reconstructor"].add_extrude(
-            start_face,
-            end_face,
-            operation
+            action["start_face"],
+            action["end_face"],
+            action["operation"]
         )
         adsk.doEvents()
+        return self.__return_graph_iou()
+
+    def add_extrudes_by_target_face(self, data):
+        """Executes multiple extrude operations,
+            between two faces of the target, in sequence"""
+        # Check we have set a target
+        if "reconstructor" not in self.state:
+            return self.runner.return_failure("Target not set")
+        # Revert if requested
+        if "revert" in data:
+            if data["revert"]:
+                self.revert_to_target()
+        # Loop over the extrude actions and execute them
+        actions = data["actions"]
+        for action in actions:
+            valid_action, error = self.__check_extrude_actions(
+                action["start_face"], action["end_face"], action["operation"])
+            if error is not None:
+                return self.runner.return_failure(error)
+            # Add the extrude
+            extrude = self.state["reconstructor"].add_extrude(
+                valid_action["start_face"],
+                valid_action["end_face"],
+                valid_action["operation"]
+            )
+        adsk.doEvents()
+        return self.__return_graph_iou()
+
+    def __check_extrude_actions(self, start_face_uuid, end_face_uuid, operation_data):
+        """Check the extrude actions are valid"""
+        result = {
+            "start_face": None,
+            "end_face": None,
+            "operation": None
+        }
+        # Start face data checks
+        start_face = self.state["reconstructor"].get_face_from_uuid(start_face_uuid)
+        if start_face is None:
+            return result, "Start face not in target"
+        start_face_geometry = start_face.geometry
+        if start_face_geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
+            return result, "Start face is not a plane"
+        # End face data checks
+        end_face = self.state["reconstructor"].get_face_from_uuid(end_face_uuid)
+        if end_face is None:
+            return result, "End face not in target"
+        end_face_geometry = end_face.geometry
+        if end_face_geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
+            return result, "End face is not a plane"
+        # End face geometric checks
+        if not end_face_geometry.isParallelToPlane(start_face_geometry):
+            return result, "End face is not parallel to start face"
+        if end_face_geometry.isCoPlanarTo(start_face_geometry):
+            return result, "End face is coplanar to start face"
+        operation = deserialize.feature_operations(operation_data)
+        if operation is None:
+            return result, "Extrude operation is not valid"
+        result["start_face"] = start_face
+        result["end_face"] = end_face
+        result["operation"] = operation
+        return result, None
+
+    def __return_graph_iou(self):
+        """Return the graph and IoU"""
         # If this is the first extrude, we initialize regraph
         if "regraph" not in self.state:
             self.state["regraph"] = Regraph(logger=self.logger, mode="PerFace")
