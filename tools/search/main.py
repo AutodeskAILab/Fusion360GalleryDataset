@@ -11,6 +11,7 @@ from repl_env import ReplEnv
 from agent_random import AgentRandom
 from agent_supervised import AgentSupervised
 from search_random import SearchRandom
+from search_beam import SearchBeam
 
 
 parser = argparse.ArgumentParser()
@@ -85,6 +86,8 @@ def get_search(env, output_dir):
     """Get the agent based on user input"""
     if args.search == "random":
         return SearchRandom(env, output_dir)
+    elif args.search == "beam":
+        return SearchBeam(env, output_dir)
 
 
 def get_agent():
