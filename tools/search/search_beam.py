@@ -30,14 +30,64 @@ class SearchBeam(Search):
         max_score = 0
         max_scores = []
 
+        # we set a beam width, and double it each time if we did not solve it
+        beam_width = 1
+        
         while used_budget < budget:
+                        
             # We begin each rollout an empty graph
             cur_graph = self.env.get_empty_graph()
+            # the beam datastructure, for each time_step, holds a list, representing the top_beam_width number of (prefix, logpr(prefix))
+            # where the logpr(prefix) is the logpr of generation under the policy
+            # (,) is the empty prefix of actions, the original log_probability is 0
+            # at the 0th timestep, 
+            beam = [ [((,), 0)] ]
             for i in range(rollout_length):
-                actions, action_probabilities = agent.get_actions_probabilities(cur_graph, self.target_graph)
-                # Filter for clearly bad actions
-                action_probabilities = self.filter_bad_actions(cur_graph, actions, action_probabilities)
-
+                
+                # the last time-step in the beam
+                last_beam_head = beam[-1]
+                # the candidate for the next time-step in the beam
+                new_beam_candidates = []
+                
+                for prefix, prefix_logpr in last_beam_head:
+                    
+                    # execute the prefix, and since we took an envstep, add 1 to budget (make extrudes able to handle empty enumerables)
+                    cur_graph, cur_iou = self.env.extrudes(prefix, revert=True)
+                    used_budget += 1
+                    
+                    # early stop, start book_keeping 
+                    # TODO @ Karl : do the book-keepings here
+                    if math.isclose(max_score, 1, abs_tol=0.00001):
+                        return max_scores
+                
+                    # end book keeping
+                    
+                    # extend the current prefix by 1 step forward
+                    actions, action_probabilities = agent.get_actions_probabilities(cur_graph, self.target_graph)
+                    # Filter for clearly bad actions
+                    action_probabilities = self.filter_bad_actions(cur_graph, actions, action_probabilities)
+                    # Convert probability to logpr so they can be added rather than multiplied for numerical stability
+                    action_logprs = np.log(action_probabilities)
+                    
+                    # add to the candidates the extended prefix, and the added log_probability (note the logpr will get more and more negative)
+                    new_beam_candidates += [( action_prefix + (a,), prefix_logpr + a_logpr ) for (a, a_logpr) in zip(actions, action_logprs)]
+                    
+                # take the top_beam_width number of candidates, sort by -log_prob
+                new_beam_candidates_sorted = sorted(new_beam_candidates, key = lambda xx : -xx[1])
+                new_beam_head = new_beam_candidates_sorted[:beam_width]
+                beam.append(new_beam_head)
+                            
+            # if we did not solve with the current beam width, multiply width by 2
+            beam_width = beam_width * 2                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 # TODO: Implement Beam Search here
                 new_graph, cur_iou = self.env.extrude(action["start_face"], action["end_face"], action["operation"])
 
