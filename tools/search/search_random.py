@@ -13,6 +13,7 @@ class SearchRandom(Search):
 
     def __init__(self, env, log_dir=None):
         super().__init__(env, log_dir)
+        self.log_probs = False
 
     def search(self, agent, budget, score_function=None, screenshot=False):
         super().search(agent, budget, score_function, screenshot)
@@ -48,7 +49,7 @@ class SearchRandom(Search):
                 if new_graph is not None:
                     cur_graph = new_graph
 
-                self.log.log({
+                log_data = {
                     "rollout_attempt": rollout_attempt,
                     "rollout_step": i,
                     "rollout_length": rollout_length,
@@ -59,12 +60,20 @@ class SearchRandom(Search):
                     "operation": action["operation"],
                     "current_iou": cur_iou,
                     "max_iou": max_score
-                }, take_screenshot)
+                }
+                if self.log_probs:
+                    probs = np.sort(action_probabilities).tolist()
+                    log_data["probabilities"] = probs
+
+                self.log.log(log_data, take_screenshot)
                 max_scores.append(max_score)
                 # Stop early if we find a solution
                 if math.isclose(max_score, 1, abs_tol=0.00001):
                     return max_scores
                 used_budget += 1
+                # Stop if the rollout hits the budget
+                if used_budget >= budget:
+                    break
             # Revert to the target and remove all reconstruction
             self.env.revert_to_target()
             rollout_attempt += 1
