@@ -127,6 +127,23 @@ Reconstruct from a target design using extrude operations from face to face.
     - `end_face`: is the uuid of the end face in the target
     - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
     - Returns a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph), and an intersection over union value calculated between the target and the reconstruction.
+- `add_extrudes_by_target_face(actions, revert)`: Executes multiple extrude operations, between two faces of the target, in sequence.
+    - `actions`: A list of actions in the following format:
+    ```json
+    [
+        {
+            "start_face": "7f00f7de-ee2e-11ea-adc1-0242ac120002",
+            "end_face": "89b53186-ee2e-11ea-adc1-0242ac120002",
+            "operation": "NewBodyFeatureOperation"
+        },
+        {
+            "start_face": "b4982e94-ee2e-11ea-adc1-0242ac120002",
+            "end_face": "b98cebe2-ee2e-11ea-adc1-0242ac120002",
+            "operation": "JoinFeatureOperation"
+        }
+    ]
+    ```
+    - `revert`: Revert to the target design before executing the extrude actions.
 
 #### Export
 Export the existing design in a number of formats.
@@ -153,11 +170,11 @@ Various utility calls to interact with Fusion 360.
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
 - `commands(command_list, dir)`: Send a list of commands to run in sequence on the server. Currently the export and reconstruction commands are supported.
     - `command_list`: a list of commands in the following format:
-    ```
+    ```json
     [
         {
             "command": "reconstruct",
-            "data": json_data
+            "data": {}
         },
         {
             "command": "sketches",

@@ -164,6 +164,83 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertIsInstance(response_data["iou"], float, msg="iou is float")
         self.assertAlmostEqual(response_data["iou"], 1, places=4, msg="iou ~= 1")
 
+    def test_add_extrudes_by_target_face(self):
+        r = self.client.set_target(self.couch_design_smt_file)
+        self.assertIsNotNone(r, msg="set_target response is not None")
+        self.assertEqual(r.status_code, 200, msg="set_target status code")
+        response_json = r.json()
+        graph = response_json["data"]["graph"]
+        nodes = graph["nodes"]
+        # Guessing these based on the order
+        r = self.client.add_extrudes_by_target_face([
+            {
+                "start_face": nodes[0]["id"],
+                "end_face": nodes[9]["id"],
+                "operation": "NewBodyFeatureOperation"
+            },
+            {
+                "start_face": nodes[1]["id"],
+                "end_face": nodes[3]["id"],
+                "operation": "CutFeatureOperation"
+            }
+        ])
+        self.assertIsNotNone(r, msg="add_extrudes_by_target_face response is not None")
+        self.assertEqual(r.status_code, 200, msg="add_extrudes_by_target_face status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.__check_graph_format(response_data)
+        self.assertIn("iou", response_data, msg="response has iou")
+        self.assertIsInstance(response_data["iou"], float, msg="iou is float")
+        self.assertGreater(response_data["iou"], 0, msg="iou > 0")
+
+    def test_add_extrudes_by_target_face_revert(self):
+        r = self.client.set_target(self.couch_design_smt_file)
+        self.assertIsNotNone(r, msg="set_target response is not None")
+        self.assertEqual(r.status_code, 200, msg="set_target status code")
+        response_json = r.json()
+        graph = response_json["data"]["graph"]
+        nodes = graph["nodes"]
+        actions = [
+            {
+                "start_face": nodes[0]["id"],
+                "end_face": nodes[9]["id"],
+                "operation": "NewBodyFeatureOperation"
+            },
+            {
+                "start_face": nodes[1]["id"],
+                "end_face": nodes[3]["id"],
+                "operation": "CutFeatureOperation"
+            }
+        ]
+        r = self.client.add_extrudes_by_target_face(actions)
+        response_json = r.json()
+        response_data = response_json["data"]
+        prev_iou = response_data["iou"]
+        r = self.client.add_extrudes_by_target_face(actions, revert=True)
+        self.assertIsNotNone(r, msg="add_extrudes_by_target_face response is not None")
+        self.assertEqual(r.status_code, 200, msg="add_extrudes_by_target_face status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.__check_graph_format(response_data)
+        self.assertIn("iou", response_data, msg="response has iou")
+        self.assertIsInstance(response_data["iou"], float, msg="iou is float")
+        self.assertEqual(response_data["iou"], prev_iou, msg="iou == prev_iou")
+
+    def test_add_extrudes_by_target_face_invalid_inputs(self):
+        r = self.client.add_extrudes_by_target_face(
+            "okok",
+            "NewBodyFeatureOperation"
+        )
+        self.assertIsNone(r, msg="add_extrudes_by_target_face response is None")
+        r = self.client.add_extrudes_by_target_face([{
+            "start_face": None,
+            "end_face": "ok",
+            "operation": "NewBodyFeatureOperation"
+        }])
+        self.assertIsNone(r, msg="add_extrudes_by_target_face response is None")
+        r = self.client.add_extrudes_by_target_face([])
+        self.assertIsNone(r, msg="add_extrudes_by_target_face response is None")
+
     def __check_graph_format(self, response_data):
         """Check the graph data that comes back is in the right format"""
         self.assertIn("graph", response_data, msg="graph in response_data")

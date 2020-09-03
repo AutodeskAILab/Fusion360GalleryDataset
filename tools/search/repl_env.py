@@ -58,6 +58,28 @@ class ReplEnv(GymEnv):
                 return_iou = response_json["data"]["iou"]
         return return_graph, return_iou
 
+    def extrudes(self, actions, revert=False):
+        """Extrudes wrapper around the gym client"""
+        is_invalid = False
+        return_graph = None
+        return_iou = None
+        action_arg = []
+        for action in actions:
+            action_arg.append({
+                "start_face": action[0],
+                "end_face": action[1],
+                "operation": action[2]
+            })
+        r = self.client.add_extrudes_by_target_face(action_arg, revert)
+        if r is not None and r.status_code == 200:
+            response_json = r.json()
+            if ("data" in response_json and
+                    "graph" in response_json["data"] and
+                    "iou" in response_json["data"]):
+                return_graph = response_json["data"]["graph"]
+                return_iou = response_json["data"]["iou"]
+        return return_graph, return_iou
+
     def screenshot(self, file):
         """Save out a screenshot"""
         r = self.client.screenshot(file)
