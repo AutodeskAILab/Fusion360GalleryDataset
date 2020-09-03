@@ -1141,19 +1141,21 @@ class RegraphReconstructor():
         # Workaround for a fusion bug that operates on the root component
         # So we create a new body and combine later
         post_process_operation = None
-        if operation == adsk.fusion.FeatureOperations.JoinFeatureOperation:
-            operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
-            post_process_operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
-        elif operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
-            operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
-            post_process_operation = adsk.fusion.FeatureOperations.CutFeatureOperation
-        elif operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
+        # if operation == adsk.fusion.FeatureOperations.JoinFeatureOperation:
+        #     operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+        #     post_process_operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+        # elif operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
+        #     operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+        #     post_process_operation = adsk.fusion.FeatureOperations.CutFeatureOperation
+        if operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
             operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
             post_process_operation = adsk.fusion.FeatureOperations.IntersectFeatureOperation
 
         extrude_input = extrudes.createInput(start_face, operation)
         extent = adsk.fusion.ToEntityExtentDefinition.create(end_face, False)
         extrude_input.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
+        extrude_input.creationOccurrence = self.reconstruction
+        extrude_input.operation = operation
         extrude = extrudes.add(extrude_input)
         # The Fusion API  doesn't seem to be able to do join extrudes
         # that don't join to the goal body
