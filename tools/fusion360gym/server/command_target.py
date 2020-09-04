@@ -48,7 +48,7 @@ class CommandTarget(CommandBase):
         self.runner.clear()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         # Switch to direct design mode for performance
-        self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
+        # self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
         # Import the geometry
         if suffix == ".step" or suffix == ".stp":
             import_options = self.app.importManager.createSTEPImportOptions(
@@ -71,12 +71,17 @@ class CommandTarget(CommandBase):
             body.name = f"Target-{body.name}"
             self.state["target_bodies"].append(body)
         adsk.doEvents()
-        regraph = Regraph(logger=self.logger, mode="PerFace")
-        self.state["target_graph"] = regraph.generate_from_bodies(self.state["target_bodies"])
+        # Flag to switch to using temp_ids
+        regraph.use_temp_id = True
+        regraph_graph = Regraph(logger=self.logger, mode="PerFace")
+        self.state["target_graph"] = regraph_graph.generate_from_bodies(
+            self.state["target_bodies"]
+        )
         temp_file.unlink()
         # Setup the reconstructor
         self.state["reconstructor"] = RegraphReconstructor(
-            target_component=self.target)
+            target_component=self.target
+        )
         self.state["reconstructor"].setup()
         return self.runner.return_success({
             "graph": self.state["target_graph"]
