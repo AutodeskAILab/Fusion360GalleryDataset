@@ -39,13 +39,16 @@ class CommandTarget(CommandBase):
         suffix = data_file.suffix
         if error is not None:
             return self.runner.return_failure(error)
+        # self.design.designType = adsk.fusion.DesignTypes.ParametricDesignType
         # Create the file locally
         temp_file = self.get_temp_file(data["file"])
         with open(temp_file, "w") as f:
             f.write(data["file_data"])
         # We clear the design before importing
         self.runner.clear()
-        existing_document = self.app.activeDocument
+        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
+        # Switch to direct design mode for performance
+        self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
         # Import the geometry
         if suffix == ".step" or suffix == ".stp":
             import_options = self.app.importManager.createSTEPImportOptions(
@@ -56,19 +59,15 @@ class CommandTarget(CommandBase):
                 str(temp_file.resolve())
             )
         import_options.isViewFit = False
-        # Import to a new document so the bodies land in the rootComponent
-        new_document = self.app.importManager.importToNewDocument(import_options)
-        if new_document is None:
-            return self.runner.return_failure(
-                f"Error importing target {suffix} file")
-        existing_document.close(False)
-        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
-        # self.design.designType = adsk.fusion.DesignTypes.ParametricDesignType
+        imported_designs = self.app.importManager.importToTarget2(
+            import_options,
+            self.design.rootComponent
+        )
+        self.target = imported_designs[0]
         # Store references to the target bodies
         self.state["target_bodies"] = []
         # Rename the bodies with Target-*
-        for body in self.design.rootComponent.bRepBodies:
+        for body in self.target.bRepBodies:
             body.name = f"Target-{body.name}"
             self.state["target_bodies"].append(body)
         adsk.doEvents()
@@ -76,7 +75,8 @@ class CommandTarget(CommandBase):
         self.state["target_graph"] = regraph.generate_from_bodies(self.state["target_bodies"])
         temp_file.unlink()
         # Setup the reconstructor
-        self.state["reconstructor"] = RegraphReconstructor()
+        self.state["reconstructor"] = RegraphReconstructor(
+            target_component=self.target)
         self.state["reconstructor"].setup()
         return self.runner.return_success({
             "graph": self.state["target_graph"]
@@ -184,7 +184,7 @@ class CommandTarget(CommandBase):
         )
         # Calculate the IoU
         iou = geometry.intersection_over_union(
-            self.design.rootComponent,
+            self.target,
             self.state["reconstructor"].reconstruction
         )
         if iou is None:
