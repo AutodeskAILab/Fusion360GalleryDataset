@@ -38,20 +38,25 @@ class Search:
     def filter_bad_actions(self, current_graph, actions, action_probabilities):
         """Filter out some actions we clearly don't want to take"""
         assert self.target_graph is not None
+        epsilon = 0.00000000001
         # Flag for if the current graph is empty
         is_current_graph_empty = len(current_graph["nodes"]) == 0
         # Adjust the probabilities of bad actions
         for index, action in enumerate(actions):
             # We only want faces that are planar
             if action["start_face"] not in self.valid_nodes:
-                action_probabilities[index] = 0.0
+                action_probabilities[index] = epsilon
             elif action["end_face"] not in self.valid_nodes:
-                action_probabilities[index] = 0.0
+                action_probabilities[index] = epsilon
             # If the current graph is empty, we want a new body operation
             elif is_current_graph_empty and action["operation"] != "NewBodyFeatureOperation":
-                action_probabilities[index] = 0.0
+                action_probabilities[index] = epsilon
             # This operation is not valid for the reconstruction task
             elif action["operation"] == "NewComponentFeatureOperation":
-                action_probabilities[index] = 0.0
+                action_probabilities[index] = epsilon
+            # Hack to avoid divide by zero
+            if action_probabilities[index] < epsilon:
+                action_probabilities[index] = epsilon
+
         action_probabilities = action_probabilities / sum(action_probabilities)
         return action_probabilities

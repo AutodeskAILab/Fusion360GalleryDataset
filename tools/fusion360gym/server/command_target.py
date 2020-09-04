@@ -110,7 +110,7 @@ class CommandTarget(CommandBase):
         if error is not None:
             return self.runner.return_failure(error)
         # Add the extrude
-        extrude = self.state["reconstructor"].add_extrude(
+        self.state["reconstructor"].add_extrude(
             action["start_face"],
             action["end_face"],
             action["operation"]
@@ -136,7 +136,7 @@ class CommandTarget(CommandBase):
             if error is not None:
                 return self.runner.return_failure(error)
             # Add the extrude
-            extrude = self.state["reconstructor"].add_extrude(
+            self.state["reconstructor"].add_extrude(
                 valid_action["start_face"],
                 valid_action["end_face"],
                 valid_action["operation"]
