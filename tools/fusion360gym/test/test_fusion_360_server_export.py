@@ -37,10 +37,13 @@ class TestFusion360ServerExport(unittest.TestCase):
         cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
         box_design = "SingleSketchExtrude_RootComponent"
         hex_design = "Z0HexagonCutJoin_RootComponent"
+        couch_design = "Couch"
         # Box json reconstruction file
         cls.box_design_json_file = cls.data_dir / f"{box_design}.json"
         # Hex shape json reconstruction file
         cls.hex_design_json_file = cls.data_dir / f"{hex_design}.json"
+        # Couch design
+        cls.couch_design_json_file = cls.data_dir / f"{couch_design}.json"
         #
         # OUTPUT FILES
         # Mesh stl file
@@ -275,18 +278,21 @@ class TestFusion360ServerExport(unittest.TestCase):
 
     def test_graph_per_face(self):
         # Reconstruct first
-        r = self.client.reconstruct(self.box_design_json_file)
+        r = self.client.reconstruct(self.couch_design_json_file)
         # Make the folder
         if not self.test_output_dir.exists():
             self.test_output_dir.mkdir()
         # Save out the graphs
-        r = self.client.graph(self.box_design_json_file, self.test_output_dir, format="PerFace")
+        r = self.client.graph(self.couch_design_json_file, self.test_output_dir, format="PerFace")
         self.assertIsNotNone(r, msg="graph response is not None")
         self.assertEqual(r.status_code, 200, msg="graph status code")
-        graph_file = self.test_output_dir / f"{self.box_design_json_file.stem}_0000.json"
-        seq_file = self.test_output_dir / f"{self.box_design_json_file.stem}_sequence.json"
+        graph_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_0000.json"
         self.assertTrue(graph_file.exists(), msg="graph file exists")
         self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        graph_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_0001.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        seq_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_sequence.json"
         self.assertTrue(seq_file.exists(), msg="sequence file exists")
         self.assertGreater(seq_file.stat().st_size, 0, msg="sequence file size greater than 0")
         # Clear
@@ -295,15 +301,21 @@ class TestFusion360ServerExport(unittest.TestCase):
 
     def test_graph_per_extrude(self):
         # Reconstruct first
-        r = self.client.reconstruct(self.box_design_json_file)
+        r = self.client.reconstruct(self.hex_design_json_file)
         # Make the folder
         if not self.test_output_dir.exists():
             self.test_output_dir.mkdir()
         # Save out the graphs
-        r = self.client.graph(self.box_design_json_file, self.test_output_dir, format="PerExtrude")
+        r = self.client.graph(self.hex_design_json_file, self.test_output_dir, format="PerExtrude")
         self.assertIsNotNone(r, msg="graph response is not None")
         self.assertEqual(r.status_code, 200, msg="graph status code")
-        graph_file = self.test_output_dir / f"{self.box_design_json_file.stem}_0000.json"
+        graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0000.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0001.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")        
+        graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0002.json"
         self.assertTrue(graph_file.exists(), msg="graph file exists")
         self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
         # Clear
