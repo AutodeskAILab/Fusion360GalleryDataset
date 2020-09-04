@@ -39,8 +39,6 @@ class CommandTarget(CommandBase):
         suffix = data_file.suffix
         if error is not None:
             return self.runner.return_failure(error)
-        # Switch to direct design mode for performance
-        self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
         # self.design.designType = adsk.fusion.DesignTypes.ParametricDesignType
         # Create the file locally
         temp_file = self.get_temp_file(data["file"])
@@ -49,6 +47,8 @@ class CommandTarget(CommandBase):
         # We clear the design before importing
         self.runner.clear()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
+        # Switch to direct design mode for performance
+        self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
         # Import the geometry
         if suffix == ".step" or suffix == ".stp":
             import_options = self.app.importManager.createSTEPImportOptions(

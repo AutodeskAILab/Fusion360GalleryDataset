@@ -1138,36 +1138,13 @@ class RegraphReconstructor():
         """Create an extrude from a start face to an end face"""
         # We generate the extrude bodies in the reconstruction component
         extrudes = self.reconstruction.component.features.extrudeFeatures
-        # Workaround for a fusion bug that operates on the root component
-        # So we create a new body and combine later
-        # post_process_operation = None
-        # if operation == adsk.fusion.FeatureOperations.JoinFeatureOperation:
-        #     operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
-        #     post_process_operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
-        # elif operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
-        #     operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
-        #     post_process_operation = adsk.fusion.FeatureOperations.CutFeatureOperation
-        # if operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
-        #     operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
-        #     post_process_operation = adsk.fusion.FeatureOperations.IntersectFeatureOperation
-
         extrude_input = extrudes.createInput(start_face, operation)
         extent = adsk.fusion.ToEntityExtentDefinition.create(end_face, False)
         extrude_input.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
         extrude_input.creationOccurrence = self.reconstruction
-        # extrude_input.operation = operation
+        tools = []
+        for body in self.reconstruction.bRepBodies:
+            tools.append(body)
+        extrude_input.participantBodies = tools
         extrude = extrudes.add(extrude_input)
-        # The Fusion API  doesn't seem to be able to do join extrudes
-        # that don't join to the goal body
-        # so we make the bodies separate and then join them after the fact to the reconstruction body
-        # if post_process_operation is not None:
-        #     if self.reconstruction.component.bRepBodies.count > 1:
-        #         combines = self.reconstruction.component.features.combineFeatures
-        #         first_body = self.reconstruction.component.bRepBodies[0]
-        #         tools = adsk.core.ObjectCollection.create()
-        #         for body in extrude.bodies:
-        #             tools.add(body)
-        #         combine_input = combines.createInput(first_body, tools)
-        #         combine_input.operation = post_process_operation
-        #         combine = combines.add(combine_input)
         return extrude
