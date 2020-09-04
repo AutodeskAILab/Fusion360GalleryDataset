@@ -177,14 +177,15 @@ def main():
             result["status"] = "Skip"
             files_processed += 1
         else:
-            print(f"[{files_processed}/{len(files)}] Reconstructing {file.stem}")
+            print("-------------------------")
+            print(f"[{files_processed + 1}/{len(files)} files] Reconstructing {file.stem}")
             try:
                 start_time = time.time()
                 target_graph = search.set_target(file)
                 agent.set_target(target_graph)
                 best_score_over_time = search.search(agent, args.budget, screenshot=args.screenshot)
                 time_taken = time.time() - start_time
-                print(f"[{time_taken} sec] Result: {best_score_over_time[-1]:.3f} in {len(best_score_over_time)}/{args.budget} steps")
+                print(f"---> Score: {best_score_over_time[-1]:.3f} in {len(best_score_over_time)}/{args.budget} steps ({time_taken:.2f} sec)")
                 files_processed += 1
             except ConnectionError as ex:
                 # ConnectionError is thrown when the Fusion 360 Gym is down and we can't connect
@@ -218,7 +219,7 @@ def main():
                         add_result(results, file, result, output_dir)
                         files_processed += 1
 
-                # Then we relaunch the gym and 
+                # Then we relaunch the gym 
                 env.launch_gym()
                 # Continue to the next
                 continue

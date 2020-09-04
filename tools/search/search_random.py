@@ -26,6 +26,9 @@ class SearchRandom(Search):
             # There exist some designs with no planar faces that we can't handle
             # We need at least 2 faces
             raise Exception("Not enough valid planar faces in target")
+        elif rollout_length > 2:
+            rollout_length = math.ceil(rollout_length / 2)
+
         rollout_attempt = 0
         used_budget = 0
         max_score = 0
@@ -74,6 +77,7 @@ class SearchRandom(Search):
                 # Stop if the rollout hits the budget
                 if used_budget >= budget:
                     break
+            print(f"[{used_budget}/{budget}] Score: {max_score}")
             # Revert to the target and remove all reconstruction
             self.env.revert_to_target()
             rollout_attempt += 1

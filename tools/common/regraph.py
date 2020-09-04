@@ -1139,6 +1139,11 @@ class RegraphReconstructor():
 
     def add_extrude(self, start_face, end_face, operation):
         """Create an extrude from a start face to an end face"""
+        # If there are no bodies to cut or intersect, do nothing
+        if ((operation == adsk.fusion.FeatureOperations.CutFeatureOperation or
+           operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation) and
+           self.reconstruction.bRepBodies.count == 0):
+            return None
         # We generate the extrude bodies in the reconstruction component
         extrudes = self.reconstruction.component.features.extrudeFeatures
         extrude_input = extrudes.createInput(start_face, operation)

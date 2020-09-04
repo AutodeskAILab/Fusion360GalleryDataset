@@ -60,17 +60,12 @@ class ReplEnv(GymEnv):
 
     def extrudes(self, actions, revert=False):
         """Extrudes wrapper around the gym client"""
+        if len(actions) == 0:
+            return None, None
         is_invalid = False
         return_graph = None
         return_iou = None
-        action_arg = []
-        for action in actions:
-            action_arg.append({
-                "start_face": action[0],
-                "end_face": action[1],
-                "operation": action[2]
-            })
-        r = self.client.add_extrudes_by_target_face(action_arg, revert)
+        r = self.client.add_extrudes_by_target_face(actions, revert)
         if r is not None and r.status_code == 200:
             response_json = r.json()
             if ("data" in response_json and
