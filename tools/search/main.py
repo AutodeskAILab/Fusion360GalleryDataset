@@ -3,6 +3,7 @@ import random
 import argparse
 import traceback
 import copy
+import time
 from pathlib import Path
 from threading import Timer
 from requests.exceptions import ConnectionError
@@ -111,6 +112,7 @@ def save_results(output_dir, results):
     with open(results_file, "w", encoding="utf8") as f:
         json.dump(results, f, indent=4)
 
+
 def add_result(results, file, result, output_dir):
     """Add a result to the list"""
     if file.stem not in results:
@@ -120,12 +122,14 @@ def add_result(results, file, result, output_dir):
 # Global variable to indicated if we have timed out
 halted = False
 
+
 def halt(env, file):
     """Halt search of the current file"""
     global halted
     print(f"Halting {file.name}")
     halted = True
     env.kill_gym()
+
 
 def setup_timer(env, file):
     """Setup the timer to halt execution if needed"""
@@ -136,6 +140,7 @@ def setup_timer(env, file):
     halt_timer = Timer(halt_delay, halt, [env, file])
     halt_timer.start()
     return halt_timer
+
 
 def main():
     global halted
@@ -171,10 +176,12 @@ def main():
         else:
             print(f"[{files_processed}/{len(files)}] Reconstructing {file.stem}")
             try:
+                start_time = time.time()
                 target_graph = search.set_target(file)
                 agent.set_target(target_graph)
                 best_score_over_time = search.search(agent, args.budget, screenshot=args.screenshot)
-                print(f"> Result: {best_score_over_time[-1]:.3f} in {len(best_score_over_time)}/{args.budget} steps")
+                time_taken = time.time() - start_time
+                print(f"[{time_taken} sec] Result: {best_score_over_time[-1]:.3f} in {len(best_score_over_time)}/{args.budget} steps")
                 files_processed += 1
             except ConnectionError as ex:
                 # ConnectionError is thrown when the Fusion 360 Gym is down and we can't connect
