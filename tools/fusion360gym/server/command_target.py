@@ -18,9 +18,11 @@ if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
 
 import deserialize
+import serialize
 import geometry
 import regraph
 importlib.reload(deserialize)
+importlib.reload(serialize)
 importlib.reload(geometry)
 importlib.reload(regraph)
 from regraph import Regraph
@@ -77,6 +79,9 @@ class CommandTarget(CommandBase):
         self.state["target_graph"] = regraph_graph.generate_from_bodies(
             self.state["target_bodies"]
         )
+        print("Target object type", self.target.objectType)
+        bbox = geometry.get_bounding_box(self.target)
+        self.state["target_bounding_box"] = serialize.bounding_box3d(bbox)
         temp_file.unlink()
         # Setup the reconstructor
         self.state["reconstructor"] = RegraphReconstructor(
@@ -84,7 +89,8 @@ class CommandTarget(CommandBase):
         )
         self.state["reconstructor"].setup()
         return self.runner.return_success({
-            "graph": self.state["target_graph"]
+            "graph": self.state["target_graph"],
+            "bounding_box": self.state["target_bounding_box"]
         })
 
     def revert_to_target(self):
@@ -97,7 +103,8 @@ class CommandTarget(CommandBase):
         if "regraph" in self.state:
             del self.state["regraph"]
         return self.runner.return_success({
-            "graph": self.state["target_graph"]
+            "graph": self.state["target_graph"],
+            "bounding_box": self.state["target_bounding_box"]
         })
 
     def add_extrude_by_target_face(self, data):
