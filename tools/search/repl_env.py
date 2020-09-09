@@ -21,7 +21,8 @@ class ReplEnv(GymEnv):
         response_json = r.json()
         if "data" not in response_json or "graph" not in response_json["data"]:
             raise Exception("[set_target] response graph missing")
-        return response_json["data"]["graph"]
+        return (response_json["data"]["graph"],
+                response_json["data"]["bounding_box"])
 
     def revert_to_target(self):
         """Revert to the target to start the search again"""
