@@ -9,6 +9,7 @@ import numpy as np
 import scipy.sparse as sp
 from tqdm import tqdm
 
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -87,7 +88,12 @@ def load_dataset(args):
     action_type_dict={'CutFeatureOperation':1,'IntersectFeatureOperation':2,'JoinFeatureOperation':0,
     'NewBodyFeatureOperation':3,'NewComponentFeatureOperation':4}
     graph_pairs_formatted=[]
-    dataset_path='../data/%s'%(args.dataset)
+    # Check if this is a full path to a valid directory
+    if os.path.isdir(args.dataset):
+        dataset_path = args.dataset
+    else:
+        dataset_path='../data/%s'%(args.dataset)
+    print("Using dataset_path:", dataset_path)
     dir_list=os.listdir(dataset_path)
     seqs=[x[:-14] for x in dir_list if (x.endswith('_sequence.json'))]
     # find number of steps
@@ -200,7 +206,13 @@ def accuracy(acc,output,labels):
     return acc
 
 def train_test(graph_pairs_formatted,args):
-    with open('../data/%s.json'%(args.split)) as json_data:
+    results = []
+    # Check if this is a full path to a valid file
+    if os.path.isfile(args.split):
+        split_file = args.split
+    else:
+        split_file = '../data/%s.json'%(args.split)
+    with open(split_file) as json_data:
         train_test_split=json.load(json_data)
     for epoch in range(args.epochs):
         # train
@@ -225,6 +237,7 @@ def train_test(graph_pairs_formatted,args):
             loss=loss+loss_now.item()
         scheduler.step(loss/acc0[1])
         print('(Train)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
+        log_results(results, "Train", epoch, loss, acc0, acc1, acc2)
         torch.save(model.state_dict(),'../ckpt/model_v42.ckpt')
         # test
         model.eval()
@@ -245,6 +258,23 @@ def train_test(graph_pairs_formatted,args):
                 acc2=accuracy(acc2,output_op,graph_pairs_formatted[iter][6])
                 loss=loss+loss_now.item()
             print('(Test)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
+            log_results(results, "Test", epoch, loss, acc0, acc1, acc2)
+            
+def log_results(results, train_test, epoch, loss, acc0, acc1, acc2):
+    results_file = '../ckpt/model_v42_results.json'
+    result = {
+        "train_test": train_test,
+        "epoch": epoch+1,
+        "loss": loss/acc0[1],
+        "start_acc": acc0[0]/acc0[1]*100.0,
+        "end_acc": acc1[0]/acc1[1]*100.0,
+        "operation_acc": acc2[0]/acc2[1]*100.0
+    }
+    results.append(result)
+    with open(results_file, "w", encoding="utf8") as f:
+        json.dump(results, f, indent=4)
+           
+            
 
 if __name__=="__main__":
     # args
