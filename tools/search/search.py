@@ -16,7 +16,9 @@ class Search:
         assert target_file.exists()
         self.target_file = target_file
         self.log.set_target(target_file)
-        self.target_graph = self.env.set_target(self.target_file)
+        self.target_graph, self.target_bounding_box = self.env.set_target(
+            self.target_file
+        )
         # Make a set of the valid nodes that are planar
         # We use this for filtering later on
         nodes = self.target_graph["nodes"]
@@ -24,7 +26,7 @@ class Search:
         for node in nodes:
             if node["surface_type"] == "PlaneSurfaceType":
                 self.valid_nodes.add(node["id"])
-        return self.target_graph
+        return self.target_graph, self.target_bounding_box
 
     def search(self, agent, budget, score_function=None, screenshot=False):
         """Given a particular agent, a search budget
