@@ -281,7 +281,7 @@ def train_test(graph_pairs_formatted,train_test_split,args):
                 acc2=accuracy(acc2,output_op,graph_pairs_formatted[iter][6])
                 loss=loss+loss_now.item()
             print('(Test)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
-            log_results(results, 'Test', epoch, loss, acc0, acc1, acc2)
+            log_results(results, exp_name, 'Test', epoch, loss, acc0, acc1, acc2)
             
 def log_results(results, exp_name, train_test, epoch, loss, acc0, acc1, acc2):
     results_file = f'../ckpt/{exp_name}_results.json'
