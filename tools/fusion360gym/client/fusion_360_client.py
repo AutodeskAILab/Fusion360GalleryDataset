@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 import tempfile
 from zipfile import ZipFile
-
+import os
 
 class Fusion360Client():
 
@@ -434,6 +434,7 @@ class Fusion360Client():
             with ZipFile(zip_file, "r") as zipObj:
                 zipObj.extractall(dir)
             zip_file.unlink()
+            os.close(temp_file_handle)
             return r
         else:
             return self.send_command("commands", command_list)
