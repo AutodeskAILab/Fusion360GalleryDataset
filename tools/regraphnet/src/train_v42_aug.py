@@ -88,14 +88,31 @@ def load_dataset(args):
     action_type_dict={'CutFeatureOperation':1,'IntersectFeatureOperation':2,'JoinFeatureOperation':0,
     'NewBodyFeatureOperation':3,'NewComponentFeatureOperation':4}
     graph_pairs_formatted=[]
+    
+    # Load the split data
+    # Check if this is a full path to a valid file
+    if os.path.isfile(args.split):
+        split_file = args.split
+    else:
+        split_file = '../data/%s.json'%(args.split)
+    with open(split_file) as json_data:
+        train_test_split=json.load(json_data)
+    
     # Check if this is a full path to a valid directory
     if os.path.isdir(args.dataset):
         dataset_path = args.dataset
     else:
         dataset_path='../data/%s'%(args.dataset)
-    print("Using dataset_path:", dataset_path)
+    print('Using dataset_path:', dataset_path)
     dir_list=os.listdir(dataset_path)
     seqs=[x[:-14] for x in dir_list if (x.endswith('_sequence.json'))]
+    if args.augment is not None and os.path.isdir(args.augment):
+        aug_dataset_path = args.augment
+        print('Loading augmentation data from:', aug_dataset_path)
+        aug_dir_list=os.listdir(aug_dataset_path)
+        aug_seqs=[x[:-14] for x in aug_dir_list if (x.endswith('_sequence.json'))]
+        seqs.extend(aug_seqs)
+        dir_list.extend(aug_dir_list)
     # find number of steps
     seqs_num_step={}
     for seq in seqs:
@@ -108,11 +125,18 @@ def load_dataset(args):
     counter=[0,0,0]
     for k in tqdm(range(len(seqs))):
         seq=seqs[k]
-        with open('%s/%s_sequence.json'%(dataset_path,seq)) as json_data:
+        # If we are training with synthetic data, ignore real training data
+        if args.only_augment and seq in train_test_split["train"]:
+            continue
+        alt_dataset_path = dataset_path
+        seq_file = '%s/%s_sequence.json'%(dataset_path,seq)
+        if not os.path.isfile(seq_file):
+            alt_dataset_path = aug_dataset_path
+        with open('%s/%s_sequence.json'%(alt_dataset_path,seq)) as json_data:
             data_seq=json.load(json_data)
         bbox=data_seq['properties']['bounding_box']
         assert(len(data_seq['sequence'])==seqs_num_step[seq])
-        with open('%s/%s'%(dataset_path,data_seq['sequence'][-1]['graph'])) as json_data:
+        with open('%s/%s'%(alt_dataset_path,data_seq['sequence'][-1]['graph'])) as json_data:
             data_tar=json.load(json_data)
         adj_tar,features_tar=format_graph_data(data_tar,bbox)
         node_names_tar=[x['id'] for x in data_tar['nodes']]
@@ -120,7 +144,7 @@ def load_dataset(args):
             if sid==0:
                 adj_cur,features_cur=torch.zeros((0)),torch.zeros((0))
             else:
-                with open('%s/%s'%(dataset_path,data_seq['sequence'][sid-1]['graph'])) as json_data:
+                with open('%s/%s'%(alt_dataset_path,data_seq['sequence'][sid-1]['graph'])) as json_data:
                     data_cur=json.load(json_data)
                 adj_cur,features_cur=format_graph_data(data_cur,bbox)
             label_start_now=[node_names_tar.index(step['start_face'])]
@@ -134,7 +158,7 @@ def load_dataset(args):
             counter[1]+=len(node_names_tar)
             counter[2]+=adj_tar.shape[0]
     print('total graph pairs: %d, total nodes: %d - %d'%(counter[0],counter[1],counter[2]))
-    return graph_pairs_formatted
+    return graph_pairs_formatted, train_test_split
 
 def format_graph_data(data,bbox):
     surf_type_dict={'ConeSurfaceType':2,'CylinderSurfaceType':1,'EllipticalConeSurfaceType':6,
@@ -205,21 +229,20 @@ def accuracy(acc,output,labels):
     acc[1]+=len(labels)
     return acc
 
-def train_test(graph_pairs_formatted,args):
+def train_test(graph_pairs_formatted,train_test_split,args):
     results = []
-    # Check if this is a full path to a valid file
-    if os.path.isfile(args.split):
-        split_file = args.split
-    else:
-        split_file = '../data/%s.json'%(args.split)
-    with open(split_file) as json_data:
-        train_test_split=json.load(json_data)
+    exp_name = f'model_{time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())}'
+    if args.exp_name is not None:
+        exp_name = args.exp_name
+
     for epoch in range(args.epochs):
         # train
         model.train()
         loss,acc0,acc1,acc2=0,[0,0],[0,0],[0,0]
         for iter in tqdm(range(len(graph_pairs_formatted))):
-            if graph_pairs_formatted[iter][7] not in train_test_split['train']:
+            # Just want to ignore any data that is in test
+            # so we can add augmented data as needed
+            if graph_pairs_formatted[iter][7] in train_test_split['test']:
                 continue
             optimizer.zero_grad()
             output_node,output_op=model(graph_pairs_formatted[iter])
@@ -237,8 +260,8 @@ def train_test(graph_pairs_formatted,args):
             loss=loss+loss_now.item()
         scheduler.step(loss/acc0[1])
         print('(Train)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
-        log_results(results, "Train", epoch, loss, acc0, acc1, acc2)
-        torch.save(model.state_dict(),'../ckpt/model_v42.ckpt')
+        log_results(results, exp_name, 'Train', epoch, loss, acc0, acc1, acc2)
+        torch.save(model.state_dict(),f'../ckpt/{exp_name}.ckpt')
         # test
         model.eval()
         loss,acc0,acc1,acc2=0,[0,0],[0,0],[0,0]
@@ -258,25 +281,24 @@ def train_test(graph_pairs_formatted,args):
                 acc2=accuracy(acc2,output_op,graph_pairs_formatted[iter][6])
                 loss=loss+loss_now.item()
             print('(Test)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
-            log_results(results, "Test", epoch, loss, acc0, acc1, acc2)
+            log_results(results, exp_name, 'Test', epoch, loss, acc0, acc1, acc2)
             
-def log_results(results, train_test, epoch, loss, acc0, acc1, acc2):
-    results_file = '../ckpt/model_v42_results.json'
+def log_results(results, exp_name, train_test, epoch, loss, acc0, acc1, acc2):
+    results_file = f'../ckpt/{exp_name}_results.json'
     result = {
-        "train_test": train_test,
-        "epoch": epoch+1,
-        "loss": loss/acc0[1],
-        "start_acc": acc0[0]/acc0[1]*100.0,
-        "end_acc": acc1[0]/acc1[1]*100.0,
-        "operation_acc": acc2[0]/acc2[1]*100.0
+        'train_test': train_test,
+        'epoch': epoch+1,
+        'loss': loss/acc0[1],
+        'start_acc': acc0[0]/acc0[1]*100.0,
+        'end_acc': acc1[0]/acc1[1]*100.0,
+        'operation_acc': acc2[0]/acc2[1]*100.0
     }
     results.append(result)
-    with open(results_file, "w", encoding="utf8") as f:
+    with open(results_file, 'w', encoding='utf8') as f:
         json.dump(results, f, indent=4)
-           
             
 
-if __name__=="__main__":
+if __name__=='__main__':
     # args
     parser=argparse.ArgumentParser()
     parser.add_argument('--no-cuda',action='store_true',default=False,help='Disables CUDA training.')
@@ -288,6 +310,9 @@ if __name__=="__main__":
     parser.add_argument('--weight_decay',type=float,default=5e-4,help='Weight decay (L2 loss on parameters).')
     parser.add_argument('--hidden',type=int,default=256,help='Number of hidden units.')
     parser.add_argument('--dropout',type=float,default=0.1,help='Dropout rate.')
+    parser.add_argument('--augment',type=str,help='Directory for augmentation data.')
+    parser.add_argument('--only_augment', dest='only_augment', default=False, action='store_true', help='Train with only augmented data')
+    parser.add_argument('--exp_name',type=str,help='Name of the experiment. Used for the checkpoint and log files.')
     args=parser.parse_args()
     args.cuda=not args.no_cuda and torch.cuda.is_available()
     # seed
@@ -296,7 +321,7 @@ if __name__=="__main__":
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
     # data and model
-    graph_pairs_formatted=load_dataset(args)
+    graph_pairs_formatted,train_test_split=load_dataset(args)
     model=NodePointer(nfeat=graph_pairs_formatted[0][1].size()[1],nhid=args.hidden,dropout=args.dropout)
     optimizer=optim.Adam(model.parameters(),lr=args.lr)
     scheduler=ReduceLROnPlateau(optimizer,'min')
@@ -307,4 +332,4 @@ if __name__=="__main__":
             for j in range(7):
                 graph_pairs_formatted[i][j]=graph_pairs_formatted[i][j].cuda()
     # train and test
-    train_test(graph_pairs_formatted,args)
+    train_test(graph_pairs_formatted,train_test_split,args)
