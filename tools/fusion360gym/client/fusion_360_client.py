@@ -383,6 +383,7 @@ class Fusion360Client():
         # Extract all the files to the given directory
         with ZipFile(zip_file, "r") as zipObj:
             zipObj.extractall(dir)
+        os.close(temp_file_handle)
         zip_file.unlink()
         return r
 
@@ -434,7 +435,6 @@ class Fusion360Client():
             with ZipFile(zip_file, "r") as zipObj:
                 zipObj.extractall(dir)
             zip_file.unlink()
-            os.close(temp_file_handle)
             return r
         else:
             return self.send_command("commands", command_list)
