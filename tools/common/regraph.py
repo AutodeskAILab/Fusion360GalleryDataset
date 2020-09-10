@@ -426,7 +426,7 @@ class Regraph():
 
     def get_face_parameter_features(self, face):
         param_features = {}
-        samples = 4
+        samples = 10
         evaluator = face.evaluator
         range_bbox = evaluator.parametricRange()
         u_min = range_bbox.minPoint.x
