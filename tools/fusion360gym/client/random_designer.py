@@ -10,9 +10,9 @@ HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
 
 RECONSTRUCTION_DATA_PATH = "d7" 
-GENERATED_DATA_PATH = "generated_design"
+GENERATED_DATA_PATH = "random_designs_10grid"
 
-TOTAL_EPISODES = 5000
+TOTAL_EPISODES = 499
 
 MIN_AREA = 10
 MAX_AREA = 2000
@@ -32,7 +32,7 @@ def main():
 
 	new_body = False
 	episode = 0
-	
+
 	while episode < TOTAL_EPISODES:
 
 		try:
@@ -128,6 +128,8 @@ def main():
 					print(response_data["message"])
 
 				num_faces = random_designer.extrude_one_profile(response_data)
+				if base_faces is None or num_faces > MAX_NUM_FACES_PER_PROFILE:
+					continue
 				current_num_faces += num_faces
 
 				steps += 1
@@ -138,10 +140,10 @@ def main():
 				if success:
 					episode += 1
 			except OSError:
-				random_designer.launch_gym()
+				# random_designer.launch_gym()
+				continue
 
 		except ConnectionError as ex:
-
 			random_designer.launch_gym()
 			continue
 

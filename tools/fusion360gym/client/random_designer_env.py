@@ -164,14 +164,15 @@ class RandomDesignerEnv(GymEnv):
 
 	def save(self, output_dir):
 		json_file_dir = output_dir
-		json_file = str(math.floor(time.time())) + ".json"
+		file_name = str(math.floor(time.time()))
+		json_file = file_name + ".json"
 		r = self.client.graph(json_file, json_file_dir, format="PerFace")
 		if r.status_code == 500:
 			print(r.json()["message"])
 			return False
 		else:
 			# save f3d
-			f3d_file = str(math.floor(time.time())) + ".f3d"
+			f3d_file = file_name + ".f3d"
 			f3d_file_dir = output_dir / f3d_file
 			self.client.brep(f3d_file_dir)
 			print("Data generation success!\n")
