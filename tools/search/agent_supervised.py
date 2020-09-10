@@ -15,16 +15,16 @@ REGRAPHNET_SRC_DIR = os.path.join(os.path.dirname(__file__), "..", "regraphnet",
 if REGRAPHNET_SRC_DIR not in sys.path:
     sys.path.append(REGRAPHNET_SRC_DIR)
 
-from train_v42 import *
+from train_v5 import *
 
 
 class AgentSupervised(Agent):
 
     def __init__(self,):
         super().__init__()
-        self.model = NodePointer(nfeat=120, nhid=256)
+        self.model = NodePointer(nfeat=708, nhid=256)
         regraphnet_dir = Path(REGRAPHNET_DIR)
-        checkpoint_file = regraphnet_dir / "ckpt/model_v42.ckpt"
+        checkpoint_file = regraphnet_dir / "ckpt/model_v5.ckpt"
         assert checkpoint_file.exists()
         # Using CUDA is slower, so we use cpu
         # Specify cpu to map to
