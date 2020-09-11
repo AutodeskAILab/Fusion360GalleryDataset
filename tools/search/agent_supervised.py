@@ -15,16 +15,16 @@ REGRAPHNET_SRC_DIR = os.path.join(os.path.dirname(__file__), "..", "regraphnet",
 if REGRAPHNET_SRC_DIR not in sys.path:
     sys.path.append(REGRAPHNET_SRC_DIR)
 
-from train_v4 import *
+from train_v5 import *
 
 
 class AgentSupervised(Agent):
 
     def __init__(self,):
         super().__init__()
-        self.model = NodePointer(nfeat=120, nhid=256)
+        self.model = NodePointer(nfeat=708, nhid=256)
         regraphnet_dir = Path(REGRAPHNET_DIR)
-        checkpoint_file = regraphnet_dir / "ckpt/model_v4.ckpt"
+        checkpoint_file = regraphnet_dir / "ckpt/model_v5.ckpt"
         assert checkpoint_file.exists()
         # Using CUDA is slower, so we use cpu
         # Specify cpu to map to
@@ -39,12 +39,14 @@ class AgentSupervised(Agent):
         return np.array(actions_sorted), np.array(probs_sorted)
 
     def load_graph_pair(self, data_tar, data_cur):
-        adj_tar, features_tar = format_graph_data(data_tar)
+        adj_tar, features_tar = format_graph_data(data_tar, self.bounding_box)
         # If the current graph is empty
         if len(data_cur["nodes"]) == 0:
             adj_cur, features_cur = torch.zeros((0)), torch.zeros((0))
         else:
-            adj_cur, features_cur = format_graph_data(data_cur)
+            adj_cur, features_cur = format_graph_data(
+                data_cur, self.bounding_box
+            )
         graph_pair_formatted = [adj_tar, features_tar, adj_cur, features_cur]
         node_names = [x["id"] for x in data_tar["nodes"]]
         return graph_pair_formatted, node_names

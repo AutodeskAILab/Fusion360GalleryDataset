@@ -1,4 +1,5 @@
 import requests
+import os
 import json
 from pathlib import Path
 import shutil
@@ -336,6 +337,7 @@ class Fusion360Client():
         # Extract all the files to the given directory
         with ZipFile(zip_file, "r") as zipObj:
             zipObj.extractall(dir)
+        os.close(temp_file_handle)
         zip_file.unlink()
         return r
 
@@ -383,6 +385,7 @@ class Fusion360Client():
         # Extract all the files to the given directory
         with ZipFile(zip_file, "r") as zipObj:
             zipObj.extractall(dir)
+        os.close(temp_file_handle)
         zip_file.unlink()
         return r
 
@@ -433,6 +436,7 @@ class Fusion360Client():
             # Extract all the files to the given directory
             with ZipFile(zip_file, "r") as zipObj:
                 zipObj.extractall(dir)
+            os.close(temp_file_handle)
             zip_file.unlink()
             return r
         else:

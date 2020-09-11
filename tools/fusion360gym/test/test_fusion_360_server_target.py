@@ -13,6 +13,7 @@ import importlib
 import json
 import shutil
 import time
+import math
 
 # Add the client folder to sys.path
 CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
@@ -40,6 +41,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         cls.couch_design_smt_file = cls.data_dir / f"{couch_design}.smt"
         cls.couch_design_step_file = cls.data_dir / f"{couch_design}.step"
         cls.box_design_smt_file = cls.data_dir / "Box.smt"
+        cls.boxes_design_smt_file = cls.data_dir / "Boxes.smt"
 
     def test_set_target_invalid_file_suffix(self):
         r = self.client.set_target(self.couch_design_json_file)
@@ -57,6 +59,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
         self.__check_graph_format(response_json["data"])
+        self.__check_bounding_box(response_json["data"])
         r = self.client.clear()
 
     def test_set_target_step(self):
@@ -65,6 +68,46 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
         self.__check_graph_format(response_json["data"])
+        self.__check_bounding_box(response_json["data"])
+        r = self.client.clear()
+
+    def test_set_target_box(self):
+        r = self.client.set_target(self.box_design_smt_file)
+        self.assertIsNotNone(r, msg="set_target response is not None")
+        self.assertEqual(r.status_code, 200, msg="set_target status code")
+        response_json = r.json()
+        self.__check_graph_format(response_json["data"])
+        self.__check_bounding_box(response_json["data"])
+        # Check the bounding box result is correct
+        bbox = response_json["data"]["bounding_box"]
+        maxp = bbox["max_point"]
+        minp = bbox["min_point"]
+        x = math.fabs(maxp["x"] - minp["x"])
+        y = math.fabs(maxp["y"] - minp["y"])
+        z = math.fabs(maxp["z"] - minp["z"])
+        self.assertAlmostEqual(x, 1, places=2, msg="bbox x ~= 1")
+        self.assertAlmostEqual(y, 1, places=2, msg="bbox y ~= 1")
+        self.assertAlmostEqual(z, 1, places=2, msg="bbox z ~= 1")
+        r = self.client.clear()
+
+    def test_set_target_boxes(self):
+        r = self.client.set_target(self.boxes_design_smt_file)
+        self.assertIsNotNone(r, msg="set_target response is not None")
+        self.assertEqual(r.status_code, 200, msg="set_target status code")
+        response_json = r.json()
+        self.__check_graph_format(response_json["data"])
+        self.__check_bounding_box(response_json["data"])
+        bbox = response_json["data"]["bounding_box"]
+        # Check the bounding box result is correct
+        bbox = response_json["data"]["bounding_box"]
+        maxp = bbox["max_point"]
+        minp = bbox["min_point"]
+        x = math.fabs(maxp["x"] - minp["x"])
+        y = math.fabs(maxp["y"] - minp["y"])
+        z = math.fabs(maxp["z"] - minp["z"])
+        self.assertAlmostEqual(x, 4, places=2, msg="bbox x ~= 4")
+        self.assertAlmostEqual(y, 4, places=2, msg="bbox y ~= 4")
+        self.assertAlmostEqual(z, 2, places=2, msg="bbox z ~= 2")
         r = self.client.clear()
 
     def test_add_extrude_by_target_face(self):
@@ -274,3 +317,49 @@ class TestFusion360ServerTarget(unittest.TestCase):
             self.assertIn(link["source"], node_set, msg="Graph link source in node set")
             self.assertIn("target", link, msg="Graph link has target")
             self.assertIn(link["target"], node_set, msg="Graph link target in node set")
+
+    def __check_bounding_box(self, response_data):
+        """Check the bounding box data that comes back is in the right format"""
+        self.assertIn("bounding_box", response_data, msg="bounding_box in response_data")
+        bbox = response_data["bounding_box"]
+
+        self.assertIn("max_point", bbox, msg="max_point in bounding_box")
+        self.assertIn("x", bbox["max_point"], msg="x in max_point")
+        self.assertIn("y", bbox["max_point"], msg="y in max_point")
+        self.assertIn("z", bbox["max_point"], msg="z in max_point")
+        self.assertIsInstance(bbox["max_point"]["x"], float, msg="max_point x is float")
+        self.assertIsInstance(bbox["max_point"]["y"], float, msg="max_point y is float")
+        self.assertIsInstance(bbox["max_point"]["z"], float, msg="max_point z is float")
+
+        self.assertIn("min_point", bbox, msg="min_point in bounding_box")
+        self.assertIn("x", bbox["min_point"], msg="x in min_point")
+        self.assertIn("y", bbox["min_point"], msg="y in min_point")
+        self.assertIn("z", bbox["min_point"], msg="z in min_point")
+        self.assertIsInstance(bbox["min_point"]["x"], float, msg="min_point x is float")
+        self.assertIsInstance(bbox["min_point"]["y"], float, msg="min_point y is float")
+        self.assertIsInstance(bbox["min_point"]["z"], float, msg="min_point z is float")
+
+        self.assertFalse(
+            math.isinf(bbox["max_point"]["x"]),
+            msg="bounding_box_max_x != inf"
+        )
+        self.assertFalse(
+            math.isinf(bbox["max_point"]["y"]),
+            msg="bounding_box_max_y != inf"
+        )
+        self.assertFalse(
+            math.isinf(bbox["max_point"]["z"]),
+            msg="bounding_box_max_z != inf"
+        )
+        self.assertFalse(
+            math.isinf(bbox["min_point"]["x"]),
+            msg="bounding_box_min_x != inf"
+        )
+        self.assertFalse(
+            math.isinf(bbox["min_point"]["y"]),
+            msg="bounding_box_min_y != inf"
+        )
+        self.assertFalse(
+            math.isinf(bbox["min_point"]["z"]),
+            msg="bounding_box_min_z != inf"
+        )

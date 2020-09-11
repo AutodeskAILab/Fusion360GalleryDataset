@@ -184,8 +184,8 @@ def main():
             print(f"[{files_processed + 1}/{len(files)} files] Reconstructing {file.stem}")
             try:
                 start_time = time.time()
-                target_graph = search.set_target(file)
-                agent.set_target(target_graph)
+                target_graph, bounding_box = search.set_target(file)
+                agent.set_target(target_graph, bounding_box)
                 best_score_over_time = search.search(agent, args.budget, screenshot=args.screenshot)
                 time_taken = time.time() - start_time
                 print(f"---> Score: {best_score_over_time[-1]:.3f} in {len(best_score_over_time)}/{args.budget} steps ({time_taken:.2f} sec)")
