@@ -2,6 +2,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import json
 import time
 import argparse
@@ -235,6 +236,7 @@ def train_test(graph_pairs_formatted,train_test_split,args):
     if args.exp_name is not None:
         exp_name = args.exp_name
 
+    lowest_train_loss = sys.float_info.max
     for epoch in range(args.epochs):
         # train
         model.train()
@@ -258,10 +260,13 @@ def train_test(graph_pairs_formatted,train_test_split,args):
             acc1=accuracy(acc1,output_end,graph_pairs_formatted[iter][5])
             acc2=accuracy(acc2,output_op,graph_pairs_formatted[iter][6])
             loss=loss+loss_now.item()
-        scheduler.step(loss/acc0[1])
-        print('(Train)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
-        log_results(results, exp_name, 'Train', epoch, loss, acc0, acc1, acc2)
-        torch.save(model.state_dict(),f'../ckpt/{exp_name}.ckpt')
+        train_loss = loss/acc0[1]
+        scheduler.step(train_loss)
+        print('(Train)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(train_loss),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
+        if train_loss < lowest_train_loss:
+            print('Saving checkpoint...')
+            torch.save(model.state_dict(),'../ckpt/model_v5.ckpt')
+            lowest_train_loss = train_loss
         # test
         model.eval()
         loss,acc0,acc1,acc2=0,[0,0],[0,0],[0,0]
