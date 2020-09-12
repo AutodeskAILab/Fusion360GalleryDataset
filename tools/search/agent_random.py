@@ -9,9 +9,9 @@ class AgentRandom(Agent):
     def __init__(self):
         super().__init__()
 
-    def set_target(self, target_graph):
+    def set_target(self, target_graph, bounding_box):
         """Set the target graph"""
-        super().set_target(target_graph)
+        super().set_target(target_graph, bounding_box)
         # Store a list of the faces we can choose from
         # These will get filtered for something sensible during search
         self.target_faces = []

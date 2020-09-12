@@ -13,6 +13,7 @@ from agent_random import AgentRandom
 from agent_supervised import AgentSupervised
 from search_random import SearchRandom
 from search_beam import SearchBeam
+from search_best import SearchBest
 
 
 parser = argparse.ArgumentParser()
@@ -23,7 +24,7 @@ parser.add_argument("--screenshot", dest="screenshot", default=False, action="st
 parser.add_argument("--launch_gym", dest="launch_gym", default=False, action="store_true",
                     help="Launch the Fusion 360 Gym automatically, requires the gym to be set to run on startup [default: False]")
 parser.add_argument("--agent", type=str, default="random", help="Agent to use, can be random, supervised [default: random]")
-parser.add_argument("--search", type=str, default="random", help="Search to use [default: random]")
+parser.add_argument("--search", type=str, default="random", help="Search to use, can be random, beam or best [default: random]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
 args = parser.parse_args()
 
@@ -89,6 +90,8 @@ def get_search(env, output_dir):
         return SearchRandom(env, output_dir)
     elif args.search == "beam":
         return SearchBeam(env, output_dir)
+    elif args.search == "best":
+        return SearchBest(env, output_dir)
 
 
 def get_agent():
