@@ -2,6 +2,7 @@ import sys
 import os
 import random
 import math
+import functools
 from pathlib import Path
 import numpy as np
 from queue import PriorityQueue
@@ -38,17 +39,18 @@ class SearchBest(Search):
         # like beam search, we keep track of prefixes, but instead of a beam we keep a "fringe"
         # we implement this with a priority queue, the queue ordered by min first max last
         # so we'll use _negative_ log likelihood and go after the "smallest" nll instead of the max like we do in beam
-        # each entry in the fringe is a tuple (neg_likelihood, (neg_likelihood, prefix))
-        # it's annoying to put nll twice, but I don't know how to get the value out from a queue lol
-        # for example an element of the queue is something like : (10, (10, (a1, a4, a10)))
+        # each entry in the fringe is a custom PriorityAction (neg_likelihood, (prefix))
+        # where prefix is a tuple that contains the actions, that are dicts
+        # for example an element of the queue is something like : (10, (a1, a4, a10))
         fringe = PriorityQueue()
-        fringe.put( (0, (0,())) )
-        
+        fringe.put(PriorityAction(0, ()))
+
         # while there is item in the fridge and we still have budget
-        while len(fringe) > 0 and used_budget < budget:
-            to_expand = fringe.get()
+        while fringe.qsize() > 0 and used_budget < budget:
+            priority_action = fringe.get()
             # nll is something like 10, prefix is something like (a1, a4, a10)
-            nll, prefix = to_expand
+            nll = priority_action.nll
+            prefix = priority_action.prefix
             new_graph, cur_iou = self.env.extrudes(list(prefix), revert=True)
             if len(prefix) > 0:
                 used_budget += 1
@@ -62,9 +64,9 @@ class SearchBest(Search):
                     cur_graph = new_graph
 
                 log_data = {
-                    "rollout_attempt": rollout_attempt,
-                    "rollout_step": i,
-                    "rollout_length": rollout_length,
+                    # "rollout_attempt": rollout_attempt,
+                    # "rollout_step": i,
+                    # "rollout_length": rollout_length,
                     "used_budget": used_budget,
                     "budget": budget,
                     "current_iou": cur_iou,
@@ -72,13 +74,13 @@ class SearchBest(Search):
                     "prefix": list(prefix)
                 }
                 self.log.log(log_data, take_screenshot)
-                max_scores.append(max_score)                
+                max_scores.append(max_score)
                 # Stop early if we find a solution
                 if math.isclose(max_score, 1, abs_tol=0.00001):
                     return max_scores
                 # Stop if the rollout hits the budget
                 if used_budget >= budget:
-                    break                
+                    break
             # If there was an invalid operation
             # continue without adding it to the search space
             if (new_graph is None or cur_iou is None) and len(prefix) > 0:
@@ -95,18 +97,26 @@ class SearchBest(Search):
                 child_prefix = prefix + (a,)
                 child_nll = nll - a_logpr
                 # do not add a prefix that's longer than rollout length
-                if len(child_prefix) < rollout_length:              
-                    fringe.put((child_nll, (child_nll, child_prefix)))
+                if len(child_prefix) < rollout_length:
+                    fringe.put(PriorityAction(child_nll, child_prefix))
 
-        print(f"[{used_budget}/{budget}] Score: {max_score}")
-
-        # rollout_attempt isn't really defined here
-        # Revert to the target and remove all reconstruction
-        # self.env.revert_to_target()
-        # rollout_attempt += 1
-    return max_scores               
+            print(f"[{used_budget}/{budget}] Score: {max_score}")
+        return max_scores
 
 
+@functools.total_ordering
+class PriorityAction():
 
+    def __init__(self, nll, prefix):
+        self.nll = nll
+        self.prefix = prefix
+        self.prefix_str = str(prefix)
 
+    def __gt__(self, other):
+        if self.nll == other.nll:
+            return self.prefix_str > other.prefix_str
+        else:
+            return self.nll > other.nll
 
+    def __eq__(self, other):
+        return self.nll == other.nll and self.prefix_str == other.prefix_str
