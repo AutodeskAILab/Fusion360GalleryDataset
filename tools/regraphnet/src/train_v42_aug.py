@@ -136,7 +136,11 @@ def load_dataset(args):
         with open('%s/%s_sequence.json'%(alt_dataset_path,seq)) as json_data:
             data_seq=json.load(json_data)
         bbox=data_seq['properties']['bounding_box']
-        assert(len(data_seq['sequence'])==seqs_num_step[seq])
+        len_equal = len(data_seq['sequence'])==seqs_num_step[seq]
+        if not len_equal:
+            print(f'Skipping {seq} due to unequal lengths: {len(data_seq["sequence"])} in json, but {seqs_num_step[seq]} files found')
+            continue
+        # assert(len_equal)
         with open('%s/%s'%(alt_dataset_path,data_seq['sequence'][-1]['graph'])) as json_data:
             data_tar=json.load(json_data)
         adj_tar,features_tar=format_graph_data(data_tar,bbox)
@@ -263,9 +267,10 @@ def train_test(graph_pairs_formatted,train_test_split,args):
         train_loss = loss/acc0[1]
         scheduler.step(train_loss)
         print('(Train)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(train_loss),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
+        log_results(results, exp_name, 'Train', epoch, loss, acc0, acc1, acc2)
         if train_loss < lowest_train_loss:
             print('Saving checkpoint...')
-            torch.save(model.state_dict(),'../ckpt/model_v5.ckpt')
+            torch.save(model.state_dict(),f'../ckpt/{exp_name}.ckpt')
             lowest_train_loss = train_loss
         # test
         model.eval()
