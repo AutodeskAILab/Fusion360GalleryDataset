@@ -33,22 +33,32 @@ def load_graph_pair(path_tar,path_cur,bbox):
 
 def inference(graph_pair_formatted,node_names,operation_names,use_gpu=False):
     model.eval()
+    num_nodes=graph_pair_formatted[1].size()[0]
+    output_end_conditioned=np.zeros((num_nodes,num_nodes))
     with torch.no_grad():
-        output_node,output_op=model(graph_pair_formatted,use_gpu=use_gpu)
-        output_start=F.softmax(output_node[:,0].view(1,-1),dim=1)
-        output_end=F.softmax(output_node[:,1].view(1,-1),dim=1)
+        graph_pair_formatted.append(0)
+        output_start,_,output_op=model(graph_pair_formatted,use_gpu=use_gpu)
+        output_start=F.softmax(output_start.view(1,-1),dim=1)
         output_op=F.softmax(output_op,dim=1)
+        for i in range(num_nodes):
+            graph_pair_formatted[4]=i
+            _,output_end,_=model(graph_pair_formatted,use_gpu=use_gpu)
+            output_end=F.softmax(output_end.view(1,-1),dim=1)
+            if use_gpu:
+                output_end_conditioned[i,:]=output_end.data.cpu().numpy()
+            else:
+                output_end_conditioned[i,:]=output_end.data.numpy()
     if use_gpu:
-        ps=[output_start.data.cpu().numpy()[0,:],output_end.data.cpu().numpy()[0,:],output_op.data.cpu().numpy()[0,:]]
+        ps=[output_start.data.cpu().numpy()[0,:],output_end_conditioned,output_op.data.cpu().numpy()[0,:]]
     else:
-        ps=[output_start.data.numpy()[0,:],output_end.data.numpy()[0,:],output_op.data.numpy()[0,:]]
+        ps=[output_start.data.numpy()[0,:],output_end_conditioned,output_op.data.numpy()[0,:]]
     # enumerate all actions
     actions,probs=[],[]
     for i in range(len(node_names)):
         for j in range(len(node_names)):
             for k in range(len(operation_names)):
                 actions.append([node_names[i],node_names[j],operation_names[k]])
-                probs.append(ps[0][i]*ps[1][j]*ps[2][k])
+                probs.append(ps[0][i]*ps[1][i,j]*ps[2][k])
     actions_sorted,probs_sorted=[],[]
     idx=np.argsort(-np.array(probs))
     for i in range(len(probs)):
@@ -93,7 +103,7 @@ if __name__=="__main__":
                     graph_pair_formatted[j]=graph_pair_formatted[j].cuda()
             # inference
             actions_sorted,probs_sorted=inference(graph_pair_formatted,node_names,operation_names,use_gpu=args.cuda)
-            print(actions_sorted)
-            print(probs_sorted)
+            print(actions_sorted[:10])
+            print(probs_sorted[:10])
     t2=time.time()
     print('%.5f seconds.'%(t2-t1))

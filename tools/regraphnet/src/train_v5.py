@@ -9,6 +9,7 @@ import numpy as np
 import scipy.sparse as sp
 from tqdm import tqdm
 
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -27,34 +28,49 @@ class NodePointer(nn.Module):
             self.fc01=nn.Linear(nhid,nhid)
             self.fc10=nn.Linear(nfeat,nhid)
             self.fc11=nn.Linear(nhid,nhid)
+            self.fc20=nn.Linear(nfeat*2,nhid)
+            self.fc21=nn.Linear(nhid,nhid)
             self.gcn0=GCN(nfeat=nhid,nhid=nhid,dropout=dropout)
             self.gcn1=GCN(nfeat=nhid,nhid=nhid,dropout=dropout)
+            self.gcn2=GCN(nfeat=nhid,nhid=nhid,dropout=dropout)
             self.fc02=nn.Linear(nhid,nhid)
             self.fc03=nn.Linear(nhid,nhid)
             self.fc12=nn.Linear(nhid,nhid)
             self.fc13=nn.Linear(nhid,nhid)
+            self.fc22=nn.Linear(nhid,nhid)
+            self.fc23=nn.Linear(nhid,nhid)
         else:
             self.fc00=nn.Linear(nfeat,nhid)
             self.fc01=nn.Linear(nhid,nhid)
             self.fc10=nn.Linear(nfeat,nhid)
             self.fc11=nn.Linear(nhid,nhid)
+            self.fc20=nn.Linear(nfeat*2,nhid)
+            self.fc21=nn.Linear(nhid,nhid)
         self.fc_operation=nn.Linear(nhid,5)
         self.fc0=nn.Linear(nhid*2,nhid*2)
         self.fc1=nn.Linear(nhid*2,nhid*2)
         self.fc2=nn.Linear(nhid*2,nhid*2)
         self.fc3=nn.Linear(nhid*2,nhid*2)
-        self.fc_start_end=nn.Linear(nhid*2,2)
-
+        self.fc_start=nn.Linear(nhid*2,1)
+        self.fc4=nn.Linear(nhid,nhid)
+        self.fc5=nn.Linear(nhid,nhid)
+        self.fc6=nn.Linear(nhid,nhid)
+        self.fc7=nn.Linear(nhid,nhid)
+        self.fc_end=nn.Linear(nhid,1)
         for m in self.modules():
             if isinstance(m,nn.Linear):
                 torch.nn.init.xavier_uniform_(m.weight)
                 m.bias.data.fill_(0.00)
 
     def forward(self,gpf,use_gpu=True):
+        x2=torch.cat((gpf[1],gpf[1][gpf[4],:].repeat(gpf[1].size()[0],1)),dim=1)
         if self.Use_GCN:
             x0=F.relu(self.fc01(F.relu(self.fc00(gpf[1]))))
             x0=self.gcn0(x0,gpf[0])
             x0=F.relu(self.fc03(F.relu(self.fc02(x0))))
+            x2=F.relu(self.fc21(F.relu(self.fc20(x2))))
+            x2=self.gcn2(x2,gpf[0])
+            x2=F.relu(self.fc23(F.relu(self.fc22(x2))))
             if gpf[2].size()[0]==0:
                 if use_gpu:
                     x1=torch.zeros((1,self.nhid)).cuda()
@@ -66,6 +82,7 @@ class NodePointer(nn.Module):
                 x1=F.relu(self.fc13(F.relu(self.fc12(x1))))
         else:
             x0=F.relu(self.fc01(F.relu(self.fc00(gpf[1]))))
+            x2=F.relu(self.fc21(F.relu(self.fc20(x2))))
             if gpf[2].size()[0]==0:
                 if use_gpu:
                     x1=torch.zeros((1,self.nhid)).cuda()
@@ -74,20 +91,30 @@ class NodePointer(nn.Module):
             else:
                 x1=F.relu(self.fc11(F.relu(self.fc10(gpf[3]))))
         x1=torch.sum(x1,dim=0,keepdim=True).repeat(x0.size()[0],1)
+        op=self.fc_operation(x1[0:1,:])
         x=torch.cat((x0,x1),dim=1)
         x=F.relu(self.fc0(x))
         x=F.relu(self.fc1(x))
         x=F.relu(self.fc2(x))
         x=F.relu(self.fc3(x))
-        x=self.fc_start_end(x)
-        op=self.fc_operation(x1[0:1,:])
-        return x,op
+        x_start=self.fc_start(x)
+        x2=F.relu(self.fc4(x2))
+        x2=F.relu(self.fc5(x2))
+        x2=F.relu(self.fc6(x2))
+        x2=F.relu(self.fc7(x2))
+        x_end=self.fc_end(x2)
+        return x_start,x_end,op
 
 def load_dataset(args):
     action_type_dict={'CutFeatureOperation':1,'IntersectFeatureOperation':2,'JoinFeatureOperation':0,
     'NewBodyFeatureOperation':3,'NewComponentFeatureOperation':4}
     graph_pairs_formatted=[]
-    dataset_path='../data/%s'%(args.dataset)
+    # Check if this is a full path to a valid directory
+    if os.path.isdir(args.dataset):
+        dataset_path=args.dataset
+    else:
+        dataset_path='../data/%s'%(args.dataset)
+    print("Using dataset_path:", dataset_path)
     dir_list=os.listdir(dataset_path)
     seqs=[x[:-14] for x in dir_list if (x.endswith('_sequence.json'))]
     # find number of steps
@@ -193,26 +220,45 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
 
 def accuracy(acc,output,labels):
     preds=output.max(1)[1].type_as(labels)
-    correct=preds.eq(labels).double()
-    correct=correct.sum().item()
+    correct=preds.eq(labels).double().sum().item()
     acc[0]+=correct
     acc[1]+=len(labels)
     return acc
 
+def accuracy_overall(acc_all,output0,output1,output2,labels0,labels1,labels2):
+    preds0=output0.max(1)[1].type_as(labels0)
+    preds1=output1.max(1)[1].type_as(labels1)
+    preds2=output2.max(1)[1].type_as(labels2)
+    correct0=preds0.eq(labels0).item()
+    correct1=preds1.eq(labels1).item()
+    correct2=preds2.eq(labels2).item()
+    correct=np.logical_and(np.logical_and(correct0,correct1),correct2)
+    if correct:
+        acc_all[0]+=1
+    acc_all[1]+=1
+    return acc_all,correct
+
 def train_test(graph_pairs_formatted,args):
-    with open('../data/%s.json'%(args.split)) as json_data:
+    results = []
+    # Check if this is a full path to a valid file
+    if os.path.isfile(args.split):
+        split_file=args.split
+    else:
+        split_file='../data/%s.json'%(args.split)
+    with open(split_file) as json_data:
         train_test_split=json.load(json_data)
+    train_losses=[]
     for epoch in range(args.epochs):
         # train
         model.train()
-        loss,acc0,acc1,acc2=0,[0,0],[0,0],[0,0]
+        loss,acc0,acc1,acc2,acc_all=0,[0,0],[0,0],[0,0],[0,0]
         for iter in tqdm(range(len(graph_pairs_formatted))):
             if graph_pairs_formatted[iter][7] not in train_test_split['train']:
                 continue
             optimizer.zero_grad()
-            output_node,output_op=model(graph_pairs_formatted[iter])
-            output_start=output_node[:,0].view(1,-1)
-            output_end=output_node[:,1].view(1,-1)
+            output_start,output_end,output_op=model(graph_pairs_formatted[iter])
+            output_start=output_start.view(1,-1)
+            output_end=output_end.view(1,-1)
             loss0=F.cross_entropy(output_start,graph_pairs_formatted[iter][4],reduction='sum')
             loss1=F.cross_entropy(output_end,graph_pairs_formatted[iter][5],reduction='sum')
             loss2=F.cross_entropy(output_op,graph_pairs_formatted[iter][6],reduction='sum')
@@ -222,20 +268,31 @@ def train_test(graph_pairs_formatted,args):
             acc0=accuracy(acc0,output_start,graph_pairs_formatted[iter][4])
             acc1=accuracy(acc1,output_end,graph_pairs_formatted[iter][5])
             acc2=accuracy(acc2,output_op,graph_pairs_formatted[iter][6])
+            acc_all,correct=accuracy_overall(acc_all,output_start,output_end,output_op,graph_pairs_formatted[iter][4],graph_pairs_formatted[iter][5],graph_pairs_formatted[iter][6])
             loss=loss+loss_now.item()
         scheduler.step(loss/acc0[1])
-        print('(Train)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
-        torch.save(model.state_dict(),'../ckpt/model_v5.ckpt')
+        # do not save checkpoint if training exploded
+        if epoch==0 or (loss/acc0[1])<np.min(train_losses):
+            torch.save(model.state_dict(),'../ckpt/model_v5.ckpt')
+        train_losses.append(loss/acc0[1])
+        print('(Train)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0),'all: {:.3f}'.format(acc_all[0]/acc_all[1]*100.0))
+        log_results(results,'Train',epoch,loss,acc0,acc1,acc2,acc_all)
         # test
         model.eval()
-        loss,acc0,acc1,acc2=0,[0,0],[0,0],[0,0]
+        loss,acc0,acc1,acc2,acc_all=0,[0,0],[0,0],[0,0],[0,0]
+        shape_ids,not_perfect_shapes={},[]
         with torch.no_grad():
             for iter in tqdm(range(len(graph_pairs_formatted))):
                 if graph_pairs_formatted[iter][7] not in train_test_split['test']:
                     continue
-                output_node,output_op=model(graph_pairs_formatted[iter])
-                output_start=output_node[:,0].view(1,-1)
-                output_end=output_node[:,1].view(1,-1)
+                if graph_pairs_formatted[iter][7] not in shape_ids:
+                    shape_ids[graph_pairs_formatted[iter][7]]=graph_pairs_formatted[iter][8]
+                else:
+                    if graph_pairs_formatted[iter][8]>shape_ids[graph_pairs_formatted[iter][7]]:
+                        shape_ids[graph_pairs_formatted[iter][7]]=graph_pairs_formatted[iter][8]
+                output_start,output_end,output_op=model(graph_pairs_formatted[iter])
+                output_start=output_start.view(1,-1)
+                output_end=output_end.view(1,-1)
                 loss0=F.cross_entropy(output_start,graph_pairs_formatted[iter][4],reduction='sum')
                 loss1=F.cross_entropy(output_end,graph_pairs_formatted[iter][5],reduction='sum')
                 loss2=F.cross_entropy(output_op,graph_pairs_formatted[iter][6],reduction='sum')
@@ -243,14 +300,42 @@ def train_test(graph_pairs_formatted,args):
                 acc0=accuracy(acc0,output_start,graph_pairs_formatted[iter][4])
                 acc1=accuracy(acc1,output_end,graph_pairs_formatted[iter][5])
                 acc2=accuracy(acc2,output_op,graph_pairs_formatted[iter][6])
+                acc_all,correct=accuracy_overall(acc_all,output_start,output_end,output_op,graph_pairs_formatted[iter][4],graph_pairs_formatted[iter][5],graph_pairs_formatted[iter][6])
+                if (not correct) and (graph_pairs_formatted[iter][7] not in not_perfect_shapes):
+                    not_perfect_shapes.append(graph_pairs_formatted[iter][7])
                 loss=loss+loss_now.item()
-            print('(Test)Epoch: {:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
+        acc_shape=[len(shape_ids)-len(not_perfect_shapes),len(shape_ids)]
+        step_counter={}
+        for seq in shape_ids:
+            if seq not in not_perfect_shapes:
+                if shape_ids[seq]+1 not in step_counter:
+                    step_counter[shape_ids[seq]+1]=0
+                step_counter[shape_ids[seq]+1]+=1
+        print('(Test)Epoch:{:04d}'.format(epoch+1),'loss: {:.4f}'.format(loss/acc0[1]),'start: {:.3f}'.format(acc0[0]/acc0[1]*100.0),'end: {:.3f}'.format(acc1[0]/acc1[1]*100.0),'op: {:.3f}'.format(acc2[0]/acc2[1]*100.0))
+        print('Steps: ',int(acc_all[0]),'/',acc_all[1],'percent: {:.3f}'.format(acc_all[0]/acc_all[1]*100.0))
+        print('Shapes: ',int(acc_shape[0]),'/',acc_shape[1],'percent: {:.3f}'.format(acc_shape[0]/acc_shape[1]*100.0),step_counter)
+        log_results(results,'Test',epoch,loss,acc0,acc1,acc2,acc_all)
+
+def log_results(results,train_test,epoch,loss,acc0,acc1,acc2,acc_all):
+    results_file='../ckpt/model_v5_results.json'
+    result={
+        'train_test':train_test,
+        'epoch':epoch+1,
+        'loss':loss/acc0[1],
+        'start_acc':acc0[0]/acc0[1]*100.0,
+        'end_acc':acc1[0]/acc1[1]*100.0,
+        'operation_acc':acc2[0]/acc2[1]*100.0,
+        'overall_acc':acc_all[0]/acc_all[1]*100.0
+    }
+    results.append(result)
+    with open(results_file,'w',encoding='utf8') as f:
+        json.dump(results,f,indent=4)
 
 if __name__=="__main__":
     # args
     parser=argparse.ArgumentParser()
     parser.add_argument('--no-cuda',action='store_true',default=False,help='Disables CUDA training.')
-    parser.add_argument('--dataset',type=str,default='RegraphPerFace_05',help='Dataset name.')
+    parser.add_argument('--dataset',type=str,default='RegraphPerFace_04',help='Dataset name.')
     parser.add_argument('--split',type=str,default='train_test',help='Split name.')
     parser.add_argument('--seed',type=int,default=42,help='Random seed.')
     parser.add_argument('--epochs',type=int,default=50,help='Number of epochs to train.')
