@@ -12,14 +12,14 @@ PORT_NUMBER = 8080
 RECONSTRUCTION_DATA_PATH = "d7" 
 GENERATED_DATA_PATH = "random_designs_10grid"
 
-TOTAL_EPISODES = 499
+TOTAL_EPISODES = 1000
 
 MIN_AREA = 10
 MAX_AREA = 2000
 
 EXTRUDE_LIMIT = 3
 TRANSLATE_NOISE = 0
-MAX_NUM_FACES_PER_PROFILE = 20
+MAX_NUM_FACES_PER_PROFILE = 15
 MAX_STEPS = 4
 
 def main():
@@ -90,7 +90,10 @@ def main():
 			base_faces, num_faces = random_designer.extrude_profiles(response_data)
 			if base_faces is None or num_faces > MAX_NUM_FACES_PER_PROFILE:
 				continue
-			current_num_faces += num_faces
+			
+			# we don't count number faces for the first steps 
+			# to make sure it has 2+ extrudes
+			# current_num_faces += num_faces
 
 			# start the sub-sketches 
 			steps = 0
@@ -128,7 +131,7 @@ def main():
 					print(response_data["message"])
 
 				num_faces = random_designer.extrude_one_profile(response_data)
-				if base_faces is None or num_faces > MAX_NUM_FACES_PER_PROFILE:
+				if num_faces > MAX_NUM_FACES_PER_PROFILE:
 					continue
 				current_num_faces += num_faces
 

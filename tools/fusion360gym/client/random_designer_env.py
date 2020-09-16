@@ -76,7 +76,7 @@ class RandomDesignerEnv(GymEnv):
 	def select_json(self, data_dir):
 		json_files = [f for f in os.listdir(data_dir) if f.endswith('.json')]
 		json_file_dir = data_dir / random.choice(json_files)
-		with open(json_file_dir) as file_handle:
+		with open(json_file_dir, encoding="utf8") as file_handle:
 			json_data = json.load(file_handle)
 		return json_data, json_file_dir
 
@@ -164,7 +164,7 @@ class RandomDesignerEnv(GymEnv):
 
 	def save(self, output_dir):
 		json_file_dir = output_dir
-		file_name = str(math.floor(time.time()))
+		file_name = "1-" + str(math.floor(time.time()))
 		json_file = file_name + ".json"
 		r = self.client.graph(json_file, json_file_dir, format="PerFace")
 		if r.status_code == 500:
