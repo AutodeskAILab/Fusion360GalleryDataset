@@ -117,6 +117,7 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
         sketch_id = json_data["timeline"][0]["entity"]
         sketch = json_data["entities"][sketch_id]
         sketch_name = sketch["name"]
+        
         # reconstruct sketch with some extra bells and whistles
         r = self.client.reconstruct_sketch(
             json_data, sketch_name,
@@ -128,12 +129,14 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
         self.__test_sketch_response(response_json["data"])
         self.client.clear()
 
-        scale = {"x": 1, "y": 2, "z": 1}
-        translate = {"x": 10, "y": 0, "z": 0}
+        scale = {"x": 2, "y": 2, "z": 1}
+        translate = {"x": 5, "y": 0, "z": 0}
+        rotate = {"x": 0, "y": 0, "z": 30}
+
         r = self.client.reconstruct_sketch(
             json_data, sketch_name,
-            sketch_plane="YZ",
-            scale=scale
+            sketch_plane="XY",
+            rotate = rotate
         )
         self.assertIsNotNone(r, msg="reconstruct response is not None")
         self.assertEqual(r.status_code, 200, msg="reconstruct status code")
@@ -146,6 +149,19 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
             sketch_plane="YZ",
             scale=scale,
             translate=translate
+        )
+        self.assertIsNotNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"])
+
+        self.client.clear()
+        r = self.client.reconstruct_sketch(
+            json_data, sketch_name,
+            sketch_plane="XY",
+            scale=scale,
+            translate = translate,
+            rotate = rotate
         )
         self.assertIsNotNone(r, msg="reconstruct response is not None")
         self.assertEqual(r.status_code, 200, msg="reconstruct status code")
