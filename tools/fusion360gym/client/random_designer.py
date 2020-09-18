@@ -18,6 +18,7 @@ MIN_AREA = 10
 MAX_AREA = 2000
 
 EXTRUDE_LIMIT = 10
+SCALE_FACTOR = 3
 TRANSLATE_NOISE = 0
 MAX_NUM_FACES_PER_PROFILE = 15
 MAX_STEPS = 4
@@ -75,13 +76,17 @@ def main():
 			# translate the sketch to the center
 			if sketch_plane == "XY":
 				translate = {"x": -sketch_centroid["x"], "y": -sketch_centroid["y"], "z": 0}
+				rotate = {"x": 0, "y": 0, "z": random.randint(0, 359)}
+				scale = {"x": random.uniform(1, SCALE_FACTOR), "y": random.uniform(1, SCALE_FACTOR), "z": 1}
 			elif sketch_plane == "XZ":
 				translate = {"x": -sketch_centroid["x"], "y": 0, "z": -sketch_centroid["z"]}
+				rotate = {"x": 0, "y": random.randint(0, 359), "z": 0}
+				scale = {"x": random.uniform(1, SCALE_FACTOR), "y": 1, "z": random.uniform(1, SCALE_FACTOR)}
 			elif sketch_plane == "YZ":
 				translate = {"x": 0, "y": -sketch_centroid["y"], "z": -sketch_centroid["z"]}
-			scale = {"x": 1, "y": 1, "z": 1}
-			rotate = {"x": random.randint(0, 359), "y": random.randint(0, 359), "z": random.randint(0, 359)}		
-
+				rotate = {"x": random.randint(0, 359), "y": 0, "z": 0}
+				scale = {"x": 1, "y": random.uniform(1, SCALE_FACTOR), "z": random.uniform(1, SCALE_FACTOR)}
+			
 			# reconsturct the based sketch
 			r = random_designer.client.reconstruct_sketch(json_data, sketch_name, sketch_plane=sketch_plane, scale=scale, translate=translate, rotate=rotate)
 			response_data = r.json()
