@@ -11,9 +11,10 @@ class Agent:
             "NewComponentFeatureOperation"
         ]
 
-    def set_target(self, target_graph):
-        """Set the target graph"""
+    def set_target(self, target_graph, bounding_box):
+        """Set the target graph and bounding box"""
         self.target_graph = target_graph
+        self.bounding_box = bounding_box
 
     def get_actions_probabilities(self, current_graph, target_graph):
         """Given the current graph, and the target graph, give two lists:

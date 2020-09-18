@@ -9,6 +9,7 @@ import adsk.fusion
 import os
 import sys
 import importlib
+import math
 
 from .command_base import CommandBase
 
@@ -58,14 +59,17 @@ class CommandReconstruct(CommandBase):
         # Optional transform
         scale = None
         translate = None
+        rotate = None
         if "scale" in data:
             scale = deserialize.vector3d(data["scale"])
         if "translate" in data:
             translate = deserialize.vector3d(data["translate"])
+        if "rotate" in data:
+            rotate = deserialize.vector3d(data["rotate"])
         transform = None
-        if scale is not None or translate is not None or sketch_plane is not None:
+        if scale is not None or translate is not None or rotate is not None or sketch_plane is not None:
             # Get the transform or an identity matrix
-            transform = self.__get_scale_translation_matrix(scale, translate)
+            transform = self.__get_transform_matrix(scale, translate, rotate)
         # Create the sketch
         importer = SketchExtrudeImporter(json_data)
         sketch = importer.reconstruct_sketch(sketch_uuid, sketch_plane=sketch_plane, transform=transform)
@@ -77,19 +81,92 @@ class CommandReconstruct(CommandBase):
             "profiles": profile_data
         })
 
-    def __get_scale_translation_matrix(self, scale=None, translation=None):
-        """Get a transformation matrix that scales and translates"""
+    def __get_transform_matrix(self, scale=None, translation=None, rotate=None):
+        """Get a transformation matrix that scales, translates, and rotates"""
         transform = adsk.core.Matrix3D.create()
         if scale is not None:
             # We don't have a Matrix3D.scale() function
             # so we set this manually
-            transform.setWithArray([
-                scale.x, 0, 0, 0,
-                0, scale.y, 0, 0,
-                0, 0, scale.z, 0,
-                0, 0, 0, 1
-            ])
+            scale_matrix = [
+                [scale.x, 0, 0, 0],
+                [0, scale.y, 0, 0],
+                [0, 0, scale.z, 0],
+                [0, 0, 0, 1]
+            ]
+        else:
+            # create identity matrix
+            # do we have Matrix3D.identity()?
+            scale_matrix = [
+                [1, 0, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]
+            ]
         if translation is not None:
             # We do have a shortcut to set the translation
-            transform.translation = translation
+            # transform.translation = translation
+            # we don't use the shortcut here as we need to cumulate all the transforms later
+            translate_matrix = [
+                [1, 0, 0, translation.x],
+                [0, 1, 0, translation.y],
+                [0, 0, 1, translation.z],
+                [0, 0, 0, 1]
+            ]
+        else:
+            translate_matrix = [
+                [1, 0, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]
+            ]
+        if rotate is not None:
+            thetaX = math.radians(rotate.x)
+            rotateX_matrix = [
+                [1, 0, 0, 0],
+                [0, math.cos(thetaX), math.sin(thetaX), 0],
+                [0, -math.sin(thetaX), math.cos(thetaX), 0],
+                [0, 0, 0, 1]
+            ]
+            thetaY = math.radians(rotate.y)
+            rotateY_matrix = [
+                [math.cos(thetaY), 0, -math.sin(thetaY), 0],
+                [0, 1, 0, 0],
+                [math.sin(thetaY), 0, math.cos(thetaY), 0],
+                [0, 0, 0, 1]
+            ]
+            thetaZ = math.radians(rotate.z)
+            rotateZ_matrix = [
+                [math.cos(thetaZ), -math.sin(thetaZ), 0, 0],
+                [math.sin(thetaZ), math.cos(thetaZ), 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]
+            ]
+            # multiply three rotate matrices 
+            rotate_matrix = self.__matrix_multiplication(rotateX_matrix, rotateY_matrix)
+            rotate_matrix = self.__matrix_multiplication(rotate_matrix, rotateZ_matrix)
+        else:
+            rotate_matrix = [
+                [1, 0, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]
+            ]
+        # multiply translate, rotate, scale matrix
+        # performs scale first, rotate second, translate last
+        transform_matrix = self.__matrix_multiplication(translate_matrix, rotate_matrix)
+        transform_matrix = self.__matrix_multiplication(transform_matrix, scale_matrix)
+        # shape the transform matrix to 1D array 
+        transform_matrix = self.__reshape_1D(transform_matrix) 
+        transform.setWithArray(transform_matrix)
         return transform
+
+    def __matrix_multiplication(self, X, Y):
+        return [[sum(a*b for a,b in zip(X_row,Y_col)) for Y_col in zip(*Y)] for X_row in X]
+
+    def __reshape_1D(self, matrix):
+        '''reshape a matrix into an array'''
+        array = []
+        for row in matrix:
+            for element in row:
+                array.append(element)
+        return array

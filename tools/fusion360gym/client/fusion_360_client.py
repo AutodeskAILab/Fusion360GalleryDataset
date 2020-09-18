@@ -1,4 +1,5 @@
 import requests
+import os
 import json
 from pathlib import Path
 import shutil
@@ -44,7 +45,7 @@ class Fusion360Client():
             json_data = json.load(file_handle)
         return self.send_command("reconstruct", json_data)
 
-    def reconstruct_sketch(self, json_data, sketch_name, sketch_plane=None, scale=None, translate=None):
+    def reconstruct_sketch(self, json_data, sketch_name, sketch_plane=None, scale=None, translate=None, rotate=None):
         """Reconstruct a sketch from the provided json data and sketch name"""
         if not isinstance(json_data, dict) or not bool(json_data):
             return self.__return_error("JSON data is invalid")
@@ -93,6 +94,14 @@ class Fusion360Client():
                 "z" not in translate):
                 return self.__return_error(f"Invalid key in translate")
             translate["type"] = "Vector3D"
+        if rotate is not None:
+            if not isinstance(rotate, dict):
+                return self.__return_error("Invalid rotate dtype")
+            if ("x" not in rotate or
+                "y" not in rotate or
+                "z" not in rotate):
+                return self.__return_error(f"Invalid key in rotate")
+            rotate["type"] = "Vector3D"
         command_data = {
             "json_data": json_data,
             "sketch_name": sketch_name
@@ -104,6 +113,8 @@ class Fusion360Client():
             command_data["scale"] = scale
         if translate is not None:
             command_data["translate"] = translate
+        if rotate is not None:
+            command_data["rotate"] = rotate
         return self.send_command("reconstruct_sketch", data=command_data)
 
     def clear(self):
@@ -336,6 +347,7 @@ class Fusion360Client():
         # Extract all the files to the given directory
         with ZipFile(zip_file, "r") as zipObj:
             zipObj.extractall(dir)
+        os.close(temp_file_handle)
         zip_file.unlink()
         return r
 
@@ -434,6 +446,7 @@ class Fusion360Client():
             # Extract all the files to the given directory
             with ZipFile(zip_file, "r") as zipObj:
                 zipObj.extractall(dir)
+            os.close(temp_file_handle)
             zip_file.unlink()
             return r
         else:
