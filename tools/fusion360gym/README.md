@@ -82,13 +82,15 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 #### Reconstruction
 Reconstruct entire designs from json files provided with the reconstruction subset.
 - `reconstruct(file)`: Reconstruct a design from the provided json file
-- `reconstruct_sketch(json_data, sketch_name, sketch_plane, scale, translate)`: Reconstruct a sketch from the provided json data and a sketch name
+- `reconstruct_sketch(json_data, sketch_name, sketch_plane, scale, translate, rotate)`: Reconstruct a sketch from the provided json data and a sketch name
     - `sketch_name`: is the string name of a sketch in the json data 
-    - `sketch_plane` (optional): can be either one of:
+    - `sketch_plane` (optional): sketch plane to create the sketch on. Can be either one of:
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
-        - BRep planar face id
-        - point3d on a planar face of a BRep
-    - `scale`, `translate`, and `rotate` (optional): scale, translate, and rotate the sketch in 3D coords e.g. `{"x": 1, "y": 1, "z":1}`. For `rotate`, the unit is degree.   
+        - B-Rep planar face id
+        - point3d on a planar face of a B-Rep
+    - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
+    - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
+    - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
 - `clear()`: Clear (i.e. close) all open designs in Fusion
 
 #### Incremental Construction
@@ -96,8 +98,8 @@ Incremental construction of new designs. Currently only a small subset of the Fu
 - `add_sketch(sketch_plane)`: Adds a sketch to the design.
     - `sketch_plane`: can be either one of:
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
-        - BRep planar face id
-        - point3d on a planar face of a BRep
+        - B-Rep planar face id
+        - point3d on a planar face of a B-Rep
     - Returns the `sketch_name` and `sketch_id`.
 - `add_point(sketch_name, p1, transform)`: Add a point to create a new sequential line in the given sketch
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
