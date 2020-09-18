@@ -88,7 +88,7 @@ Reconstruct entire designs from json files provided with the reconstruction subs
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
         - BRep planar face id
         - point3d on a planar face of a BRep
-    - `scale` and `translate` (optional): scale and translate the sketch in 3D coords e.g. `{"x": 1, "y": 1, "z":1}` 
+    - `scale`, `translate`, and `rotate` (optional): scale, translate, and rotate the sketch in 3D coords e.g. `{"x": 1, "y": 1, "z":1}`. For `rotate`, the unit is degree.   
 - `clear()`: Clear (i.e. close) all open designs in Fusion
 
 #### Incremental Construction
