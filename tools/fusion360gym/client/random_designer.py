@@ -10,17 +10,18 @@ HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
 
 RECONSTRUCTION_DATA_PATH = "d7" 
-GENERATED_DATA_PATH = "random_designs_10grid"
+GENERATED_DATA_PATH = "generated_design"
 
 TOTAL_EPISODES = 1000
 
 MIN_AREA = 10
 MAX_AREA = 2000
 
-EXTRUDE_LIMIT = 3
+EXTRUDE_LIMIT = 10
 TRANSLATE_NOISE = 0
 MAX_NUM_FACES_PER_PROFILE = 15
 MAX_STEPS = 4
+TWO_MORE_EXTRUDE = True
 
 def main():
 
@@ -78,10 +79,11 @@ def main():
 				translate = {"x": -sketch_centroid["x"], "y": 0, "z": -sketch_centroid["z"]}
 			elif sketch_plane == "YZ":
 				translate = {"x": 0, "y": -sketch_centroid["y"], "z": -sketch_centroid["z"]}
-			scale = {"x": 1, "y": 1, "z": 1}		
+			scale = {"x": 1, "y": 1, "z": 1}
+			rotate = {"x": random.randint(0, 359), "y": random.randint(0, 359), "z": random.randint(0, 359)}		
 
 			# reconsturct the based sketch
-			r = random_designer.client.reconstruct_sketch(json_data, sketch_name, sketch_plane=sketch_plane, scale=scale, translate=translate)
+			r = random_designer.client.reconstruct_sketch(json_data, sketch_name, sketch_plane=sketch_plane, scale=scale, translate=translate, rotate=rotate)
 			response_data = r.json()
 			if response_data["status"] == 500:
 				print(response_data["message"])
@@ -91,9 +93,8 @@ def main():
 			if base_faces is None or num_faces > MAX_NUM_FACES_PER_PROFILE:
 				continue
 			
-			# we don't count number faces for the first steps 
-			# to make sure it has 2+ extrudes
-			# current_num_faces += num_faces
+			if not TWO_MORE_EXTRUDE:
+				current_num_faces += num_faces
 
 			# start the sub-sketches 
 			steps = 0

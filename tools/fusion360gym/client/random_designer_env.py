@@ -51,10 +51,10 @@ class RandomDesignerEnv(GymEnv):
 
 	# calculate average area from profiles 
 	def calculate_average_area(self, profiles):
-	    average_area = 0
-	    for profile_id in profiles:
-	        average_area += profiles[profile_id]["properties"]["area"]
-	    return average_area / len(profiles)
+		average_area = 0
+		for profile_id in profiles:
+			average_area += profiles[profile_id]["properties"]["area"]
+		return average_area / len(profiles)
 
 
 	# traverse all the sketches
@@ -97,7 +97,7 @@ class RandomDesignerEnv(GymEnv):
 
 	def extrude_profiles(self, response_data):
 		# extrude profiles 
-		if "data" in response_data and "profiles" in response_data["data"]:
+		if "data" in response_data and "profiles" in response_data["data"] and len(response_data["data"]["profiles"]) > 0:
 			sketch_name = response_data["data"]["sketch_name"]
 			profiles = response_data["data"]["profiles"]
 			average_area = self.calculate_average_area(profiles)
