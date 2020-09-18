@@ -80,6 +80,14 @@ class RandomDesignerEnv(GymEnv):
 			json_data = json.load(file_handle)
 		return json_data, json_file_dir
 
+
+	# select a particular json file from the databse
+	def select_specific_json(self, data_dir, file_name):
+		json_file_dir = data_dir / file_name
+		with open(json_file_dir, encoding="utf8") as file_handle:
+			json_data = json.load(file_handle)
+		return json_data
+
 	def setup_from_distributions(self):
 		# face count distribution
 		FACE_COUNTS = [821, 2595, 1950, 1038, 608, 378, 319, 184, 135, 90, 70, 52, 41, 35, 27, 27, 14, 19, 9, 17, 11, 18, 19, 8, 10]
@@ -182,10 +190,12 @@ class RandomDesignerEnv(GymEnv):
 		# randomly pick an extrude 
 		data = np.random.choice(base_faces, 1)[0]
 		faces = data["data"]["faces"]
-		# pick the start face 
-		# sketch_plane = faces[0]["face_id"]
-		face_id = np.random.choice(len(faces), 1)[0]
-		sketch_plane = faces[face_id]["face_id"]
+		valid_faces = []
+		for face in faces:
+			if face["surface_type"] != "CylinderSurfaceType":
+				valid_faces.append(face)
+		face_id = np.random.choice(len(valid_faces), 1)[0]
+		sketch_plane = valid_faces[face_id]["face_id"]
 		return sketch_plane
 
 	# def select_plane(self, base_faces):
