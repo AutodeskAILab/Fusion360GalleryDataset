@@ -173,9 +173,9 @@ class RandomDesignerEnv(GymEnv):
 		else:
 			return 0
 
-	def save(self, output_dir):
+	def save(self, output_dir, prefix):
 		json_file_dir = output_dir
-		file_name = "1-" + str(math.floor(time.time()))
+		file_name = str(prefix) + "-" + str(math.floor(time.time()))
 		json_file = file_name + ".json"
 		r = self.client.graph(json_file, json_file_dir, format="PerFace")
 		if r.status_code == 500:

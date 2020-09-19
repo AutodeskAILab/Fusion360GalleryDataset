@@ -24,6 +24,8 @@ MAX_NUM_FACES_PER_PROFILE = 15
 MAX_STEPS = 4
 TWO_MORE_EXTRUDE = True
 
+MACHINE_ID = 2
+
 def main():
 
 	current_dir = Path(__file__).resolve().parent
@@ -34,7 +36,8 @@ def main():
 
 	new_body = False
 	episode = 0
-
+	skip_regraph = False
+	
 	while episode < TOTAL_EPISODES:
 
 		try:
@@ -137,15 +140,21 @@ def main():
 					print(response_data["message"])
 
 				num_faces = random_designer.extrude_one_profile(response_data)
-				if num_faces > MAX_NUM_FACES_PER_PROFILE or num_faces == 0:
-					continue
 				current_num_faces += num_faces
 
+				if num_faces > MAX_NUM_FACES_PER_PROFILE or num_faces == 0:
+					skip_regraph = True
+					continue
+				
 				steps += 1
+
+			if skip_regraph:
+				skip_regraph = False
+				continue
 
 			# save graph and f3d
 			try:
-				success = random_designer.save(output_dir)
+				success = random_designer.save(output_dir, MACHINE_ID)
 				if success:
 					episode += 1
 			except OSError:
