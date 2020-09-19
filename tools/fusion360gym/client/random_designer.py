@@ -12,7 +12,7 @@ PORT_NUMBER = 8080
 RECONSTRUCTION_DATA_PATH = "d7" 
 GENERATED_DATA_PATH = "generated_design"
 
-TOTAL_EPISODES = 1000
+TOTAL_EPISODES = 2000
 
 MIN_AREA = 10
 MAX_AREA = 2000
@@ -137,7 +137,7 @@ def main():
 					print(response_data["message"])
 
 				num_faces = random_designer.extrude_one_profile(response_data)
-				if num_faces > MAX_NUM_FACES_PER_PROFILE:
+				if num_faces > MAX_NUM_FACES_PER_PROFILE or num_faces == 0:
 					continue
 				current_num_faces += num_faces
 

@@ -164,7 +164,10 @@ class RandomDesignerEnv(GymEnv):
 			response_data = r.json()
 			
 			# to-do: the way to calculate the current face might be problematic 
-			num_faces = len(response_data["data"]["faces"])
+			if "data" in response_data:
+				num_faces = len(response_data["data"]["faces"])
+			else:
+				num_faces = 0
 
 			return int(num_faces)
 		else:
