@@ -32,19 +32,18 @@ MACHINE_ID = 2
 halted = False
 
 
-def main(input_dir, output_dir, split_file, machine_id=MACHINE_ID):
+def main(input_dir, output_dir, split_file, host, port, machine_id=MACHINE_ID):
     global halted
 
     random_designer = RandomDesignerEnv(
-        host=HOST_NAME,
-        port=PORT_NUMBER,
+        host=host,
+        port=port,
         extrude_limit=EXTRUDE_LIMIT,
         data_dir=input_dir,
         split_file=split_file,
         launch_gym=True
     )
 
-    new_body = False
     episode = 0
     skip_regraph = False
 
@@ -130,25 +129,12 @@ def main(input_dir, output_dir, split_file, machine_id=MACHINE_ID):
 
             # start the sub-sketches
             steps = 0
-            # Keep track of use of the start and end faces
-            base_start_face_used = False
-            base_end_face_used = False
-
+ 
             while current_num_faces < target_face and len(base_faces) > 0 and steps < MAX_STEPS:
 
                 try:
-                    sketch_plane, location_in_feature = random_designer.select_plane(base_faces, base_start_face_used, base_end_face_used)
+                    sketch_plane = random_designer.select_plane(base_faces)
                 except ValueError:
-                    continue
-                
-                if location_in_feature == "StartFace":
-                    base_start_face_used = True
-                if location_in_feature == "EndFace":
-                    base_end_face_used = True
-
-                # This should never happen, if it does regraph will fail
-                if base_start_face_used and base_end_face_used:
-                    skip_regraph = True
                     continue
 
                 # pick up a new random json file
@@ -194,6 +180,7 @@ def main(input_dir, output_dir, split_file, machine_id=MACHINE_ID):
 
             if skip_regraph:
                 skip_regraph = False
+                halt_timer.cancel()
                 continue
 
             # save graph and f3d
@@ -209,11 +196,13 @@ def main(input_dir, output_dir, split_file, machine_id=MACHINE_ID):
             halt_timer.cancel()
 
         except ConnectionError as ex:
+            print("ConnectionError!")
             if not halted:
+                halted = True
                 halt_timer.cancel()
+                print("Launching the gym again...")
                 random_designer.launch_gym()
                 continue
-
 
 
 def halt(env):
@@ -228,8 +217,7 @@ def setup_timer(env):
     """Setup the timer to halt execution if needed"""
     global halted
     # We put a hard cap on the time it takes to execute
-    # halt_delay = 60 * 5
-    halt_delay = 60 * 15
+    halt_delay = 60 * 5
     halted = False
     halt_timer = Timer(halt_delay, halt, [env])
     halt_timer.start()
@@ -274,10 +262,13 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, default=GENERATED_DATA_PATH,
                         help="Folder to save the output to [default: generated_design]")
     parser.add_argument("--machine_id", type=int, default=MACHINE_ID, help="Machine id used in file names [default: 2]")
+    parser.add_argument("--host", type=str, default=HOST_NAME,
+                        help="Host name to launch Fusion Gym on [default: 127.0.0.1]")
+    parser.add_argument("--port", type=int, default=PORT_NUMBER, help="Port number to launch Fusion Gym on [default: 8080]")
     args = parser.parse_args()
 
     input_dir = get_input_dir(args)
     output_dir = get_output_dir(args)
     split_file = get_split_file(args)
 
-    main(input_dir, output_dir, split_file, machine_id=args.machine_id)
+    main(input_dir, output_dir, split_file, args.host, args.port, machine_id=args.machine_id)
