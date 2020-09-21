@@ -15,7 +15,7 @@ class RandomDesignerEnv(GymEnv):
         self.extrude_limit = extrude_limit
         self.new_body = False
         self.max_base_profiles = 1
-        self.train_files = get_json_train_files(data_dir, split_file)
+        self.train_files = self.get_json_train_files(data_dir, split_file)
 
         GymEnv.__init__(self, host=host, port=port, launch_gym=launch_gym)
 
@@ -75,9 +75,8 @@ class RandomDesignerEnv(GymEnv):
 
     # Get a set of just the training set json files"""
 
-    def get_json_train_files(data_dir, split_file):
-        train_files = set()
-        json_files = [f for f in data_dir.glob("**/*.json")]
+    def get_json_train_files(self, data_dir, split_file):
+        train_files = []
         with open(split_file, encoding="utf8") as f:
             json_data = json.load(f)
             if "train" not in json_data:
@@ -86,9 +85,9 @@ class RandomDesignerEnv(GymEnv):
                 for train_file_name in json_data["train"]:
                     train_file = data_dir / f"{train_file_name}.json"
                     if not train_file.exists():
-                        print(f"Train file {train_file_name} missing")
+                        print(f"Train file {train_file} missing")
                     else:
-                        train_files.add(train_file)
+                        train_files.append(train_file)
         return train_files
 
     # select a radnom json file from the database
@@ -214,17 +213,24 @@ class RandomDesignerEnv(GymEnv):
             print("Data generation success!\n")
             return True
 
-    def select_plane(self, base_faces):
+    def select_plane(self, base_faces, base_start_face_used, base_end_face_used):
         # randomly pick an extrude
         data = np.random.choice(base_faces, 1)[0]
         faces = data["data"]["faces"]
         valid_faces = []
         for face in faces:
+            # Don't choose a start face is we have used the end face
+            if face["location_in_feature"] == "StartFace" and base_end_face_used:
+                continue
+            # Don't choose an end face if we have used the start face
+            if face["location_in_feature"] == "EndFace" and base_start_face_used:
+                continue
             if face["surface_type"] != "CylinderSurfaceType":
                 valid_faces.append(face)
         face_id = np.random.choice(len(valid_faces), 1)[0]
         sketch_plane = valid_faces[face_id]["face_id"]
-        return sketch_plane
+        location_in_feature = valid_faces[face_id]["location_in_feature"]
+        return sketch_plane, location_in_feature
 
     # def select_plane(self, base_faces):
 

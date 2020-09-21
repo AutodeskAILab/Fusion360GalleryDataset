@@ -4,6 +4,7 @@ import numpy as np
 import math
 import random
 import argparse
+from threading import Timer
 
 from random_designer_env import RandomDesignerEnv
 
@@ -31,16 +32,16 @@ MACHINE_ID = 2
 halted = False
 
 
-def main(input_dir, output_dir, split_file, launch_gym=False, machine_id=MACHINE_ID):
+def main(input_dir, output_dir, split_file, machine_id=MACHINE_ID):
     global halted
 
     random_designer = RandomDesignerEnv(
         host=HOST_NAME,
         port=PORT_NUMBER,
         extrude_limit=EXTRUDE_LIMIT,
-        input_dir=input_dir,
+        data_dir=input_dir,
         split_file=split_file,
-        launch_gym=launch_gym
+        launch_gym=True
     )
 
     new_body = False
@@ -50,7 +51,7 @@ def main(input_dir, output_dir, split_file, launch_gym=False, machine_id=MACHINE
     while episode < TOTAL_EPISODES:
 
         try:
-            halt_timer = setup_timer(env)
+            halt_timer = setup_timer(random_designer)
             current_num_faces = 0
 
             # setup
@@ -129,12 +130,25 @@ def main(input_dir, output_dir, split_file, launch_gym=False, machine_id=MACHINE
 
             # start the sub-sketches
             steps = 0
+            # Keep track of use of the start and end faces
+            base_start_face_used = False
+            base_end_face_used = False
+
             while current_num_faces < target_face and len(base_faces) > 0 and steps < MAX_STEPS:
 
                 try:
-                    sketch_plane = random_designer.select_plane(base_faces)
+                    sketch_plane, location_in_feature = random_designer.select_plane(base_faces, base_start_face_used, base_end_face_used)
                 except ValueError:
-                    halt_timer.cancel()
+                    continue
+                
+                if location_in_feature == "StartFace":
+                    base_start_face_used = True
+                if location_in_feature == "EndFace":
+                    base_end_face_used = True
+
+                # This should never happen, if it does regraph will fail
+                if base_start_face_used and base_end_face_used:
+                    skip_regraph = True
                     continue
 
                 # pick up a new random json file
@@ -144,7 +158,6 @@ def main(input_dir, output_dir, split_file, launch_gym=False, machine_id=MACHINE
 
                 sketches = random_designer.traverse_sketches(json_data)
                 if len(sketches) == 0:
-                    halt_timer.cancel()
                     continue
 
                 sketch = np.random.choice(sketches, 1)[0]
@@ -175,14 +188,12 @@ def main(input_dir, output_dir, split_file, launch_gym=False, machine_id=MACHINE
 
                 if num_faces > MAX_NUM_FACES_PER_PROFILE or num_faces == 0:
                     skip_regraph = True
-                    halt_timer.cancel()
                     continue
 
                 steps += 1
 
             if skip_regraph:
                 skip_regraph = False
-                halt_timer.cancel()
                 continue
 
             # save graph and f3d
@@ -195,12 +206,14 @@ def main(input_dir, output_dir, split_file, launch_gym=False, machine_id=MACHINE
                 halt_timer.cancel()
                 continue
 
-        except ConnectionError as ex:
             halt_timer.cancel()
-            random_designer.launch_gym()
-            continue
-    
-    halt_timer.cancel()
+
+        except ConnectionError as ex:
+            if not halted:
+                halt_timer.cancel()
+                random_designer.launch_gym()
+                continue
+
 
 
 def halt(env):
@@ -215,7 +228,8 @@ def setup_timer(env):
     """Setup the timer to halt execution if needed"""
     global halted
     # We put a hard cap on the time it takes to execute
-    halt_delay = 60 * 10
+    # halt_delay = 60 * 5
+    halt_delay = 60 * 15
     halted = False
     halt_timer = Timer(halt_delay, halt, [env])
     halt_timer.start()
@@ -259,8 +273,6 @@ if __name__ == "__main__":
                         help="Train/test split file from which to select train sketches only [default: train_test.json]")
     parser.add_argument("--output", type=str, default=GENERATED_DATA_PATH,
                         help="Folder to save the output to [default: generated_design]")
-    parser.add_argument("--launch_gym", dest="launch_gym", default=False, action="store_true",
-                        help="Launch the Fusion 360 Gym automatically, requires the gym to be set to run on startup [default: False]")
     parser.add_argument("--machine_id", type=int, default=MACHINE_ID, help="Machine id used in file names [default: 2]")
     args = parser.parse_args()
 
@@ -268,5 +280,4 @@ if __name__ == "__main__":
     output_dir = get_output_dir(args)
     split_file = get_split_file(args)
 
-    main(input_dir, output_dir, split_file,
-         launch_gym=args.launch_gym, machine_id=args.machine_id)
+    main(input_dir, output_dir, split_file, machine_id=args.machine_id)
