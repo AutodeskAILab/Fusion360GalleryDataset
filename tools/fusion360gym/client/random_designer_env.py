@@ -213,24 +213,17 @@ class RandomDesignerEnv(GymEnv):
             print("Data generation success!\n")
             return True
 
-    def select_plane(self, base_faces, base_start_face_used, base_end_face_used):
+    def select_plane(self, base_faces):
         # randomly pick an extrude
         data = np.random.choice(base_faces, 1)[0]
         faces = data["data"]["faces"]
         valid_faces = []
         for face in faces:
-            # Don't choose a start face is we have used the end face
-            if face["location_in_feature"] == "StartFace" and base_end_face_used:
-                continue
-            # Don't choose an end face if we have used the start face
-            if face["location_in_feature"] == "EndFace" and base_start_face_used:
-                continue
             if face["surface_type"] != "CylinderSurfaceType":
                 valid_faces.append(face)
         face_id = np.random.choice(len(valid_faces), 1)[0]
         sketch_plane = valid_faces[face_id]["face_id"]
-        location_in_feature = valid_faces[face_id]["location_in_feature"]
-        return sketch_plane, location_in_feature
+        return sketch_plane
 
     # def select_plane(self, base_faces):
 
