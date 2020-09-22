@@ -20,11 +20,15 @@ from train_v5 import *
 
 class AgentSupervised(Agent):
 
-    def __init__(self,):
+    def __init__(self, use_gcn=True):
         super().__init__()
-        self.model = NodePointer(nfeat=708, nhid=256)
+        self.model = NodePointer(nfeat=708, nhid=256, Use_GCN=use_gcn)
         regraphnet_dir = Path(REGRAPHNET_DIR)
-        checkpoint_file = regraphnet_dir / "ckpt/model_v5_10x10.ckpt"
+        if use_gcn:
+            checkpoint_file = regraphnet_dir / "ckpt/model_v5_10x10.ckpt"
+        else:
+            checkpoint_file = regraphnet_dir / "ckpt/model_v5_no_gcn.ckpt"
+        print(f"Using {checkpoint_file.name}")
         assert checkpoint_file.exists()
         # Using CUDA is slower, so we use cpu
         # Specify cpu to map to

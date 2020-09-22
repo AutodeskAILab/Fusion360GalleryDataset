@@ -23,7 +23,7 @@ parser.add_argument("--output", type=str, help="Folder to save the output logs t
 parser.add_argument("--screenshot", dest="screenshot", default=False, action="store_true", help="Save screenshots during reconstruction [default: False]")
 parser.add_argument("--launch_gym", dest="launch_gym", default=False, action="store_true",
                     help="Launch the Fusion 360 Gym automatically, requires the gym to be set to run on startup [default: False]")
-parser.add_argument("--agent", type=str, default="random", help="Agent to use, can be random, supervised [default: random]")
+parser.add_argument("--agent", type=str, default="random", help="Agent to use, can be random, supervised, or supervised_no_gcn [default: random]")
 parser.add_argument("--search", type=str, default="random", help="Search to use, can be random, beam or best [default: random]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
 args = parser.parse_args()
@@ -99,7 +99,9 @@ def get_agent():
     if args.agent == "random":
         return AgentRandom()
     elif args.agent == "supervised":
-        return AgentSupervised()
+        return AgentSupervised(use_gcn=True)
+    elif args.agent == "supervised_no_gcn":
+        return AgentSupervised(use_gcn=False)
 
 
 def load_results(output_dir):
