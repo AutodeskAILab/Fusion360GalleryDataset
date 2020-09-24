@@ -26,6 +26,7 @@ parser.add_argument("--launch_gym", dest="launch_gym", default=False, action="st
 parser.add_argument("--agent", type=str, default="random", help="Agent to use, can be random, supervised, or supervised_no_gcn [default: random]")
 parser.add_argument("--search", type=str, default="random", help="Search to use, can be random, beam or best [default: random]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
+parser.add_argument("--augment", dest="augment", default=False, action="store_true", help="Use a supervised agent trained on augmented data")
 args = parser.parse_args()
 
 
@@ -99,9 +100,9 @@ def get_agent():
     if args.agent == "random":
         return AgentRandom()
     elif args.agent == "supervised":
-        return AgentSupervised(use_gcn=True)
+        return AgentSupervised(use_gcn=True, use_aug=args.augment)
     elif args.agent == "supervised_no_gcn":
-        return AgentSupervised(use_gcn=False)
+        return AgentSupervised(use_gcn=False, use_aug=args.augment)
 
 
 def load_results(output_dir):
