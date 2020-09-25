@@ -31,7 +31,7 @@ class AgentSupervised(Agent):
                 checkpoint_file = regraphnet_dir / "ckpt/model_v5_10x10.ckpt"
         else:
             if use_aug:
-                print("Augmented No GCN Not supported yet!")
+                checkpoint_file = regraphnet_dir / "model_v5_no_gcn_aug_rd5.ckpt"
             else:
                 checkpoint_file = regraphnet_dir / "ckpt/model_v5_no_gcn.ckpt"
         print(f"Using {checkpoint_file.name}")
