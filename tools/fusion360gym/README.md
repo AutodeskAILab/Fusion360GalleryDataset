@@ -148,26 +148,33 @@ Reconstruct from a target design using extrude operations from face to face.
     - `revert`: Revert to the target design before executing the extrude actions.
 
 #### Randomized Construction 
-A group of commands to support generations of semi-synthetic data.  
-- `distribution_sampling(data_dir, parameters)`: sample distribution matching parameters for one design from the the given dataset 
-    - `data_dir`: the local directory where the human designs are saved
-    - `parameters`(optional): a list of parameters to be sampled, e.g. `['faces', 'extrusions']`. Currently supporting: `sketch_plane`: the starting sketch place, `faces`: the number of faces, `extrusions`: the number of extrusions, `sequences`: the length of sequences, `curves`: the number of curves, and `bodies`: the number of bodies. If not specified, the whole list is forwarded.     
-    - Returns a list of values w.r.t. the forwarded parameters. 
-- `sample_design(data_dir)`: Randomly sample a json file from the given dataset. 
+Randomized consturction of new designs by sampling existing designs in Fusion 360 Gallery, in support of generations of semi-synthetic data.  
+- `distribution_sampling(data_dir, parameters)`: samples distribution-matching parameters for one design from the provided dataset. 
+    - `data_dir`: the local directory where the human designs are saved.
+    - `parameters`(optional): a list of parameters to be sampled, e.g. `['faces', 'extrusions']`. Currently supporting: 
+        - `sketch_plane`: the starting sketch place 
+        - `faces`: the number of faces
+        - `extrusions`: the number of extrusions
+        - `sequences`: the length of sequences
+        - `curves`: the number of curves
+        - `bodies`: the number of bodies. 
+        - If not specified, the whole list is taken.     
+    - Returns a list of values w.r.t. the input parameters. 
+- `sample_design(data_dir)`: Randomly samples a json file from the given dataset. 
     - Returns the name and the json data of the sampled json file
-- `sample_sketch(json_file, sampling_type)`: Sample one sketch from the provided design.
+- `sample_sketch(json_file, sampling_type)`: Samples one sketch from the provided design.
     - `json_file`: is the name of the provide json file. 
     - `sampling_type`: a string with the values defining the type of sampling: 
         - `random`: returns a sketch randomly sampled from all the sketches in the design. 
         - `deterministic`: returns the largest sketch in the design.
-        - `distribution`: returns a sketch that its area in the distribution of the provided dataset.
+        - `distribution`: returns a sketch that its area is in the distribution of the provided dataset.
 - `sample_profiles(sketch_name, max_number_profiles, sampling_type)`
     - `sketch_name`: is the string name of the provided sketch. 
     - `max_number_profiles`: an integer indicating the maximum number of profiles to be sampled. If the value is more than the number of profiles in the sketch, the value switches to the number of profiles in the sketch. 
     - `sampling_type`: a string with the values defining the type of sampling: 
         - `random`: returns profiles randomly sampled from the sketch. 
         - `deterministic`: returns profiles that are larger than the average profiles in the sketch. 
-        - `distribution`: returns profiles that the areas in the distribution of the provided dataset. 
+        - `distribution`: returns profiles that the areas are in the distribution of the provided dataset. 
 
 #### Export
 Export the existing design in a number of formats.
