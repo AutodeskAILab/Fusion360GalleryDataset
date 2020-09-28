@@ -148,33 +148,47 @@ Reconstruct from a target design using extrude operations from face to face.
     - `revert`: Revert to the target design before executing the extrude actions.
 
 #### Randomized Construction 
-Randomized consturction of new designs by sampling existing designs in Fusion 360 Gallery, in support of generations of semi-synthetic data.  
-- `distribution_sampling(data_dir, parameters)`: samples distribution-matching parameters for one design from the provided dataset. 
+Randomized construction of new designs by sampling existing designs in Fusion 360 Gallery, in support of generations of semi-synthetic data. 
+- `get_distributions(data_dir, filter)`: gets a list of distributions from the provided dataset. 
     - `data_dir`: the local directory where the human designs are saved.
-    - `parameters`(optional): a list of parameters to be sampled, e.g. `['faces', 'extrusions']`. Currently supporting: 
-        - `sketch_plane`: the starting sketch place 
-        - `faces`: the number of faces
-        - `extrusions`: the number of extrusions
-        - `sequences`: the length of sequences
-        - `curves`: the number of curves
-        - `bodies`: the number of bodies. 
-        - If not specified, the whole list is taken.     
-    - Returns a list of values w.r.t. the input parameters. 
+    - `filter` (optional): a boolean to whether exclude test file data or not. The default value is `True`.
+    - Returns a list of distributions in the following format:
+    ```
+    {"faces": NUM_FACES_DISTRIBUTION, "extrusions": NUM_EXTRUSIONS_DISTRIBUTION, ...}
+    ```   
+    - Currently we support the following distributions:
+        - `sketch_plane`: the starting sketch place distribution
+        - `faces`: the number of faces distribution
+        - `extrusions`: the number of extrusions distribution
+        - `sequences`: the length of sequences distribution
+        - `curves`: the number of curves distribution
+        - `bodies`: the number of bodies distribution
+        - `sketch_areas`: the sketch areas distribution
+        - `profile_areas`: the profile areas distribution 
+- `distribution_sampling(distributions, parameters)`: samples distribution-matching parameters for one design from the distributions.
+    - `distributions`: is the list of the distributions returned by `get_distributions()`.  
+    - `parameters`(optional): a list of parameters to be sampled, e.g. `['faces', 'extrusions']`. 
+        - If not specified, the whole list is taken.
+    - Returns a list of values w.r.t. the input parameters, e.g. `{"faces": 4, "extrusions": 2}`.
 - `sample_design(data_dir)`: Randomly samples a json file from the given dataset. 
     - Returns the name and the json data of the sampled json file
-- `sample_sketch(json_file, sampling_type)`: Samples one sketch from the provided design.
+- `sample_sketch(json_file, sampling_type, area_distribution)`: Samples one sketch from the provided design.
     - `json_file`: is the name of the provide json file. 
     - `sampling_type`: a string with the values defining the type of sampling: 
         - `random`: returns a sketch randomly sampled from all the sketches in the design. 
         - `deterministic`: returns the largest sketch in the design.
         - `distribution`: returns a sketch that its area is in the distribution of the provided dataset.
-- `sample_profiles(sketch_name, max_number_profiles, sampling_type)`
+    - `area_distribution`: is the sketch areas distribution returned by `get_distributions()`. Only required in the `distribution` sampling type.
+    - Returns the `sketch_name` to be constructed.  
+- `sample_profiles(sketch_name, max_number_profiles, sampling_type, area_distribution)`
     - `sketch_name`: is the string name of the provided sketch. 
     - `max_number_profiles`: an integer indicating the maximum number of profiles to be sampled. If the value is more than the number of profiles in the sketch, the value switches to the number of profiles in the sketch. 
     - `sampling_type`: a string with the values defining the type of sampling: 
         - `random`: returns profiles randomly sampled from the sketch. 
         - `deterministic`: returns profiles that are larger than the average profiles in the sketch. 
-        - `distribution`: returns profiles that the areas are in the distribution of the provided dataset. 
+        - `distribution`: returns profiles that the areas are in the distribution of the provided dataset.
+    - `area_distribution`: is the profile areas distribution returned by `get_distributions()`. Only required in the `distribution` sampling type.
+    - Returns the `profile_id`s to be extruded.
 
 #### Export
 Export the existing design in a number of formats.
