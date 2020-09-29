@@ -91,6 +91,12 @@ Reconstruct entire designs from json files provided with the reconstruction subs
     - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
     - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
     - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
+- **(to-do)** `reconstruct_profile(json_data, sketch_name, profile_id, scale, translate, rotate)`: Reconstruct a profile from the provide json data, a sketch name, and a profile id. 
+    - `profile_id`: is the id of a profile in the json data
+    - the rest input parameters are the same in `reconstruct_sketch()`
+- **(to-do)** `reconstruct_curve(json_data, sketch_name, curve_id, scale, translate, rotate)`: Reconstruct a curve from the provide json data, a sketch name, and a curve id. 
+    - `curve_id`: is the id of a curve in the json data
+    - the rest input parameters are the same in `reconstruct_sketch()`
 - `clear()`: Clear (i.e. close) all open designs in Fusion
 
 #### Incremental Construction
@@ -113,12 +119,17 @@ Incremental construction of new designs. Currently only a small subset of the Fu
     - Returns the sketch profiles or an empty dict if there are no profiles. Note that profile uuid returned is only valid while the design does not change.
 - `close_profile(sketch_name)`: Close the current set of lines to create one or more profiles by joining the first point to the last point
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
-- `add_extrude(sketch_name, profile_id, distance, operation)`: Add an extrude to the design
+- **(to-do)** `add_extrude(sketch_name, profile_id, distance, operation, export_type, is_IoU)`: Add an extrude to the design
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
     - `profile_id`: is the uuid of the profile returned by `add_line()`
     - `distance`: is the extrude distance perpendicular to the profile plane
     - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
-    - Returns BRep vertices of the resulting body, BRep face information
+    - `export_type` (optional): a string with the values defining the exported format: `BRep` or `Graph`. The default is `Graph`. 
+    - `is_IoU` (optional): a boolean to determine whether to return an intersection over union (IoU) value calculated between the target and the reconstruction. The default is `True`. 
+    - Return:
+        - when `export_type` is `BRep`, returns BRep vertices of the resulting body, BRep face information.
+        - when `export_type` is `Graph`, returns a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph)
+        - when `is_IoU` is `True`, returns an IoU value calculated between the target and the reconstruction.
 
 #### Target Reconstruction
 Reconstruct from a target design using extrude operations from face to face.
@@ -146,6 +157,49 @@ Reconstruct from a target design using extrude operations from face to face.
     ]
     ```
     - `revert`: Revert to the target design before executing the extrude actions.
+
+#### **(to-do)** Randomized Construction 
+Randomized construction of new designs by sampling existing designs in Fusion 360 Gallery, in support of generations of semi-synthetic data. 
+- `get_distributions(data_dir, filter)`: gets a list of distributions from the provided dataset. 
+    - `data_dir`: the local directory where the human designs are saved.
+    - `filter` (optional): a boolean to whether exclude test file data or not. The default value is `True`.
+    - Returns a list of distributions in the following format:
+    ```
+    {"faces": NUM_FACES_DISTRIBUTION, "extrusions": NUM_EXTRUSIONS_DISTRIBUTION, ...}
+    ```   
+    - Currently we support the following distributions:
+        - `sketch_plane`: the starting sketch place distribution
+        - `faces`: the number of faces distribution
+        - `extrusions`: the number of extrusions distribution
+        - `sequences`: the length of sequences distribution
+        - `curves`: the number of curves distribution
+        - `bodies`: the number of bodies distribution
+        - `sketch_areas`: the sketch areas distribution
+        - `profile_areas`: the profile areas distribution 
+- `distribution_sampling(distributions, parameters)`: samples distribution-matching parameters for one design from the distributions.
+    - `distributions`: is the list of the distributions returned by `get_distributions()`.  
+    - `parameters`(optional): a list of parameters to be sampled, e.g. `['faces', 'extrusions']`. 
+        - If not specified, the whole list is taken.
+    - Returns a list of values w.r.t. the input parameters, e.g. `{"faces": 4, "extrusions": 2}`.
+- `sample_design(data_dir)`: Randomly samples a json file from the given dataset. 
+    - Returns the name and the json data of the sampled json file
+- `sample_sketch(json_file, sampling_type, area_distribution)`: Samples one sketch from the provided design.
+    - `json_file`: is the name of the provide json file. 
+    - `sampling_type`: a string with the values defining the type of sampling: 
+        - `random`: returns a sketch randomly sampled from all the sketches in the design. 
+        - `deterministic`: returns the largest sketch in the design.
+        - `distributive`: returns a sketch that its area is in the distribution of the provided dataset.
+    - `area_distribution`: is the sketch areas distribution returned by `get_distributions()`. Only required in the `distributive` sampling type.
+    - Returns the `sketch_name` to be constructed.  
+- `sample_profiles(sketch_name, max_number_profiles, sampling_type, area_distribution)`: Samples profiles from the provided sketch.
+    - `sketch_name`: is the string name of the provided sketch. 
+    - `max_number_profiles`: an integer indicating the maximum number of profiles to be sampled. If the value is more than the number of profiles in the sketch, the value switches to the number of profiles in the sketch. 
+    - `sampling_type`: a string with the values defining the type of sampling: 
+        - `random`: returns profiles randomly sampled from the sketch. 
+        - `deterministic`: returns profiles that are larger than the average profiles in the sketch. 
+        - `distributive`: returns profiles that the areas are in the distribution of the provided dataset.
+    - `area_distribution`: is the profile areas distribution returned by `get_distributions()`. Only required in the `distributive` sampling type.
+    - Returns the `profile_id`(s) to be extruded.
 
 #### Export
 Export the existing design in a number of formats.
