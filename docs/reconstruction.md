@@ -400,7 +400,7 @@ Each sequence item has:
 - `timeline`: The index in the timeline of the modeling operation.
 
 Additionally curves have the following:
-- `curve`: The `uuid` key to access the curve in sketch data structure.
+- `curve`: The `uuid` key to access the curve in the sketch data structure.
 
 Additionally extrudes have the following:
 - `png`: A png screen capture of the design at this point in the sequence.
