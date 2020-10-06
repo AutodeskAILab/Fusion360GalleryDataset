@@ -291,22 +291,87 @@ The `extent_type` defines the type of "extent" used for with the extrude. See [`
 #### Extent One/Two
 Both `extent_one` and `extent_two` define the distance and taper of the extrude. See [`ExtrudeFeature.extentOne`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature_extentOne.htm) / [`extentTwo`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature_extentTwo.htm). For `OneSideFeatureExtentType` and `SymmetricFeatureExtentType` only `extent_one` will be present. The `taper_angle` is provided in radians and illustrated on the right in the above image.
 
+```js
+"extent_one": {
+    "distance": {
+        "type": "ModelParameter",
+        "value": -1.2,
+        "name": "d3",
+        "role": "AlongDistance"
+    },
+    "taper_angle": {
+        "type": "ModelParameter",
+        "value": 0.0,
+        "name": "d4",
+        "role": "TaperAngle"
+    },
+    "type": "DistanceExtentDefinition"
+}
+```
+
 
 #### Faces
 The `faces` data structure contains a list of **all** B-Rep faces in the design at this point in the timeline. The `index` value can be used to reference the face when imported into Fusion 360 from the .smt file generated at this step in the timeline. The `surface_type` indicates the type of underlying surface represented by the face, see [`SurfaceTypes`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SurfaceTypes.htm). `point_on_face` is a 3D point at or near the center of the face.
+
+```js
+"faces": {
+    "eab25b94-e6ef-11ea-8960-acde48001122": {
+        "index": 0,
+        "surface_type": "PlaneSurfaceType",
+        "point_on_face": {
+            "type": "Point3D",
+            "x": 2.0000000298023224,
+            "y": 0.30000000447034836,
+            "z": 1.6
+        }
+    },
+    ...
+}
+```
 
 
 #### Bodies
 The `bodies` data structure contains a list of **all** B-Rep bodies in the design at this point in the timeline. The `index` value can be used to reference the body when imported into Fusion 360 from the .smt file generated at this step in the timeline. Each body has a list of `faces`, containing uuids, that reference the `faces` list at the above level. 
 
+```js
+"bodies": {
+    "ea7d4e36-e6ef-11ea-8960-acde48001122": {
+        "index": 0,
+        "name": "Body1",
+        "faces": [
+            "eab25b94-e6ef-11ea-8960-acde48001122",
+            ...
+        ]
+    }
+}
+```
 
 #### Extrude Bodies and Faces
 The `extrude_bodies` and `extrude_faces` lists contain references to the subset of B-Rep bodies and faces that were created from the current extrude. The `extrude_side_faces`, `extrude_end_faces`, and `extrude_start_faces` lists indicate the role of each face in the extrude. Side faces are those running perpendicular to the extrude direction. Start faces cap the end of the extrusion and are coincident with the sketch plane. End faces cap the end of the extrusion, opposite the start faces.
 
+```js
+"extrude_bodies": [
+    "ea7d4e36-e6ef-11ea-8960-acde48001122"
+],
+"extrude_faces": [
+    "eab25b94-e6ef-11ea-8960-acde48001122",
+    "eab2ce80-e6ef-11ea-8960-acde48001122",
+    ...
+],
+"extrude_side_faces": [
+    "eab25b94-e6ef-11ea-8960-acde48001122",
+    "eab2ce80-e6ef-11ea-8960-acde48001122",
+    ...
+],
+"extrude_end_faces": [
+    "eab5f0a6-e6ef-11ea-8960-acde48001122"
+],
+"extrude_start_faces": []
+```
 
 
 ### Sequence
-The sequence data structure contains a list of files and data references that are using during reconstruction. A new sequence item is added when a curve or an extrude is added to the design.
+The sequence data structure contains a list of files and data references that are using during reconstruction. A new sequence item is added when a curve or an extrude is added to the design. Note that the as-designed ordering of sketch operations is not stored in the native design files, however this sequence represents a consistent ordering derived by traversing the sketch profiles in sequence. 
 ```js
 "sequence": [
     {
@@ -314,8 +379,7 @@ The sequence data structure contains a list of files and data references that ar
         "type": "Sketch",
         "entity": "7bb3de62-cad8-11ea-a448-acde48001122",
         "curve": "7bb7cd38-cad8-11ea-a448-acde48001122",
-        "timeline": 0,
-        "png": "File_12a12060_0000_0001.png"
+        "timeline": 0
     },
     ...
     {
@@ -334,8 +398,12 @@ Each sequence item has:
 - `type`: Either `Sketch` or `ExtrudeFeature`, indicating the modeling operation used.
 - `entity`: The `uuid` key to access the entity in the `entities` data structure.
 - `timeline`: The index in the timeline of the modeling operation.
-- `png`: A png screen capture of the design at this point in the sequence.
 
-Additionally extrude features have the following:
+Additionally curves have the following:
+- `curve`: The `uuid` key to access the curve in sketch data structure.
+
+Additionally extrudes have the following:
+- `png`: A png screen capture of the design at this point in the sequence.
 - `smt`: A B-Rep file in smt format of the design at this point in the sequence.
+- `step`: A B-Rep file in step format of the design at this point in the sequence.
 - `obj`: A mesh file in obj format of the design at this point in the sequence.
