@@ -7,21 +7,29 @@ The Reconstruction Subset contains sequential design data from a subset of simpl
 Reconstruction data is extracted in sequence from CAD modeling operations found in the parametric feature timeline of each Fusion 360 CAD model. Although there are many CAD modeling operations, we intentionally limit the data to the *sketch* and *extrude* operations to reduce the complexity of the reconstruction task. By replaying the sequence of modeling operations programmatically in Fusion 360 it is possible to reconstruct the original model. 
 
 ### Sketch
-We represent each sketch as a series of points, that create curves, that in turn create profiles. Curves can range from a simple line, to a circle, to arcs and splines. Profiles are closed loops formed from one or more curves.
+Sketch data is represented as a series of points, that create curves, that in turn create profiles. Curves can range from a simple line, to a circle, to arcs and splines. Profiles are closed loops formed from one or more curves.
 
 ![Sketch Overview](images/reconstruction_overview_sketch.png)
 
 ### Extrude
-An extrude operation takes one or more sketch profiles and constructs a 3D shape. The distance parameter defines how far the profile is extruded. Various options for the type of extrude operation are outlined in more detail below.
+An extrude operation takes one or more sketch profiles and constructs a 3D shape. Various parameters inform how the extrude operation is created, such as the direction, distance, and operation type. In the example design sequence below, sketch profiles are sequentially extruded to _join_ (Extrude 1, Extrude 2) or _cut_ (Extrude 3) geometry using built in boolean operations. The color coded areas show the sketch profiles that partake in each extrude operation.
 
-
-![Extrude Overview](images/reconstruction_overview_extrude.png)
+![Sketch and Extrude Sequence](images/reconstruction_overview_sequence.png)
 
 ## Data Formats
-The reconstruction subset contains a total of 7,706 3D models in three different representations: B-Rep, mesh, and construction sequence saved in the json format. B-Rep data is provided in .smt files representing the ground truth geometry. Mesh data is provided in .obj format representing a triangulated version of ground truth geometry.
+The reconstruction subset contains 3D models in three different representations: B-Rep, mesh, and construction sequence saved in JSON text format. Other representations, such as point clouds or voxels, can be generated using existing data conversion routines and are not included in the dataset. For convenience we include a thumbnail .png image file together with each geometry. Files are provided in a single directory, with a naming convention as follows: `XXXXX_YYYYYYYY_ZZZZ[_1234].ext`. Here `XXXXX` represents the project, `YYYYYYYY` the file, `ZZZZ` the component, and `_1234` the extrude index. If `_1234` is absent the file represents the final design.
+
+### B-Rep
+B-Rep data is provided as .smt files representing the ground truth geometry and .step as an alternate neutral B-Rep file format. The .smt file format is the native format used by Autodesk Shape Manager, the CAD kernel within Fusion 360, and has the advantage of minimizing conversion errors. Additionally the B-Rep entities, such as bodies and faces, can referenced from the construction sequence back to entities in the .smt file.
+
+### Mesh
+Mesh data is provided in .obj format representing a triangulated version of the B-Rep. Each B-Rep face is triangulated separately and labeled as a group of triangles in the .obj file with the B-Rep face id as the group name. This approach allows the triangles to be traced back to the B-Rep face and associated extrude operation. Note that the .obj meshes provided are not manifold. 
+
+### Units
+All units are provided in cm. Angular units are provided in radians.
 
 ## Construction Sequence
-Construction information is provided in a .json format that allows for designs to be reconstructed with Fusion 360 to match the original geometry. 
+Construction information is provided in a .json text format that allows for designs to be reconstructed with Fusion 360 to match the original geometry. 
 
 ### Timeline
 When a user is designing in Fusion 360, CAD modelling operations are recorded in a timeline along with the parameters specified by the user at each step. 
@@ -67,21 +75,19 @@ The `entities` data structure contains the details of the sketch and extrude ope
 }
 ```
 
-### Sketch Entities
+### Sketch
 Sketch entities reflect the Fusion API [`Sketch`](http://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Sketch.htm). A high level overview of the data structure is provided below, but please refer to the Fusion API documentation for low level details. A sketch entity contains the following top level data structures:
 
 ```json
-"entities": {
-    "ed84457a-965f-11ea-911a-acde48001122": {
-        "name": "Sketch1",
-        "type": "Sketch",
-        "points": { },
-        "curves": { },
-        "constraints": { },
-        "profiles": { },
-        "transform": { },
-        "reference_plane": { }
-    }
+"ed84457a-965f-11ea-911a-acde48001122": {
+    "name": "Sketch1",
+    "type": "Sketch",
+    "points": { },
+    "curves": { },
+    "constraints": { },
+    "profiles": { },
+    "transform": { },
+    "reference_plane": { }
 }
 ```
 
@@ -147,34 +153,117 @@ Dimensions are defined by the user to set angles, diameters, distances etc... be
 }
 ```
 
+
 #### Profiles
-Profiles represent a collection of curves that joint together to make a closed loop. In Fusion 360 profiles are automatically generated from arbitrary curves that don't necessarily connect at the end points. In the example below two profiles (`pr1` and `pr2`) are generated when the line crosses the triangle. We provide both the original curves used to generate the profiles (left) and the trimmed profile information containing just the closed profile loop.
+Profiles represent a collection of curves that joint together to make a closed loop. In Fusion 360 profiles are automatically generated from arbitrary curves that don't necessarily connect at the end points. In the example below two profiles (`pr1` and `pr2`) are generated when the line crosses the triangle. We provide both the original curves used to generate the profiles (bottom left) and the trimmed profile information containing just the closed profile loop (bottom right).
 
-![Profiles](images/reconstruction_profiles.png)
+![Sketch Entities](images/reconstruction_sketch_entities.png)
 
-The overall structure for a profile is as follows.
+The overall structure for a profile is as follows. Inside `profile_curves` the reference to the `curve` uuid points to the original curve that created the profile. The remaining data specifies the trimmed curve segments that form a connected loop. 
 
 ```json
 "0e0d3220-8e8c-3fd7-b7ad-cba4eca5ed74": {
     "loops": [
         {
             "is_outer": true,
-            "profile_curves": []
+            "profile_curves": [
+                {
+                    "type": "Line3D",
+                    "start_point": {
+                        "type": "Point3D",
+                        "x": 4.000000059604645,
+                        "y": 3.0000000447034836,
+                        "z": 0.0
+                    },
+                    "end_point": {
+                        "type": "Point3D",
+                        "x": 4.000000059604645,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "curve": "ea667aee-e6ef-11ea-8960-acde48001122"
+                },
+                {
+                    ...
+                }
+            ]
         }
     ],
     "properties": { }
 }
 ```
 
-
 #### Transform
-[To be added]
+The transform of the sketch with respect to model space. See [`Sketch.transform`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Sketch_transform.htm). Provided as a [coordinate system](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Matrix3D_getAsCoordinateSystem.htm).
+
 
 #### Reference Plane
-[To be added]
+The reference plane the sketch is associated to. See [`Sketch.referencePlane`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Sketch_referencePlane.htm). The refererence plane can originate from a [`ConstructionPlane`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/BRepFace.htm) (such as a canonical XY, YZ, or YZ construction plane), a planar [`BRepFace`](https://help.autodesk.com/view/fusion360/ENU/?guid=BRepFace), or a [`Profile`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Profile.htm).
 
-### Extrude Entities
-[To be added]
+
+### Extrude
+Extrude entities reflect the Fusion API [`ExtrudeFeature`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature.htm). A high level overview of the data structure is provided below, but please refer to the Fusion API documentation for low level details. An extrude entity contains the following top level data structures:
+
+```json
+"ea69e774-e6ef-11ea-8960-acde48001122": {
+    "name": "Extrude1",
+    "type": "ExtrudeFeature",
+    "profiles": [ ],
+    "operation": "NewBodyFeatureOperation",
+    "start_extent": { },
+    "extent_type": "OneSideFeatureExtentType",
+    "extent_one": { },
+    "faces": { },
+    "bodies": { },
+    "extrude_bodies": [ ],
+    "extrude_faces": [ ],
+    "extrude_side_faces": [ ],
+    "extrude_end_faces": [ ],
+    "extrude_start_faces": [ ]
+},
+```
+
+#### Profiles
+The sketch profiles used to define the shape of the extrude. Each entry contains a reference to the `sketch` in the `entities` data structure and to the `profile` within that sketch.
+
+```json
+"profiles": [
+    {
+        "profile": "5bebd271-f2be-3fbf-80e0-072256cd8723",
+        "sketch": "ea635c7e-e6ef-11ea-8960-acde48001122"
+    }
+]
+```
+
+#### Operation
+The `operation` defines the type of operation performed by the extrude. See [`ExtrudeFeature.operation`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature_operation.htm). Can be one of `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`, illustrated in the figure below.
+
+![Extrude Operations](images/reconstruction_extrude_operations.png)
+
+#### Start Extent
+The `start_extent` defines the "extent" used to define the start of the extrude. See [`ExtrudeFeature.startExtent`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature_startExtent.htm). Can be one of `ProfilePlaneStartDefinition` or `OffsetStartDefinition`. With `ProfilePlaneStartDefinition` the extrude starts at the sketch profile, while with `OffsetStartDefinition` it is offset by a given distance from the sketch profile.
+
+#### Extent Type
+The `extent_type` defines the type of "extent" used for with the extrude. See [`ExtrudeFeature.extentType`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature_extentType.htm). The image below shows how an extrude can be expressed in several different ways: perpendicular from a sketch for a set distance along one side (`OneSideFeatureExtentType`), a symmetrical distance along both sides (`SymmetricFeatureExtentType`), or separate distances along two sides (`TwoSidesFeatureExtentType`).
+
+![Extrude Types](images/reconstruction_extrude_types.png)
+
+
+#### Extent One/Two
+Both `extent_one` and `extent_two` define the distance and taper of the extrude. See [`ExtrudeFeature.extentOne`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature_extentOne.htm) / [`extentTwo`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature_extentTwo.htm). For `OneSideFeatureExtentType` and `SymmetricFeatureExtentType` only `extent_one` will be present. The `taper_angle` is provided in radians and illustrated on the right in the above image.
+
+
+#### Faces
+The `faces` data structure contains a list of **all** B-Rep faces in the design at this point in the timeline. The `index` value can be used to reference the face when imported into Fusion 360 from the .smt file generated at this step in the timeline. The `surface_type` indicates the type of underlying surface represented by the face, see [`SurfaceTypes`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SurfaceTypes.htm). `point_on_face` is a 3D point at or near the center of the face.
+
+
+#### Bodies
+The `bodies` data structure contains a list of **all** B-Rep bodies in the design at this point in the timeline. The `index` value can be used to reference the body when imported into Fusion 360 from the .smt file generated at this step in the timeline. Each body has a list of `faces`, containing uuids, that reference the `faces` list at the above level. 
+
+
+#### Extrude Bodies and Faces
+The `extrude_bodies` and `extrude_faces` lists contain references to the subset of B-Rep bodies and faces that were created from the current extrude. The `extrude_side_faces`, `extrude_end_faces`, and `extrude_start_faces` lists indicate the role of each face in the extrude. Side faces are those running perpendicular to the extrude direction. Start faces cap the end of the extrusion and are coincident with the sketch plane. End faces cap the end of the extrusion, opposite the start faces.
+
 
 
 ### Sequence
