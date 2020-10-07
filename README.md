@@ -24,7 +24,7 @@ From the approximately 20,000 designs available we derive several datasets focus
 As part of the dataset we provide various tools for working with the data. These tools leverage the [Fusion 360 API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B5A90C8-E94C-48DA-B16B-430729B734DC) to perform operations such as geometry reconstruction, traversing B-Rep data structures, and conversion to other formats. More information can be found in the [tools directory](tools).
 
 ## Publications
-Please cite the relevant paper below if you use a Fusion 360 Gallery dataset in your research.
+Please cite the relevant paper below if you use the Fusion 360 Gallery dataset in your research.
 
 #### Segmentation Dataset
 Coming soon...
