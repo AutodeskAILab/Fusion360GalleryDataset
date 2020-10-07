@@ -16,8 +16,8 @@ From the approximately 20,000 designs available we derive several datasets focus
 
 | Dataset | Documentation | Download | Paper |
 | - | - | - | - |
-| Segmentation | [Documentation](docs/segmentation.md) | [Version d5](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d5) | Paper |
-| Reconstruction | [Documentation](docs/reconstruction.md) | [Version d7](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d7) | Paper |
+| Segmentation | [Documentation](docs/segmentation.md) | [Version d5](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d5) | Forthcoming |
+| Reconstruction | [Documentation](docs/reconstruction.md) | [Version d7](https://github.com/karldd/Fusion360GalleryDataset/releases/tag/d7) | [Paper](https://arxiv.org/abs/2010.02392) |
 
 
 ## Tools
@@ -33,17 +33,18 @@ The dataset to which this license is attached is trial data from the Autodesk Fu
 6.	These terms and conditions shall apply to your use of any future release of the Trial Dataset unless Autodesk publishes the Trial Dataset with a publicly-facing license to the Trial Dataset with terms that are less restrictive on you, in which case such less restrictive terms shall apply to you. Provided for clarity that this license shall not be applicable to the anticipated non-trial version of the Fusion 360 Dataset.
 7.	The laws of the State of California shall apply to all disputes under this agreement.
 
-## Publications
+## Citations
 Please cite our paper if you use the Fusion 360 Gallery dataset.
 
 ### Segmentation Dataset
-```
-
-
-```
+Coming soon...
 
 ### Reconstruction Dataset
 ```
-
-
+@article{willis2020fusion,
+    title={Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Reconstruction},
+    author={Karl D. D. Willis and Yewen Pu and Jieliang Luo and Hang Chu and Tao Du and Joseph G. Lambourne and Armando Solar-Lezama and Wojciech Matusik},
+    journal={arXiv preprint arXiv:2010.02392},
+    year={2020}
+}
 ```
