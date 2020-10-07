@@ -26,10 +26,10 @@ As part of the dataset we provide various tools for working with the data. These
 ## Publications
 Please cite the relevant paper below if you use a Fusion 360 Gallery dataset in your research.
 
-### Segmentation Dataset
+#### Segmentation Dataset
 Coming soon...
 
-### Reconstruction Dataset
+#### Reconstruction Dataset
 ```
 @article{willis2020fusion,
     title={Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Reconstruction},
