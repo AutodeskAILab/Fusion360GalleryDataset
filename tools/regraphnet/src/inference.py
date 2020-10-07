@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from train_v5_aug import *
+from train import *
 
 def load_graph_pair(path_tar,path_cur,bbox):
     action_type_dict={'CutFeatureOperation':1,'IntersectFeatureOperation':2,'JoinFeatureOperation':0,'NewBodyFeatureOperation':3,'NewComponentFeatureOperation':4}
