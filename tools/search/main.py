@@ -23,10 +23,10 @@ parser.add_argument("--output", type=str, help="Folder to save the output logs t
 parser.add_argument("--screenshot", dest="screenshot", default=False, action="store_true", help="Save screenshots during reconstruction [default: False]")
 parser.add_argument("--launch_gym", dest="launch_gym", default=False, action="store_true",
                     help="Launch the Fusion 360 Gym automatically, requires the gym to be set to run on startup [default: False]")
-parser.add_argument("--agent", type=str, default="random", help="Agent to use, can be random, supervised, or supervised_no_gcn [default: random]")
-parser.add_argument("--search", type=str, default="random", help="Search to use, can be random, beam or best [default: random]")
+parser.add_argument("--agent", type=str, default="rand", help="Agent to use, can be rand, mpn, or mlp [default: rand]")
+parser.add_argument("--search", type=str, default="rand", help="Search to use, can be rand, beam or best [default: rand]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
-parser.add_argument("--augment", dest="augment", default=False, action="store_true", help="Use a supervised agent trained on augmented data")
+parser.add_argument("--augment", dest="augment", default=False, action="store_true", help="Use an agent trained on augmented data [default: False]")
 args = parser.parse_args()
 
 
@@ -87,7 +87,7 @@ def get_output_dir():
 
 def get_search(env, output_dir):
     """Get the agent based on user input"""
-    if args.search == "random":
+    if args.search == "rand":
         return SearchRandom(env, output_dir)
     elif args.search == "beam":
         return SearchBeam(env, output_dir)
@@ -97,11 +97,11 @@ def get_search(env, output_dir):
 
 def get_agent():
     """Get the agent based on user input"""
-    if args.agent == "random":
+    if args.agent == "rand":
         return AgentRandom()
-    elif args.agent == "supervised":
+    elif args.agent == "mpn":
         return AgentSupervised(use_gcn=True, use_aug=args.augment)
-    elif args.agent == "supervised_no_gcn":
+    elif args.agent == "mlp":
         return AgentSupervised(use_gcn=False, use_aug=args.augment)
 
 
@@ -156,9 +156,6 @@ def main():
     files = get_files()
     output_dir = get_output_dir()
     results = load_results(output_dir)
-
-    # Random sample of a limited set for testing
-    # files = random.sample(files, 10)
 
     # Setup the search and the environment that connects to FusionGym
     env = ReplEnv(host="127.0.0.1", port=8080, launch_gym=args.launch_gym)
