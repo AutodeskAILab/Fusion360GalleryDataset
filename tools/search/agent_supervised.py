@@ -15,7 +15,7 @@ REGRAPHNET_SRC_DIR = os.path.join(os.path.dirname(__file__), "..", "regraphnet",
 if REGRAPHNET_SRC_DIR not in sys.path:
     sys.path.append(REGRAPHNET_SRC_DIR)
 
-from train_v5 import *
+from train_v5_aug import *
 
 
 class AgentSupervised(Agent):

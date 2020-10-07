@@ -6,14 +6,12 @@ import json
 import time
 import argparse
 import numpy as np
-import scipy.sparse as sp
-from tqdm import tqdm
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from train_v5 import *
+from train_v5_aug import *
 
 def load_graph_pair(path_tar,path_cur,bbox):
     action_type_dict={'CutFeatureOperation':1,'IntersectFeatureOperation':2,'JoinFeatureOperation':0,'NewBodyFeatureOperation':3,'NewComponentFeatureOperation':4}
@@ -70,33 +68,36 @@ if __name__=="__main__":
     # args
     parser=argparse.ArgumentParser()
     parser.add_argument('--no-cuda',action='store_true',default=True,help='Disables CUDA training.')
-    parser.add_argument('--dataset',type=str,default='RegraphPerFace_04',help='Dataset name.')
-    parser.add_argument('--split',type=str,default='train_test',help='Split name.')
-    parser.add_argument('--hidden',type=int,default=256,help='Number of hidden units.')
+    parser.add_argument('--dataset',type=str,default='data',help='Dataset name.')
     args=parser.parse_args()
     args.cuda=not args.no_cuda and torch.cuda.is_available()
     # load model
-    model=NodePointer(nfeat=120,nhid=args.hidden)
-    model.load_state_dict(torch.load('../ckpt/model_v5.ckpt'))
+    model=NodePointer(nfeat=708,nhid=256)
+    checkpoint_file='../ckpt/model_v5_10x10.ckpt'
     if args.cuda:
+        model.load_state_dict(torch.load(checkpoint_file))
         model.cuda()
+    else:
+        model.load_state_dict(
+            torch.load(checkpoint_file, map_location=torch.device("cpu"))
+        )
     # inference
     t1=time.time()
     for seq in ['31962_e5291336_0054']:
         # load _sequence.json, as an example
-        path_seq='../data/%s/%s_sequence.json'%(args.dataset,seq)
+        path_seq='../%s/%s_sequence.json'%(args.dataset,seq)
         if not os.path.isfile(path_seq):
             continue
         with open(path_seq) as json_data:
             data_seq=json.load(json_data)
-        path_tar='../data/%s/%s'%(args.dataset,data_seq['sequence'][-1]['graph'])
+        path_tar='../%s/%s'%(args.dataset,data_seq['sequence'][-1]['graph'])
         bbox=data_seq['properties']['bounding_box']
         for t in range(len(data_seq['sequence'])):
             # load and format graph data from json files
             if t==0:
                 path_cur=None
             else:
-                path_cur='../data/%s/%s_%04d.json'%(args.dataset,seq,t-1)
+                path_cur='../%s/%s_%04d.json'%(args.dataset,seq,t-1)
             graph_pair_formatted,node_names,operation_names=load_graph_pair(path_tar,path_cur,bbox)
             if args.cuda:
                 for j in range(4):

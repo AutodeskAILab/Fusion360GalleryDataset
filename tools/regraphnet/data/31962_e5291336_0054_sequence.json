@@ -1,0 +1,42 @@
+{
+    "sequence": [
+        {
+            "start_face": "073c66a2-f2ef-11ea-930c-066234a457d1",
+            "end_face": "073c4d94-f2ef-11ea-825b-066234a457d1",
+            "operation": "NewBodyFeatureOperation",
+            "graph": "31962_e5291336_0054_0000.json"
+        },
+        {
+            "start_face": "073cea70-f2ef-11ea-9796-066234a457d1",
+            "end_face": "073c4d94-f2ef-11ea-825b-066234a457d1",
+            "operation": "JoinFeatureOperation",
+            "graph": "31962_e5291336_0054_0001.json"
+        },
+        {
+            "start_face": "073d74d8-f2ef-11ea-947a-066234a457d1",
+            "end_face": "073c66a2-f2ef-11ea-930c-066234a457d1",
+            "operation": "CutFeatureOperation",
+            "graph": "31962_e5291336_0054_0002.json"
+        }
+    ],
+    "properties": {
+        "bounding_box": {
+            "type": "BoundingBox3D",
+            "max_point": {
+                "type": "Point3D",
+                "x": 0.2999999999999998,
+                "y": -7.333841812473256,
+                "z": 22.516315822017432
+            },
+            "min_point": {
+                "type": "Point3D",
+                "x": -2.0,
+                "y": -7.883841812473253,
+                "z": 21.966315822017435
+            }
+        },
+        "extrude_count": 3,
+        "body_count": 1,
+        "timeline_count": 6
+    }
+}
