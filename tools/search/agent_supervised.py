@@ -15,7 +15,7 @@ REGRAPHNET_SRC_DIR = os.path.join(os.path.dirname(__file__), "..", "regraphnet",
 if REGRAPHNET_SRC_DIR not in sys.path:
     sys.path.append(REGRAPHNET_SRC_DIR)
 
-from train_v5 import *
+from train import *
 
 
 class AgentSupervised(Agent):
@@ -26,14 +26,14 @@ class AgentSupervised(Agent):
         regraphnet_dir = Path(REGRAPHNET_DIR)
         if use_gcn:
             if use_aug:
-                checkpoint_file = regraphnet_dir / "ckpt/model_v5_aug_rd5.ckpt"
+                checkpoint_file = regraphnet_dir / "ckpt/model_mpn_aug.ckpt"
             else:
-                checkpoint_file = regraphnet_dir / "ckpt/model_v5_10x10.ckpt"
+                checkpoint_file = regraphnet_dir / "ckpt/model_mpn.ckpt"
         else:
             if use_aug:
-                checkpoint_file = regraphnet_dir / "ckpt/model_v5_no_gcn_aug_rd5.ckpt"
+                checkpoint_file = regraphnet_dir / "ckpt/model_mlp_aug.ckpt"
             else:
-                checkpoint_file = regraphnet_dir / "ckpt/model_v5_no_gcn.ckpt"
+                checkpoint_file = regraphnet_dir / "ckpt/model_mlp.ckpt"
         print(f"Using {checkpoint_file.name}")
         assert checkpoint_file.exists()
         # Using CUDA is slower, so we use cpu
