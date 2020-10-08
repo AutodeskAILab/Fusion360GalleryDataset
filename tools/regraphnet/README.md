@@ -15,7 +15,7 @@ For further details on the method, please refer to [our paper](https://arxiv.org
 ```
 
 ## Setup
-Install requirements:
+1. Install requirements:
     - `pytorch` tested with 1.4.0, gpu not required
     - `numpy` tested with 1.18.1
     - `scipy` tested with 1.4.1
