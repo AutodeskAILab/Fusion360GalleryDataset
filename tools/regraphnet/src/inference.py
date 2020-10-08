@@ -73,7 +73,7 @@ if __name__=="__main__":
     args.cuda=not args.no_cuda and torch.cuda.is_available()
     # load model
     model=NodePointer(nfeat=708,nhid=256)
-    checkpoint_file='../ckpt/model_v5_10x10.ckpt'
+    checkpoint_file='../ckpt/model_mpn.ckpt'
     if args.cuda:
         model.load_state_dict(torch.load(checkpoint_file))
         model.cuda()
