@@ -45,26 +45,31 @@ class Fusion360Client():
             json_data = json.load(file_handle)
         return self.send_command("reconstruct", json_data)
 
-    def reconstruct_sketch(self, json_data, sketch_name, sketch_plane=None, scale=None, translate=None, rotate=None):
+    def reconstruct_sketch(self, json_data, sketch_id, sketch_plane=None,
+                           scale=None, translate=None, rotate=None):
         """Reconstruct a sketch from the provided json data and sketch name"""
         if not isinstance(json_data, dict) or not bool(json_data):
             return self.__return_error("JSON data is invalid")
         if "timeline" not in json_data or "entities" not in json_data:
             return self.__return_error("JSON data is invalid")
-        if not isinstance(sketch_name, str):
-            return self.__return_error("Sketch name is not string")
-        # check if the sketch name exists in the JSON data
-        sketches = []
-        timeline = json_data["timeline"]
+        if not isinstance(sketch_id, str):
+            return self.__return_error("Sketch ID is not string")
+
         entities = json_data["entities"]
+        timeline = json_data["timeline"]
+
+        # Check the sketch data exists
+        if sketch_id not in entities:
+            return self.__return_error("Sketch doesn't exist")
+        sketch_data = entities[sketch_id]
+
+        # Get the sketch index
+        sketch_index = 0
         for timeline_object in timeline:
-            entity_uuid = timeline_object["entity"]
-            entity_index = timeline_object["index"]
-            entity = entities[entity_uuid]
-            if entity["type"] == "Sketch":
-                sketches.append(entity["name"])
-        if sketch_name not in sketches:
-            return self.__return_error("Sketch name doesn't exist")
+            if timeline_object["entity"] == sketch_id:
+                sketch_index = timeline_object["index"]
+
+        # Check the sketch plane
         if sketch_plane is not None:
             is_str = isinstance(sketch_plane, str)
             is_int = isinstance(sketch_plane, int)
@@ -72,39 +77,27 @@ class Fusion360Client():
             if not is_str and not is_int and not is_dict:
                 return self.__return_error(f"Invalid sketch_plane value")
             if is_str and sketch_plane not in self.construction_planes:
-                    return self.__return_error(f"Invalid sketch_plane value")
+                return self.__return_error(f"Invalid sketch_plane value")
             if is_dict:
-                if ("x" not in sketch_plane or
-                        "y" not in sketch_plane or
-                        "z" not in sketch_plane):
-                    return self.__return_error(f"Invalid sketch_plane value")
-        if scale is not None:
-            if not isinstance(scale, dict):
-                return self.__return_error("Invalid scale dtype")
-            if ("x" not in scale or
-                "y" not in scale or
-                "z" not in scale):
-                return self.__return_error(f"Invalid key in scale")
-            scale["type"] = "Vector3D"
-        if translate is not None:
-            if not isinstance(translate, dict):
-                return self.__return_error("Invalid translate dtype")
-            if ("x" not in translate or
-                "y" not in translate or
-                "z" not in translate):
-                return self.__return_error(f"Invalid key in translate")
-            translate["type"] = "Vector3D"
-        if rotate is not None:
-            if not isinstance(rotate, dict):
-                return self.__return_error("Invalid rotate dtype")
-            if ("x" not in rotate or
-                "y" not in rotate or
-                "z" not in rotate):
-                return self.__return_error(f"Invalid key in rotate")
-            rotate["type"] = "Vector3D"
+                error = self.__check_vector3d(sketch_plane)
+                if error is not None:
+                    return self.__return_error(f"{error}: sketch_plane")
+
+        # Check the transform vectors
+        error = self.__check_vector3d(scale)
+        if error is not None:
+            return self.__return_error(f"{error}: scale")
+        error = self.__check_vector3d(translate)
+        if error is not None:
+            return self.__return_error(f"{error}: translate")
+        error = self.__check_vector3d(rotate)
+        if error is not None:
+            return self.__return_error(f"{error}: rotate")
+
         command_data = {
-            "json_data": json_data,
-            "sketch_name": sketch_name
+            "sketch_data": sketch_data,
+            "sketch_id": sketch_id,
+            "sketch_index": sketch_index
         }
         # Add optional args if they are defined
         if sketch_plane is not None:
@@ -116,6 +109,66 @@ class Fusion360Client():
         if rotate is not None:
             command_data["rotate"] = rotate
         return self.send_command("reconstruct_sketch", data=command_data)
+
+    def reconstruct_curve(self, json_data, sketch_name, sketch_id, curve_id,
+                          scale=None, translate=None, rotate=None):
+        """Reconstruct a curve from the provided
+            json data, sketch name, and curve_id"""
+        if not isinstance(json_data, dict) or not bool(json_data):
+            return self.__return_error("JSON data is invalid")
+        if "timeline" not in json_data or "entities" not in json_data:
+            return self.__return_error("JSON data is invalid")
+        if not isinstance(sketch_id, str):
+            return self.__return_error("Sketch ID is not string")
+        if not isinstance(curve_id, str):
+            return self.__return_error("Curve ID is not string")
+        if not isinstance(sketch_name, str):
+            return self.__return_error("Sketch name is not string")
+
+        # Check if the curve id exists in the JSON data
+        entities = json_data["entities"]
+        timeline = json_data["timeline"]
+
+        # Check the sketch data exists
+        if sketch_id not in entities:
+            return self.__return_error("Sketch doesn't exist")
+        sketch_data = entities[sketch_id]
+
+        # Get the sketch index
+        sketch_index = 0
+        for timeline_object in timeline:
+            if timeline_object["entity"] == sketch_id:
+                sketch_index = timeline_object["index"]
+
+        if curve_id not in sketch_data["curves"]:
+            return self.__return_error("Sketch curve doesn't exist")
+
+        # Check the transform vectors
+        error = self.__check_vector3d(scale)
+        if error is not None:
+            return self.__return_error(f"{error}: scale")
+        error = self.__check_vector3d(translate)
+        if error is not None:
+            return self.__return_error(f"{error}: translate")
+        error = self.__check_vector3d(rotate)
+        if error is not None:
+            return self.__return_error(f"{error}: rotate")
+
+        command_data = {
+            "sketch_data": sketch_data,
+            "sketch_name": sketch_name,
+            "sketch_id": sketch_id,
+            "sketch_index": sketch_index,
+            "curve_id": curve_id
+        }
+        # Add optional args if they are defined
+        if scale is not None:
+            command_data["scale"] = scale
+        if translate is not None:
+            command_data["translate"] = translate
+        if rotate is not None:
+            command_data["rotate"] = rotate
+        return self.send_command("reconstruct_curve", data=command_data)
 
     def clear(self):
         """Clear (i.e. close) all open designs in Fusion"""
@@ -465,3 +518,14 @@ class Fusion360Client():
             with open(file, "wb") as file_handle:
                 for chunk in r.iter_content(chunk_size=128):
                     file_handle.write(chunk)
+
+    def __check_vector3d(self, vector):
+        if vector is not None:
+            if not isinstance(vector, dict):
+                return "Invalid type"
+            if ("x" not in vector or
+                "y" not in vector or
+                "z" not in vector):
+                return "Invalid key"
+            vector["type"] = "Vector3D"
+        return None

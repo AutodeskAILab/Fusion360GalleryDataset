@@ -20,14 +20,14 @@ import deserialize
 
 
 class SketchExtrudeImporter():
-    def __init__(self, json_data):
+    def __init__(self, json_data=None):
         self.app = adsk.core.Application.get()
-
-        if isinstance(json_data, dict):
-            self.data = json_data
-        else:
-            with open(json_data, encoding="utf8") as f:
-                self.data = json.load(f, object_pairs_hook=OrderedDict)
+        if json_data is not None:
+            if isinstance(json_data, dict):
+                self.data = json_data
+            else:
+                with open(json_data, encoding="utf8") as f:
+                    self.data = json.load(f, object_pairs_hook=OrderedDict)
 
         product = self.app.activeProduct
         self.design = adsk.fusion.Design.cast(product)
@@ -62,7 +62,7 @@ class SketchExtrudeImporter():
             elif entity["type"] == "ExtrudeFeature":
                 self.reconstruct_extrude_feature(entity, entity_uuid, entity_index, sketch_profiles)
 
-    def reconstruct_sketch(self, sketch_uuid,
+    def reconstruct_sketch(self, sketch_data, sketch_uuid, sketch_index,
                            reconstruct_cb=None, target_component=None,
                            sketch_plane=None, transform=None):
         """Reconstruct and return just a single sketch"""
@@ -70,14 +70,29 @@ class SketchExtrudeImporter():
         self.target_component = target_component
         if self.target_component is None:
             self.target_component = self.design.rootComponent
-        sketch_index = 0
-        for timeline_object in self.data["timeline"]:
-            if timeline_object["entity"] == sketch_uuid:
-                sketch_index = timeline_object["index"]
-        sketch_data = self.data["entities"][sketch_uuid]
         sketch, sketch_profile_set = self.reconstruct_sketch_feature(
             sketch_data, sketch_uuid, sketch_index, {},
             sketch_plane=sketch_plane, transform=transform
+        )
+        return sketch
+
+    def reconstruct_curve(self, sketch_data, sketch_name, sketch_uuid,
+                          sketch_index, curve_uuid, reconstruct_cb=None,
+                          target_component=None, transform=None):
+        """Reconstruct a single curve in a given sketch"""
+        self.reconstruct_cb = reconstruct_cb
+        self.target_component = target_component
+        if self.target_component is None:
+            self.target_component = self.design.rootComponent
+
+        curve_data = sketch_data["curves"][curve_uuid]
+        points_data = sketch_data["points"]
+        sketches = self.target_component.sketches
+        sketch = sketches.itemByName(sketch_name)
+
+        self.reconstruct_sketch_curve(
+            sketch, sketch_data, sketch_uuid, sketch_index,
+            curve_data, curve_uuid, points_data, transform
         )
         return sketch
 

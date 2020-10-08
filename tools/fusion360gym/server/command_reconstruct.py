@@ -21,6 +21,8 @@ if COMMON_DIR not in sys.path:
 import deserialize
 import serialize
 import match
+import sketch_extrude_importer
+importlib.reload(sketch_extrude_importer)
 from sketch_extrude_importer import SketchExtrudeImporter
 
 
@@ -33,25 +35,14 @@ class CommandReconstruct(CommandBase):
         return self.runner.return_success()
 
     def reconstruct_sketch(self, data):
-        if (data is None or "json_data" not in data or
-           "sketch_name" not in data):
+        """Reconstruct a single sketch"""
+        if (data is None or "sketch_data" not in data or
+           "sketch_id" not in data or "sketch_index" not in data):
             return self.runner.return_failure("reconstruct_sketch data not specified")
-        json_data = data["json_data"]
-        sketch_name = data["sketch_name"]
-        if json_data is None:
-            return self.runner.return_failure("reconstruct json not found")
-        if sketch_name is None:
-            return self.runner.return_failure("reconstruct sketch not found")
-        entities = json_data["entities"]
-        if entities is None:
-            return self.runner.return_failure("reconstruct entities not found")
-        # retrieve sketch id from sketch name
-        sketch_uuid = None
-        for entity in entities:
-            if entities[entity]["name"] == sketch_name:
-                sketch_uuid = entity
-        if sketch_uuid is None:
-            return self.runner.return_failure("reconstruct sketch id doesn't exist")
+        sketch_data = data["sketch_data"]
+        sketch_uuid = data["sketch_id"]
+        sketch_index = data["sketch_index"]
+
         # Optional sketch plane
         sketch_plane = None
         if "sketch_plane" in data:
@@ -66,18 +57,65 @@ class CommandReconstruct(CommandBase):
             translate = deserialize.vector3d(data["translate"])
         if "rotate" in data:
             rotate = deserialize.vector3d(data["rotate"])
-        transform = None
+        transform = adsk.core.Matrix3D.create()
         if scale is not None or translate is not None or rotate is not None or sketch_plane is not None:
             # Get the transform or an identity matrix
             transform = self.__get_transform_matrix(scale, translate, rotate)
+
         # Create the sketch
-        importer = SketchExtrudeImporter(json_data)
-        sketch = importer.reconstruct_sketch(sketch_uuid, sketch_plane=sketch_plane, transform=transform)
+        importer = SketchExtrudeImporter()
+        sketch = importer.reconstruct_sketch(
+            sketch_data, sketch_uuid, sketch_index,
+            sketch_plane=sketch_plane, transform=transform
+        )
         # Serialize the data and return
         profile_data = serialize.sketch_profiles(sketch.profiles)
         return self.runner.return_success({
             "sketch_id": sketch_uuid,
             "sketch_name": sketch.name,
+            "profiles": profile_data
+        })
+
+    def reconstruct_curve(self, data):
+        """Reconstruct a single curve"""
+        if (data is None or "sketch_data" not in data or
+           "sketch_name" not in data or "sketch_id" not in data or
+                "sketch_index" not in data or "curve_id" not in data):
+            return self.runner.return_failure("reconstruct_sketch data not specified")
+        sketch_data = data["sketch_data"]
+        sketch_name = data["sketch_name"]
+        sketch_uuid = data["sketch_id"]
+        sketch_index = data["sketch_index"]
+        curve_uuid = data["curve_id"]
+
+        # Optional transform
+        scale = None
+        translate = None
+        rotate = None
+        if "scale" in data:
+            scale = deserialize.vector3d(data["scale"])
+        if "translate" in data:
+            translate = deserialize.vector3d(data["translate"])
+        if "rotate" in data:
+            rotate = deserialize.vector3d(data["rotate"])
+        transform = adsk.core.Matrix3D.create()
+        if scale is not None or translate is not None or rotate is not None:
+            # Get the transform or an identity matrix
+            transform = self.__get_transform_matrix(scale, translate, rotate)
+
+        # Create the curve
+        importer = SketchExtrudeImporter()
+        sketch = importer.reconstruct_curve(
+            sketch_data, sketch_name,
+            sketch_uuid, sketch_index,
+            curve_uuid, transform=transform
+        )
+        # Serialize the data and return
+        profile_data = serialize.sketch_profiles(sketch.profiles)
+        return self.runner.return_success({
+            "sketch_id": sketch_uuid,
+            "sketch_name": sketch.name,
+            "curve_id": curve_uuid,
             "profiles": profile_data
         })
 

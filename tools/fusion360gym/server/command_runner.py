@@ -50,6 +50,8 @@ class CommandRunner():
                 result = self.reconstruct.reconstruct(data)
             elif command == "reconstruct_sketch":
                 result = self.reconstruct.reconstruct_sketch(data)
+            elif command == "reconstruct_curve":
+                result = self.reconstruct.reconstruct_curve(data)
             elif command == "clear":
                 result = self.clear()
             elif command == "mesh":
