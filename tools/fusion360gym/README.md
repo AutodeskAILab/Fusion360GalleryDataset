@@ -15,7 +15,7 @@ Multiple instances of the server can be launched and assigned a range of ports u
 1. Complete steps 1-3 in **Running** section above. Then select 'Run on startup' and close Fusion.
 2. From the command line:
     ```
-    cd path/to/Fusion360Server/server
+    cd path/to/fusion360gym/server
     python launch.py --instances 2
     Launching Fusion 360 instance: 127.0.0.1:8080
     Launching Fusion 360 instance: 127.0.0.1:8081
@@ -58,14 +58,14 @@ python client_example.py
 This script will output various files to the [data](data) directory and you will see the Fusion UI update as it processes requests.
 
 ### Interface
-See [client/fusion_360_client.py](client/fusion_360_client.py) for the implementation of the calls below.
+See [client/fusion360gym_client.py](client/fusion360gym_client.py) for the implementation of the calls below.
 
 #### Response Format
 All calls return a response object that can be accessed like so:
 
 ```python
 # Create the client class to interact with the server
-client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
+client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
 # Make a call to the server to clear the design
 r = client.clear()
 # Example of how we read the response data
