@@ -35,6 +35,10 @@ class SketchExtrudeImporter():
         # called incrementally when the design changs
         self.reconstruct_cb = None
 
+    # --------------------------------------------------------
+    # PUBLIC API CALLS
+    # --------------------------------------------------------
+
     def reconstruct(self, reconstruct_cb=None, target_component=None):
         """Reconstruct the full design"""
         self.reconstruct_cb = reconstruct_cb
@@ -81,6 +85,22 @@ class SketchExtrudeImporter():
         )
         return sketch
 
+    def reconstruct_profile(self, sketch_data, sketch_name, profile_uuid,
+                            transform=None, reconstruct_cb=None,
+                            target_component=None):
+        """Reconstruct a single profile from a given sketch"""
+        self.reconstruct_cb = reconstruct_cb
+        self.target_component = target_component
+        if self.target_component is None:
+            self.target_component = self.design.rootComponent
+        profile_data = sketch_data["profiles"][profile_uuid]
+        sketches = self.target_component.sketches
+        sketch = sketches.itemByName(sketch_name)
+        if transform is None:
+            transform = adsk.core.Matrix3D.create()
+        self.reconstruct_trimmed_curves(sketch, profile_data, transform)
+        return sketch
+
     def reconstruct_curve(self, sketch_data, sketch_name, curve_uuid,
                           sketch_uuid=None, sketch_index=None,
                           transform=None, reconstruct_cb=None,
@@ -95,7 +115,8 @@ class SketchExtrudeImporter():
         points_data = sketch_data["points"]
         sketches = self.target_component.sketches
         sketch = sketches.itemByName(sketch_name)
-
+        if transform is None:
+            transform = adsk.core.Matrix3D.create()
         self.reconstruct_sketch_curve(
             sketch,
             curve_data,
@@ -106,6 +127,10 @@ class SketchExtrudeImporter():
             sketch_index=sketch_index
         )
         return sketch
+
+    # --------------------------------------------------------
+    # SKETCH FEATURE
+    # --------------------------------------------------------
 
     def get_extrude_profiles(self, timeline, entities):
         """Get the profiles used with extrude operations"""
@@ -453,41 +478,45 @@ class SketchExtrudeImporter():
         sketch_profile = sketch.profiles[sketch_profile_index]
         return sketch_profile
 
-    def reconstruct_sketch_curve(self, sketch, curve, curve_uuid, points_data,
+    # --------------------------------------------------------
+    # PROFILE CURVES
+    # --------------------------------------------------------
+
+    def reconstruct_sketch_curve(self, sketch, curve_data, curve_uuid, points_data,
                                  transform=None, sketch_uuid=None,
                                  sketch_index=None):
         """Reconstruct a sketch curve"""
-        if curve["construction_geom"]:
+        if curve_data["construction_geom"]:
             return
         if transform is None:
             transform = adsk.core.Matrix3D.create()
-        if curve["type"] == "SketchLine":
+        if curve_data["type"] == "SketchLine":
             curve_obj = self.reconstruct_sketch_line(
                 sketch.sketchCurves.sketchLines,
-                curve, curve_uuid, points_data, transform
+                curve_data, curve_uuid, points_data, transform
             )
-        elif curve["type"] == "SketchArc":
+        elif curve_data["type"] == "SketchArc":
             curve_obj = self.reconstruct_sketch_arc(
                 sketch.sketchCurves.sketchArcs,
-                curve, curve_uuid, points_data, transform
+                curve_data, curve_uuid, points_data, transform
             )
-        elif curve["type"] == "SketchCircle":
+        elif curve_data["type"] == "SketchCircle":
             curve_obj = self.reconstruct_sketch_circle(
                 sketch.sketchCurves.sketchCircles,
-                curve, curve_uuid, points_data, transform
+                curve_data, curve_uuid, points_data, transform
             )
-        elif curve["type"] == "SketchEllipse":
+        elif curve_data["type"] == "SketchEllipse":
             curve_obj = self.reconstruct_sketch_ellipse(
                 sketch.sketchCurves.sketchEllipses,
-                curve, curve_uuid, points_data, transform
+                curve_data, curve_uuid, points_data, transform
             )
-        elif curve["type"] == "SketchFittedSpline":
+        elif curve_data["type"] == "SketchFittedSpline":
             curve_obj = self.reconstruct_sketch_fitted_spline(
                 sketch.sketchCurves.sketchFittedSplines,
-                curve, curve_uuid, transform
+                curve_data, curve_uuid, transform
             )
         else:
-            raise Exception(f"Unsupported curve type: {curve['type']}")
+            raise Exception(f"Unsupported curve type: {curve_data['type']}")
 
         if self.reconstruct_cb is not None:
             cb_data = {
@@ -583,12 +612,12 @@ class SketchExtrudeImporter():
         return ellipse
 
     def reconstruct_sketch_fitted_spline(self, sketch_fitted_splines, curve_data, curve_uuid, transform):
-        nurbs_curve = self.reconstruct_nurbs_curve(curve_data, transform)
+        nurbs_curve = self.get_nurbs_curve(curve_data, transform)
         spline = sketch_fitted_splines.addByNurbsCurve(nurbs_curve)
         self.set_uuid(spline, curve_uuid)
         return spline
 
-    def reconstruct_nurbs_curve(self, curve_data, transform):
+    def get_nurbs_curve(self, curve_data, transform):
         control_points = deserialize.point3d_list(curve_data["control_points"], transform)
         nurbs_curve = None
         if curve_data["rational"] is True:
@@ -603,6 +632,125 @@ class SketchExtrudeImporter():
                 curve_data["knots"], curve_data["periodic"]
             )
         return nurbs_curve
+
+    # --------------------------------------------------------
+    # TRIMMED PROFILE CURVES
+    # --------------------------------------------------------
+
+    def reconstruct_trimmed_curves(self, sketch, profile_data, transform):
+        loops = profile_data["loops"]
+        for loop in loops:
+            profile_curves = loop["profile_curves"]
+            for curve_data in profile_curves:
+                self.reconstruct_trimmed_curve(sketch, curve_data, transform)
+
+    def reconstruct_trimmed_curve(self, sketch, curve_data, transform):
+        if curve_data["type"] == "Line3D":
+            self.reconstruct_line(
+                sketch.sketchCurves.sketchLines, curve_data, transform
+            )
+        elif curve_data["type"] == "Arc3D":
+            self.reconstruct_arc(
+                sketch.sketchCurves.sketchArcs, curve_data, transform
+            )
+        elif curve_data["type"] == "Circle3D":
+            self.reconstruct_circle(
+                sketch.sketchCurves.sketchCircles, curve_data, transform
+            )
+        elif curve_data["type"] == "Ellipse3D":
+            self.reconstruct_ellipse(
+                sketch.sketchCurves.sketchEllipses, curve_data, transform
+            )
+        elif curve_data["type"] == "NurbsCurve3D":
+            self.reconstruct_nurbs_curve(
+                sketch.sketchCurves.sketchFittedSplines, curve_data, transform
+            )
+        else:
+            raise Exception(f"Unsupported curve type: {curve_data['type']}")
+
+    def reconstruct_line(self, sketch_lines, curve_data, transform):
+        start_point = deserialize.point3d(curve_data["start_point"])
+        start_point.transformBy(transform)
+        end_point = deserialize.point3d(curve_data["end_point"])
+        end_point.transformBy(transform)
+        line = sketch_lines.addByTwoPoints(start_point, end_point)
+        self.set_uuid(line, curve_data["curve"])
+        return line
+
+    def reconstruct_arc(self, sketch_arcs, curve_data, transform):
+        start_point = deserialize.point3d(curve_data["start_point"])
+        start_point.transformBy(transform)
+        center_point = deserialize.point3d(curve_data["center_point"])
+        center_point.transformBy(transform)
+        sweep_angle = curve_data["end_angle"] - curve_data["start_angle"]
+        arc = sketch_arcs.addByCenterStartSweep(center_point, start_point, sweep_angle)
+        self.set_uuid(arc, curve_data["curve"])
+        return arc
+
+    def reconstruct_circle(self, sketch_circles, curve_data, transform):
+        center_point = deserialize.point3d(curve_data["center_point"])
+        center_point.transformBy(transform)
+        radius = curve_data["radius"]
+        circle = sketch_circles.addByCenterRadius(center_point, radius)
+        self.set_uuid(circle, curve_data["curve"])
+        return circle
+
+    def reconstruct_ellipse(self, sketch_ellipses, curve_data, transform):
+        # Ellipse reconstruction requires us to provide 3 points:
+        # - Center point
+        # - Major axis point
+        # - (Minor axis) point that the ellipse will pass through
+
+        # Center point
+        center_point = deserialize.point3d(curve_data["center_point"])
+        center_point_vector = center_point.asVector()
+
+        # Major axis point
+        # Take the vector for the major axis
+        # then normalize it
+        # then scale it to the radius of the major axis
+        # and offset by the center point
+        major_axis = deserialize.vector3d(curve_data["major_axis"])
+        major_axis_radius = curve_data["major_axis_radius"]
+        major_axis.normalize()
+        major_axis_vector = major_axis.copy()
+        major_axis_vector.scaleBy(major_axis_radius)
+        major_axis_point = major_axis_vector.asPoint()
+        major_axis_point.translateBy(center_point_vector)
+
+        # Minor axis point
+        # Rotate 90 deg around z from the major axis
+        # then scale and offset by the center point
+        minor_axis_radius = curve_data["minor_axis_radius"]
+        rot_matrix = adsk.core.Matrix3D.create()
+        origin = adsk.core.Point3D.create()
+        axis = adsk.core.Vector3D.create(0.0, 0.0, 1.0)
+        rot_matrix.setToRotation(math.radians(90), axis, origin)
+        minor_axis = major_axis.copy()
+        minor_axis.transformBy(rot_matrix)
+        minor_axis_vector = minor_axis.copy()
+        minor_axis_vector.scaleBy(minor_axis_radius)
+        minor_axis_point = minor_axis_vector.asPoint()
+        minor_axis_point.translateBy(center_point_vector)
+
+        # Finally apply the sketch alignment matrix
+        major_axis_point.transformBy(transform)
+        minor_axis_point.transformBy(transform)
+        center_point.transformBy(transform)
+
+        ellipse = sketch_ellipses.add(center_point, major_axis_point, minor_axis_point)
+        self.set_uuid(ellipse, curve_data["curve"])
+        return ellipse
+
+    def reconstruct_nurbs_curve(self, sketch_fitted_splines, curve_data, transform):
+        nurbs_curve = self.get_nurbs_curve(curve_data, transform)
+        spline = sketch_fitted_splines.addByNurbsCurve(nurbs_curve)
+        self.set_uuid(spline, curve_data["curve"])
+        return spline
+
+    # --------------------------------------------------------
+    # EXTRUDE FEATURE
+    # --------------------------------------------------------
 
     def reconstruct_extrude_feature(self, extrude_data, extrude_uuid, extrude_index, sketch_profiles):
         extrudes = self.target_component.features.extrudeFeatures

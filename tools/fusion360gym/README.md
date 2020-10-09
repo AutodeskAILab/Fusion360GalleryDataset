@@ -91,7 +91,14 @@ Reconstruct entire designs from json files provided with the reconstruction subs
     - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
     - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
     - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
-- `reconstruct_curve(sketch_data, sketch_name, curve_id, scale, translate, rotate)`: Reconstruct a sketch from the provided sketch data
+- `reconstruct_profile(sketch_data, sketch_name, profile_id, scale, translate, rotate)`: Reconstruct a single profile from the provided sketch data
+    - `sketch_data`: is the sketch entity data structure from the json data
+    - `sketch_name`: is the name of the sketch to draw the curve in, typically returned from `add_sketch()`
+    - `profile_id`: the uuid of the profile to be drawn
+    - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
+    - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
+    - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
+- `reconstruct_curve(sketch_data, sketch_name, curve_id, scale, translate, rotate)`: Reconstruct a single curve from the provided sketch data
     - `sketch_data`: is the sketch entity data structure from the json data
     - `sketch_name`: is the name of the sketch to draw the curve in, typically returned from `add_sketch()`
     - `curve_id`: the uuid of the curve to be drawn

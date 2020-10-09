@@ -90,6 +90,45 @@ class Fusion360Client():
             command_data["rotate"] = rotate
         return self.send_command("reconstruct_sketch", data=command_data)
 
+    def reconstruct_profile(self, sketch_data, sketch_name, profile_id,
+                            scale=None, translate=None, rotate=None):
+        """Reconstruct a profile from the provided
+            sketch data, sketch name, and profile_id"""
+        if not isinstance(sketch_data, dict) or not sketch_data:
+            return self.__return_error("Sketch data is invalid")
+        if not isinstance(sketch_name, str):
+            return self.__return_error("Sketch name is not string")
+        if not isinstance(profile_id, str):
+            return self.__return_error("Profile ID is not string")
+
+        if profile_id not in sketch_data["profiles"]:
+            return self.__return_error("Sketch profile doesn't exist")
+
+        # Check the transform vectors
+        error = self.__check_vector3d(scale)
+        if error is not None:
+            return self.__return_error(f"{error}: scale")
+        error = self.__check_vector3d(translate)
+        if error is not None:
+            return self.__return_error(f"{error}: translate")
+        error = self.__check_vector3d(rotate)
+        if error is not None:
+            return self.__return_error(f"{error}: rotate")
+
+        command_data = {
+            "sketch_data": sketch_data,
+            "sketch_name": sketch_name,
+            "profile_id": profile_id
+        }
+        # Add optional args if they are defined
+        if scale is not None:
+            command_data["scale"] = scale
+        if translate is not None:
+            command_data["translate"] = translate
+        if rotate is not None:
+            command_data["rotate"] = rotate
+        return self.send_command("reconstruct_profile", data=command_data)
+
     def reconstruct_curve(self, sketch_data, sketch_name, curve_id,
                           scale=None, translate=None, rotate=None):
         """Reconstruct a curve from the provided
