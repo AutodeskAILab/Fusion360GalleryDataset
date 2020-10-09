@@ -80,7 +80,7 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 
 
 #### Reconstruction
-Reconstruct entire designs from json files provided with the reconstruction subset.
+Reconstruct entire designs or parts of them from the json files provided with the reconstruction subset.
 - `reconstruct(file)`: Reconstruct a design from the provided json file
 - `reconstruct_sketch(sketch_data, sketch_plane, scale, translate, rotate)`: Reconstruct a sketch from the provided sketch data
     - `sketch_data`: is the sketch entity data structure from the json data
@@ -105,10 +105,14 @@ Reconstruct entire designs from json files provided with the reconstruction subs
     - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
     - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
     - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
-- `clear()`: Clear (i.e. close) all open designs in Fusion
 
-#### Incremental Construction
-Incremental construction of new designs. Currently only a small subset of the Fusion API is supported, but we will expand this over time.
+#### Target Reconstruction
+Set the target design to be used with reconstruction.
+- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. Returns `graph` as a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph) and a `bounding_box` of the target that can be used for normalization.
+- `revert_to_target()`: Reverts to the target design, removing all reconstruction geometry. Returns the same data as `set_target(file)`.
+
+#### Sketch Extrusion
+Incrementally create designs by generating the underlying sketch primitives and extruding them. 
 - `add_sketch(sketch_plane)`: Adds a sketch to the design.
     - `sketch_plane`: can be either one of:
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
@@ -134,10 +138,8 @@ Incremental construction of new designs. Currently only a small subset of the Fu
     - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
     - Returns BRep vertices of the resulting body, BRep face information
 
-#### Target Reconstruction
-Reconstruct from a target design using extrude operations from face to face.
-- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. Returns `graph` as a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph) and a `bounding_box` of the target that can be used for normalization.
-- `revert_to_target()`: Reverts to the target design, removing all reconstruction geometry added with `add_extrude_by_target_face()`. Returns the same data as `set_target(file)`.
+#### Face Extrusion
+Use simplified face extrusion actions that reference a target design set with `set_target()`.
 - `add_extrude_by_target_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
     - `start_face`: is the uuid of the start face in the target
     - `end_face`: is the uuid of the end face in the target
@@ -159,7 +161,7 @@ Reconstruct from a target design using extrude operations from face to face.
         }
     ]
     ```
-    - `revert`: Revert to the target design before executing the extrude actions.
+    - `revert` (optional): Revert to the target design before executing the extrude actions.
 
 #### Export
 Export the existing design in a number of formats.
@@ -181,6 +183,7 @@ Export the existing design in a number of formats.
 
 #### Utility
 Various utility calls to interact with Fusion 360.
+- `clear()`: Clear (i.e. close) all open designs in Fusion
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 

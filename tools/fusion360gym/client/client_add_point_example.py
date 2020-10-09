@@ -9,7 +9,7 @@ import sys
 import os
 import json
 import random
-from fusion_360_client import Fusion360Client
+from fusion360gym_client import Fusion360GymClient
 
 
 # Before running ensure the Fusion360Server is running
@@ -20,7 +20,7 @@ PORT_NUMBER = 8080
 
 def main():
     # Create the client class to interact with the server
-    client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
+    client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
     # Clear to force close all documents in Fusion
     r = client.clear()
 

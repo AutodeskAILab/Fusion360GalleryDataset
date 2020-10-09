@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 import os
 import json
-from fusion_360_client import Fusion360Client
+from fusion360gym_client import Fusion360GymClient
 
 # Before running ensure the Fusion360Server is running
 # and configured with the same host name and port number
@@ -19,7 +19,7 @@ def main():
 
     # SETUP
     # Create the client class to interact with the server
-    client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
+    client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
     # Clear to force close all documents in Fusion
     # Do this before a new reconstruction
     r = client.clear()

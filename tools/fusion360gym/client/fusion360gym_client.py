@@ -7,7 +7,7 @@ import tempfile
 from zipfile import ZipFile
 
 
-class Fusion360Client():
+class Fusion360GymClient():
 
     def __init__(self, url="http://127.0.0.1:8080"):
         self.url = url

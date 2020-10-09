@@ -20,7 +20,7 @@ CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
 
-from fusion_360_client import Fusion360Client
+from fusion360gym_client import Fusion360GymClient
 
 HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
@@ -30,7 +30,7 @@ class TestFusion360Server(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
+        cls.client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
         # Clear all documents so we start with a clean slate
         cls.client.clear()
         # ------------------------------------------
