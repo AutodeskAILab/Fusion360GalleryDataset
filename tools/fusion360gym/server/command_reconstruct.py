@@ -45,19 +45,7 @@ class CommandReconstruct(CommandBase):
         if "sketch_plane" in data:
             sketch_plane = match.sketch_plane(data["sketch_plane"])
         # Optional transform
-        scale = None
-        translate = None
-        rotate = None
-        if "scale" in data:
-            scale = deserialize.vector3d(data["scale"])
-        if "translate" in data:
-            translate = deserialize.vector3d(data["translate"])
-        if "rotate" in data:
-            rotate = deserialize.vector3d(data["rotate"])
-        transform = None
-        if scale is not None or translate is not None or rotate is not None or sketch_plane is not None:
-            # Get the transform or an identity matrix
-            transform = self.__get_transform_matrix(scale, translate, rotate)
+        transform = self.__get_transform(data)
 
         # Create the sketch
         importer = SketchExtrudeImporter()
@@ -72,16 +60,60 @@ class CommandReconstruct(CommandBase):
             "profiles": profile_data
         })
 
+    def reconstruct_profile(self, data):
+        """Reconstruct a single profile"""
+        if (data is None or "sketch_data" not in data or
+           "sketch_name" not in data or "profile_id" not in data):
+            return self.runner.return_failure("reconstruct_profile data not specified")
+        sketch_data = data["sketch_data"]
+        sketch_name = data["sketch_name"]
+        profile_id = data["profile_id"]
+
+        # Optional transform
+        transform = self.__get_transform(data)
+
+        # Create the curve
+        importer = SketchExtrudeImporter()
+        sketch = importer.reconstruct_profile(
+            sketch_data, sketch_name,
+            profile_id, transform=transform
+        )
+        # Serialize the data and return
+        profile_data = serialize.sketch_profiles(sketch.profiles)
+        return self.runner.return_success({
+            "sketch_name": sketch.name,
+            "profile_id": profile_id,
+            "profiles": profile_data
+        })
+
     def reconstruct_curve(self, data):
         """Reconstruct a single curve"""
         if (data is None or "sketch_data" not in data or
            "sketch_name" not in data or "curve_id" not in data):
-            return self.runner.return_failure("reconstruct_sketch data not specified")
+            return self.runner.return_failure("reconstruct_curve data not specified")
         sketch_data = data["sketch_data"]
         sketch_name = data["sketch_name"]
-        curve_uuid = data["curve_id"]
+        curve_id = data["curve_id"]
 
         # Optional transform
+        transform = self.__get_transform(data)
+
+        # Create the curve
+        importer = SketchExtrudeImporter()
+        sketch = importer.reconstruct_curve(
+            sketch_data, sketch_name,
+            curve_id, transform=transform
+        )
+        # Serialize the data and return
+        profile_data = serialize.sketch_profiles(sketch.profiles)
+        return self.runner.return_success({
+            "sketch_name": sketch.name,
+            "curve_id": curve_id,
+            "profiles": profile_data
+        })
+
+    def __get_transform(self, data):
+        """Get a transform from incoming data"""
         scale = None
         translate = None
         rotate = None
@@ -91,24 +123,11 @@ class CommandReconstruct(CommandBase):
             translate = deserialize.vector3d(data["translate"])
         if "rotate" in data:
             rotate = deserialize.vector3d(data["rotate"])
-        transform = adsk.core.Matrix3D.create()
+        transform = None
         if scale is not None or translate is not None or rotate is not None:
             # Get the transform or an identity matrix
             transform = self.__get_transform_matrix(scale, translate, rotate)
-
-        # Create the curve
-        importer = SketchExtrudeImporter()
-        sketch = importer.reconstruct_curve(
-            sketch_data, sketch_name,
-            curve_uuid, transform=transform
-        )
-        # Serialize the data and return
-        profile_data = serialize.sketch_profiles(sketch.profiles)
-        return self.runner.return_success({
-            "sketch_name": sketch.name,
-            "curve_id": curve_uuid,
-            "profiles": profile_data
-        })
+        return transform
 
     def __get_transform_matrix(self, scale=None, translation=None, rotate=None):
         """Get a transformation matrix that scales, translates, and rotates"""

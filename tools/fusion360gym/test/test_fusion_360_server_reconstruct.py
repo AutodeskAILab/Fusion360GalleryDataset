@@ -162,6 +162,119 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
         response_json = r.json()
         self.__test_sketch_response(response_json["data"])
 
+    def test_reconstruct_profile_invalid(self):
+        self.client.clear()
+        with open(self.hex_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        sketch_id = json_data["timeline"][0]["entity"]
+        sketch_data = json_data["entities"][sketch_id]
+        profile_keys = list(sketch_data["profiles"].keys())
+        profile_id = profile_keys[0]
+
+        # Create a sketch
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+
+        # No data
+        r = self.client.reconstruct_profile({}, sketch_name, profile_id)
+        self.assertIsNone(r, msg="reconstruct_profile response is None")
+        # Bad sketch name
+        r = self.client.reconstruct_profile(sketch_data, "Sketchxxxx", profile_id)
+        self.assertEqual(r.status_code, 500, msg="reconstruct_profile status code")
+        # Bad profile id
+        r = self.client.reconstruct_profile(sketch_data, sketch_name, "foo")
+        self.assertIsNone(r, msg="reconstruct_profile response is None")
+
+    def test_reconstruct_profile(self):
+        self.client.clear()
+        with open(self.hex_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        sketch_id = json_data["timeline"][0]["entity"]
+        sketch_data = json_data["entities"][sketch_id]
+        profile_keys = list(sketch_data["profiles"].keys())
+        profile_id = profile_keys[0]
+
+        # Create a sketch
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+
+        # Draw the profile on the sketch
+        r = self.client.reconstruct_profile(sketch_data, sketch_name, profile_id)
+        self.assertIsNotNone(r, msg="reconstruct profile response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct profile status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"])
+
+        sketch_id = json_data["timeline"][4]["entity"]
+        sketch_data = json_data["entities"][sketch_id]
+        profile_keys = list(sketch_data["profiles"].keys())
+        profile_id = profile_keys[1]
+
+        # Draw another profile on the sketch
+        r = self.client.reconstruct_profile(sketch_data, sketch_name, profile_id)
+        self.assertIsNotNone(r, msg="reconstruct profile response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct profile status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"])
+
+    def test_reconstruct_profile_transform(self):
+        self.client.clear()
+        with open(self.hex_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        sketch_id = json_data["timeline"][0]["entity"]
+        sketch_data = json_data["entities"][sketch_id]
+        profile_keys = list(sketch_data["profiles"].keys())
+        profile_id = profile_keys[0]
+
+        # Create a sketch
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+
+        scale = {"x": 2, "y": 2, "z": 1}
+        translate = {"x": 5, "y": 0, "z": 0}
+        rotate = {"x": 0, "y": 0, "z": 30}
+
+        # Draw the profile on the sketch
+        r = self.client.reconstruct_profile(sketch_data, sketch_name, profile_id, scale=scale)
+        self.assertIsNotNone(r, msg="reconstruct profile response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct profile status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"])
+
+        r = self.client.reconstruct_profile(sketch_data, sketch_name, profile_id, translate=translate)
+        self.assertIsNotNone(r, msg="reconstruct profile response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct profile status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"])
+
+        r = self.client.reconstruct_profile(sketch_data, sketch_name, profile_id, rotate=rotate)
+        self.assertIsNotNone(r, msg="reconstruct profile response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct profile status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"])
+
+    def test_reconstruct_curve_invalid(self):
+        self.client.clear()
+        # Add sketch
+        r = self.client.add_sketch("XY")
+        self.assertEqual(r.status_code, 200, msg="add_sketch status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.assertIn("sketch_name", response_data, msg="add_sketch response has sketch_name")
+        sketch_name = response_data["sketch_name"]
+
+        r = self.client.reconstruct_curve({}, sketch_name, "xxx")
+        self.assertIsNone(r, msg="reconstruct_curve response is None")
+
+        r = self.client.reconstruct_curve({"curves": {}}, sketch_name, "xxx")
+        self.assertIsNone(r, msg="reconstruct_curve response is None")
+
     def test_reconstruct_curve(self):
         self.client.clear()
         with open(self.hex_design_json_file) as file_handle:
@@ -187,8 +300,14 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
             self.__test_sketch_response(response_json["data"], False)
         self.__test_sketch_response(response_json["data"])
 
-    def test_reconstruct_curve_invalid(self):
+    def test_reconstruct_curve_transform(self):
         self.client.clear()
+        with open(self.hex_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        sketch_id = json_data["timeline"][0]["entity"]
+        sketch_data = json_data["entities"][sketch_id]
+        curve_ids = list(sketch_data["curves"].keys())
+
         # Add sketch
         r = self.client.add_sketch("XY")
         self.assertEqual(r.status_code, 200, msg="add_sketch status code")
@@ -197,11 +316,32 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
         self.assertIn("sketch_name", response_data, msg="add_sketch response has sketch_name")
         sketch_name = response_data["sketch_name"]
 
-        r = self.client.reconstruct_curve({}, sketch_name, "xxx")
-        self.assertIsNone(r, msg="reconstruct_curve response is None")
+        scale = {"x": 2, "y": 2, "z": 1}
+        translate = {"x": 5, "y": 0, "z": 0}
+        rotate = {"x": 0, "y": 0, "z": 30}
 
-        r = self.client.reconstruct_curve({"curves": {}}, sketch_name, "xxx")
-        self.assertIsNone(r, msg="reconstruct_curve response is None")
+        r = self.client.reconstruct_curve(sketch_data, sketch_name,
+                                          curve_ids[0], scale=scale)
+        self.assertIsNotNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"], False)
+
+        r = self.client.reconstruct_curve(sketch_data, sketch_name,
+                                          curve_ids[0], scale=scale,
+                                          translate=translate)
+        self.assertIsNotNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"], False)
+
+        r = self.client.reconstruct_curve(sketch_data, sketch_name,
+                                          curve_ids[0], scale=scale,
+                                          translate=translate, rotate=rotate)
+        self.assertIsNotNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"], False)
 
     def __test_sketch_response(self, response_data, has_profiles=True):
         """Check that the sketch response is valid"""
