@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import tempfile
 from zipfile import ZipFile
+import random
 
 
 class Fusion360Client():
@@ -289,6 +290,43 @@ class Fusion360Client():
             "revert": revert
         }
         return self.send_command("add_extrudes_by_target_face", command_data)
+
+    # -------------------------------------------------------------------------
+    # RANDOMIZED RECONSTRUCTION
+    # -------------------------------------------------------------------------
+    def sample_design(self, data_dir, filter=True, split_file=None):
+        """randomly sample a json file from 
+        the given dataset"""
+        if filter:
+            if split_file is None or not str(split_file).endswith(".json"):
+                return self.__return_error(f"Invalid split file")
+            json_files = []
+            try:
+                with open(split_file, encoding="utf8") as f:
+                    json_data = json.load(f)
+            except FileNotFoundError:
+                return self.__return_error(f"Invalid split file")
+            if "train" not in json_data:
+                 return self.__return_error(f"Split file does not have a train set")
+            else:
+                for train_file_name in json_data["train"]:
+                    train_file = data_dir / f"{train_file_name}.json"
+                    if not train_file.exists():
+                         return self.__return_error(f"Train file doesn't exist in the data directory")
+                    else:
+                        json_files.append(train_file)
+        else: 
+            try:
+                json_files = [f for f in os.listdir(data_dir) if f.endswith('.json')]
+            except FileNotFoundError:
+                return self.__return_error(f"Invalid data directory")
+        if not json_files is None and len(json_files) > 0:
+            json_file_dir = data_dir / random.choice(json_files)
+        else:
+            return self.__return_error(f"Invalid data directory")
+        with open(json_file_dir, encoding="utf8") as file_handle:
+            json_data = json.load(file_handle)
+        return json_data, json_file_dir
 
     # -------------------------------------------------------------------------
     # EXPORT
