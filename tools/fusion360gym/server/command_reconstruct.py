@@ -36,12 +36,9 @@ class CommandReconstruct(CommandBase):
 
     def reconstruct_sketch(self, data):
         """Reconstruct a single sketch"""
-        if (data is None or "sketch_data" not in data or
-           "sketch_id" not in data or "sketch_index" not in data):
+        if (data is None or "sketch_data" not in data):
             return self.runner.return_failure("reconstruct_sketch data not specified")
         sketch_data = data["sketch_data"]
-        sketch_uuid = data["sketch_id"]
-        sketch_index = data["sketch_index"]
 
         # Optional sketch plane
         sketch_plane = None
@@ -57,7 +54,7 @@ class CommandReconstruct(CommandBase):
             translate = deserialize.vector3d(data["translate"])
         if "rotate" in data:
             rotate = deserialize.vector3d(data["rotate"])
-        transform = adsk.core.Matrix3D.create()
+        transform = None
         if scale is not None or translate is not None or rotate is not None or sketch_plane is not None:
             # Get the transform or an identity matrix
             transform = self.__get_transform_matrix(scale, translate, rotate)
@@ -65,13 +62,12 @@ class CommandReconstruct(CommandBase):
         # Create the sketch
         importer = SketchExtrudeImporter()
         sketch = importer.reconstruct_sketch(
-            sketch_data, sketch_uuid, sketch_index,
+            sketch_data,
             sketch_plane=sketch_plane, transform=transform
         )
         # Serialize the data and return
         profile_data = serialize.sketch_profiles(sketch.profiles)
         return self.runner.return_success({
-            "sketch_id": sketch_uuid,
             "sketch_name": sketch.name,
             "profiles": profile_data
         })
@@ -79,13 +75,10 @@ class CommandReconstruct(CommandBase):
     def reconstruct_curve(self, data):
         """Reconstruct a single curve"""
         if (data is None or "sketch_data" not in data or
-           "sketch_name" not in data or "sketch_id" not in data or
-                "sketch_index" not in data or "curve_id" not in data):
+           "sketch_name" not in data or "curve_id" not in data):
             return self.runner.return_failure("reconstruct_sketch data not specified")
         sketch_data = data["sketch_data"]
         sketch_name = data["sketch_name"]
-        sketch_uuid = data["sketch_id"]
-        sketch_index = data["sketch_index"]
         curve_uuid = data["curve_id"]
 
         # Optional transform
@@ -107,13 +100,11 @@ class CommandReconstruct(CommandBase):
         importer = SketchExtrudeImporter()
         sketch = importer.reconstruct_curve(
             sketch_data, sketch_name,
-            sketch_uuid, sketch_index,
             curve_uuid, transform=transform
         )
         # Serialize the data and return
         profile_data = serialize.sketch_profiles(sketch.profiles)
         return self.runner.return_success({
-            "sketch_id": sketch_uuid,
             "sketch_name": sketch.name,
             "curve_id": curve_uuid,
             "profiles": profile_data
