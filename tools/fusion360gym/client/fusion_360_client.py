@@ -297,6 +297,43 @@ class Fusion360Client():
     def sample_design(self, data_dir, filter=True, split_file=None):
         """randomly sample a json file from 
         the given dataset"""
+        if isinstance(data_dir, str):
+            data_dir = Path(data_dir)
+        if not data_dir.exists():
+            return self.__return_error(f"Invalid data directory")
+        json_files = self.__get_json_files(data_dir, filter, split_file)
+        if not json_files is None and len(json_files) > 0:
+            json_file_dir = data_dir / random.choice(json_files)
+        else:
+            return None
+        with open(json_file_dir, encoding="utf8") as file_handle:
+            json_data = json.load(file_handle)
+        return [json_data, json_file_dir]
+
+    # def get_distributions(self, data_dir, filter=True, split_file=None):
+    #     """get a list of distributions from
+    #     the provided dataset"""
+    #     if isinstance(data_dir, str):
+    #         data_dir = Path(data_dir)
+    #     if not data_dir.exists():
+    #         return self.__return_error(f"Invalid data directory")
+    #     json_files = self.__get_json_files(data_dir, filter, split_file)
+    #     if not json_files is None and len(json_files) > 0:
+    #         json_data = []
+    #         print("Get distributions begins")
+    #         for json_file in json_files:
+    #             json_file = data_dir / json_file
+    #             with open(json_file, "r", encoding="utf8") as f:
+    #                 data = json.load(f)
+    #                 json_data.append(data)
+    #         print("Get distributions ends")
+    #     else:
+    #         return None
+    #     return len(json_data)
+
+
+    def __get_json_files(self, data_dir, filter, split_file):
+        """get json files from the data directory and the split file"""    
         if filter:
             if split_file is None or not str(split_file).endswith(".json"):
                 return self.__return_error(f"Invalid split file")
@@ -320,14 +357,7 @@ class Fusion360Client():
                 json_files = [f for f in os.listdir(data_dir) if f.endswith('.json')]
             except FileNotFoundError:
                 return self.__return_error(f"Invalid data directory")
-        if not json_files is None and len(json_files) > 0:
-            json_file_dir = data_dir / random.choice(json_files)
-        else:
-            return self.__return_error(f"Invalid data directory")
-        with open(json_file_dir, encoding="utf8") as file_handle:
-            json_data = json.load(file_handle)
-        return json_data, json_file_dir
-
+        return json_files
     # -------------------------------------------------------------------------
     # EXPORT
     # -------------------------------------------------------------------------

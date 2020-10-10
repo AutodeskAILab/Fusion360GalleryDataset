@@ -33,19 +33,25 @@ class TestFusion360RandomizedReconstruction(unittest.TestCase):
 
     def test_sample_design(self):
         # Sample the whole dataset
-        json_data, json_file_name = self.client.sample_design(self.data_dir, filter=False)
+        r = self.client.sample_design(self.data_dir, filter=False)
         # Sample the training data
-        json_data, json_file_name = self.client.sample_design(self.data_dir, filter=True, split_file=self.split_file)
+        r = self.client.sample_design(self.data_dir, filter=True, split_file=self.split_file)
 
     def test_sample_design_invalid_data_dir(self):
         # Sample from a non-existent directory 
-        self.client.sample_design(self.void_data_dir, filter=False)
+        r = self.client.sample_design(self.void_data_dir, filter=False)
         # Sample from a non-existent directory with the split file 
-        self.client.sample_design(self.void_data_dir, filter=True, split_file=self.split_file)
+        r = self.client.sample_design(self.void_data_dir, filter=True, split_file=self.split_file)
+        # Sample from a non-existent string 
+        r = self.client.sample_design("random_data_dir", filter=False)
 
     def test_sample_design_invalid_split_file(self):
         # the split file is void
-        self.client.sample_design(self.data_dir, filter=True, split_file=self.void_split_file)
+        r = self.client.sample_design(self.data_dir, filter=True, split_file=self.void_split_file)
+
+    # def test_get_distributions(self):
+    #     r = self.client.get_distributions(self.data_dir, filter=False)
+    #     print(r)
 
 if __name__ == "__main__":
     unittest.main()
