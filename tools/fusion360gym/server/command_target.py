@@ -21,19 +21,20 @@ import deserialize
 import serialize
 import geometry
 import regraph
+import face_reconstructor
 importlib.reload(deserialize)
 importlib.reload(serialize)
 importlib.reload(geometry)
 importlib.reload(regraph)
+importlib.reload(face_reconstructor)
 from regraph import Regraph
-from regraph import RegraphReconstructor
+from face_reconstructor import FaceReconstructor
 
 
 class CommandTarget(CommandBase):
 
     def __init__(self, runner):
         CommandBase.__init__(self, runner)
-        self.target_component = None
 
     def set_target(self, data):
         """Set the target design"""
@@ -47,44 +48,29 @@ class CommandTarget(CommandBase):
         with open(temp_file, "w") as f:
             f.write(data["file_data"])
         # We clear the design before importing
-        self.runner.clear()
-        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        # Switch to direct design mode for performance
-        # self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
-        # Import the geometry
-        if suffix == ".step" or suffix == ".stp":
-            import_options = self.app.importManager.createSTEPImportOptions(
-                str(temp_file.resolve())
-            )
-        else:
-            import_options = self.app.importManager.createSMTImportOptions(
-                str(temp_file.resolve())
-            )
-        import_options.isViewFit = False
-        imported_designs = self.app.importManager.importToTarget2(
-            import_options,
-            self.design.rootComponent
-        )
-        self.target = imported_designs[0]
+        self.design_state.clear()
+        self.design_state.set_target(temp_file)
         # Store references to the target bodies
         self.state["target_bodies"] = []
         # Rename the bodies with Target-*
-        for body in self.target.bRepBodies:
+        for body in self.design_state.target.bRepBodies:
             body.name = f"Target-{body.name}"
             self.state["target_bodies"].append(body)
         adsk.doEvents()
-        # Flag to switch to using temp_ids
-        regraph.use_temp_id = True
-        regraph_graph = Regraph(logger=self.logger, mode="PerFace")
+        # Use temp_ids
+        regraph_graph = Regraph(
+            logger=self.logger,
+            mode="PerFace",
+            use_temp_id=True
+        )
         self.state["target_graph"] = regraph_graph.generate_from_bodies(
             self.state["target_bodies"]
         )
-        print("Target object type", self.target.objectType)
-        bbox = geometry.get_bounding_box(self.target)
+        bbox = geometry.get_bounding_box(self.design_state.target)
         self.state["target_bounding_box"] = serialize.bounding_box3d(bbox)
         temp_file.unlink()
         # Setup the reconstructor
-        self.state["reconstructor"] = RegraphReconstructor(
+        self.state["reconstructor"] = FaceReconstructor(
             target_component=self.target
         )
         self.state["reconstructor"].setup()
@@ -189,7 +175,11 @@ class CommandTarget(CommandBase):
         """Return the graph and IoU"""
         # If this is the first extrude, we initialize regraph
         if "regraph" not in self.state:
-            self.state["regraph"] = Regraph(logger=self.logger, mode="PerFace")
+            self.state["regraph"] = Regraph(
+                logger=self.logger,
+                mode="PerFace",
+                use_temp_id=True
+            )
         # Generate the graph from the reconstruction component
         graph = self.state["regraph"].generate_from_bodies(
             self.state["reconstructor"].reconstruction.bRepBodies

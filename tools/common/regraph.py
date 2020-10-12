@@ -22,20 +22,15 @@ import name
 import geometry
 import exporter
 import serialize
-import deserialize
 import exceptions
+from face_reconstructor import FaceReconstructor
 from logger import Logger
-reload(name)
-reload(geometry)
-
-# Global flag defining which id's to get for regraph
-use_temp_id = False
 
 
 class Regraph():
     """Reconstruction Graph generation"""
 
-    def __init__(self, logger=None, mode="PerExtrude"):
+    def __init__(self, logger=None, mode="PerExtrude", use_temp_id=False):
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
@@ -66,6 +61,8 @@ class Regraph():
         self.current_action_index = 0
         # The mode we want
         self.mode = mode
+        # Global flag defining which id's to get for regraph
+        self.use_temp_id = use_temp_id
 
     # -------------------------------------------------------------------------
     # GENERATE
@@ -85,7 +82,7 @@ class Regraph():
         # Check that all faces have uuids
         for body in self.target_component.bRepBodies:
             for face in body.faces:
-                face_uuid = get_regraph_uuid(face)
+                face_uuid = self.get_regraph_uuid(face)
                 assert face_uuid is not None
         prev_extrude_index = 0
         skip_reason = None
@@ -193,7 +190,7 @@ class Regraph():
     def add_extrude_faces_to_cache(self, extrude_faces, operation_short, extrude_face_location):
         """Update the extrude face cache with the recently added faces"""
         for face in extrude_faces:
-            face_uuid = set_regraph_uuid(face)
+            face_uuid = self.set_regraph_uuid(face)
             assert face_uuid is not None
             # We will have split faces with the same uuid
             # So we need to update them
@@ -217,14 +214,14 @@ class Regraph():
                 for edge in face.edges:
                     edge_faces = edge.faces
                     assert edge_faces.count == 2
-                    edge_uuid = set_regraph_uuid(edge)
+                    edge_uuid = self.set_regraph_uuid(edge)
                     edge_temp_id = edge.tempId
                     edge_concave = edge_temp_id in concave_edge_cache
                     assert edge_uuid is not None
                     self.edge_cache[edge_uuid] = {
                         "temp_id": edge_temp_id,
-                        "source": get_regraph_uuid(edge_faces[0]),
-                        "target": get_regraph_uuid(edge_faces[1])
+                        "source": self.get_regraph_uuid(edge_faces[0]),
+                        "target": self.get_regraph_uuid(edge_faces[1])
                     }
                     if self.mode == "PerExtrude":
                         self.edge_cache[edge_uuid]["convexity"] = self.get_edge_convexity(edge, edge_concave)
@@ -238,8 +235,8 @@ class Regraph():
                     #         self.edge_cache[edge_uuid] = {
                     #             "temp_id": edge.tempId,
                     #             "convexity": self.get_edge_convexity(edge, edge_concave),
-                    #             "source": get_regraph_uuid(edge.faces[edge_face_index]),
-                    #             "target": get_regraph_uuid(edge.faces[index])
+                    #             "source": self.get_regraph_uuid(edge.faces[edge_face_index]),
+                    #             "target": self.get_regraph_uuid(edge.faces[index])
                     #         }
 
     def add_extrude_to_sequence(self, extrude):
@@ -268,13 +265,13 @@ class Regraph():
         if start_face is None or start_end_flipped is None:
             start_face, start_end_flipped = self.get_extrude_start_face(extrude)
         assert start_face is not None
-        start_face_uuid = get_regraph_uuid(start_face)
+        start_face_uuid = self.get_regraph_uuid(start_face)
         assert start_face_uuid is not None
 
         # End face
         end_face = self.get_extrude_end_face(extrude, start_end_flipped, start_face.body)
         assert end_face is not None
-        end_face_uuid = get_regraph_uuid(end_face)
+        end_face_uuid = self.get_regraph_uuid(end_face)
         assert end_face_uuid is not None
 
         operation = serialize.feature_operation(extrude.operation)
@@ -373,7 +370,7 @@ class Regraph():
         """Set the face uuids for a collection of bodies"""
         for body in bodies:
             for face in body.faces:
-                face_uuid = set_regraph_uuid(face)
+                face_uuid = self.set_regraph_uuid(face)
 
     # -------------------------------------------------------------------------
     # FEATURES
@@ -599,7 +596,7 @@ class Regraph():
 
     def get_face_data(self, face):
         """Get the features for a face"""
-        face_uuid = get_regraph_uuid(face)
+        face_uuid = self.get_regraph_uuid(face)
         assert face_uuid is not None
         if self.mode == "PerExtrude":
             face_metadata = self.face_cache[face_uuid]
@@ -650,7 +647,7 @@ class Regraph():
 
     def get_edge_data(self, edge):
         """Get the features for an edge"""
-        edge_uuid = get_regraph_uuid(edge)
+        edge_uuid = self.get_regraph_uuid(edge)
         assert edge_uuid is not None
         edge_metadata = self.edge_cache[edge_uuid]
         if self.mode == "PerExtrude":
@@ -766,6 +763,24 @@ class Regraph():
                 if is_coplanar:
                     return face
         return None
+
+    def get_regraph_uuid(entity):
+        """Get a uuid or a tempid depending on a flag"""
+        is_face = isinstance(entity, adsk.fusion.BRepFace)
+        is_edge = isinstance(entity, adsk.fusion.BRepEdge)
+        if self.use_temp_id and (is_face or is_edge):
+            return str(entity.tempId)
+        else:
+            return name.get_uuid(entity)
+
+    def set_regraph_uuid(entity):
+        """Set a uuid or a tempid depending on a flag"""
+        is_face = isinstance(entity, adsk.fusion.BRepFace)
+        is_edge = isinstance(entity, adsk.fusion.BRepEdge)
+        if self.use_temp_id and (is_face or is_edge):
+            return str(entity.tempId)
+        else:
+            return name.set_uuid(entity)
 
 
 # -------------------------------------------------------------------------
@@ -885,13 +900,13 @@ class RegraphTester(unittest.TestCase):
 
     def reconstruct(self, graph_data, target_component=None):
         """Reconstruct and test it matches the target"""
-        regraph_reconstructor = RegraphReconstructor(target_component)
-        regraph_reconstructor.reconstruct(graph_data)
+        face_reconstructor = FaceReconstructor(target_component)
+        face_reconstructor.reconstruct(graph_data)
         # Compare the ground truth with the reconstruction
-        gt = regraph_reconstructor.target_component
-        rc = regraph_reconstructor.reconstruction.component
+        gt = face_reconstructor.target_component
+        rc = face_reconstructor.reconstruction.component
         self.test_reconstruction(gt, rc)
-        regraph_reconstructor.remove()
+        face_reconstructor.remove()
 
     def test_per_extrude_graph(self, graph):
         """Test a per extrude graph"""
@@ -1049,132 +1064,3 @@ class RegraphTester(unittest.TestCase):
             math.isinf(rc_bbox.minPoint.z),
             msg="bounding_box_min_z != inf"
         )
-
-
-# -------------------------------------------------------------------------
-# REGRAPH RECONSTRUCTOR
-# -------------------------------------------------------------------------
-
-
-class RegraphReconstructor():
-    """Reconstruct the graph to test it matches the target"""
-
-    def __init__(self, target_component=None):
-        self.app = adsk.core.Application.get()
-        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        self.target_component = target_component
-        if self.target_component is None:
-            self.target_component = self.design.rootComponent
-        self.target_uuid_to_face_map = {}
-
-    def setup(self):
-        """Setup for reconstruction"""
-        # Create a reconstruction component that we create geometry in
-        self.create_component()
-        # Populate the cache with a map from uuids to face indices
-        self.target_uuid_to_face_map = self.get_target_uuid_to_face_map()
-
-    def reset(self):
-        """Reset the reconstructor"""
-        self.remove()
-        self.create_component()
-
-    def remove(self):
-        """Remove the reconstructed component"""
-        self.reconstruction.deleteMe()
-
-    def create_component(self):
-        """Create the reconstruction component"""
-        self.reconstruction = self.design.rootComponent.occurrences.addNewComponent(
-            adsk.core.Matrix3D.create()
-        )
-        self.reconstruction.activate()
-        # Avoid naming for now to avoid name clashes
-        # self.reconstruction.component.name = "Reconstruction"
-
-    def reconstruct(self, graph_data):
-        """Reconstruct from the sequence of faces"""
-        self.sequence = graph_data["sequences"][0]
-        self.setup()
-        for seq in self.sequence["sequence"]:
-            self.add_extrude_from_uuid(
-                seq["start_face"],
-                seq["end_face"],
-                seq["operation"]
-            )
-
-    def get_face_from_uuid(self, face_uuid):
-        """Get a face from an index in the sequence"""
-        if face_uuid not in self.target_uuid_to_face_map:
-            return None
-        uuid_data = self.target_uuid_to_face_map[face_uuid]
-        # body_index = indices["body_index"]
-        # face_index = indices["face_index"]
-        # body = self.target_component.bRepBodies[body_index]
-        # face = body.faces[face_index]
-        return uuid_data["face"]
-
-    def get_target_uuid_to_face_map(self):
-        """As we have to find faces multiple times we first
-            make a map between uuids and face indices"""
-        target_uuid_to_face_map = {}
-        for body_index, body in enumerate(self.target_component.bRepBodies):
-            for face_index, face in enumerate(body.faces):
-                face_uuid = get_regraph_uuid(face)
-                assert face_uuid is not None
-                target_uuid_to_face_map[face_uuid] = {
-                    "body_index": body_index,
-                    "face_index": face_index,
-                    "body": body,
-                    "face": face
-                }
-        return target_uuid_to_face_map
-
-    def add_extrude_from_uuid(self, start_face_uuid, end_face_uuid, operation):
-        """Create an extrude from a start face uuid to an end face uuid"""
-        start_face = self.get_face_from_uuid(start_face_uuid)
-        end_face = self.get_face_from_uuid(end_face_uuid)
-        operation = deserialize.feature_operations(operation)
-        return self.add_extrude(start_face, end_face, operation)
-
-    def add_extrude(self, start_face, end_face, operation):
-        """Create an extrude from a start face to an end face"""
-        # If there are no bodies to cut or intersect, do nothing
-        if ((operation == adsk.fusion.FeatureOperations.CutFeatureOperation or
-           operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation) and
-           self.reconstruction.bRepBodies.count == 0):
-            return None
-        # We generate the extrude bodies in the reconstruction component
-        extrudes = self.reconstruction.component.features.extrudeFeatures
-        extrude_input = extrudes.createInput(start_face, operation)
-        extent = adsk.fusion.ToEntityExtentDefinition.create(end_face, False)
-        extrude_input.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
-        extrude_input.creationOccurrence = self.reconstruction
-        tools = []
-        for body in self.reconstruction.bRepBodies:
-            tools.append(body)
-        extrude_input.participantBodies = tools
-        extrude = extrudes.add(extrude_input)
-        return extrude
-
-
-def get_regraph_uuid(entity):
-    """Get a uuid or a tempid depending on a flag"""
-    global use_temp_id
-    is_face = isinstance(entity, adsk.fusion.BRepFace)
-    is_edge = isinstance(entity, adsk.fusion.BRepEdge)
-    if use_temp_id and (is_face or is_edge):
-        return str(entity.tempId)
-    else:
-        return name.get_uuid(entity)
-
-
-def set_regraph_uuid(entity):
-    """Set a uuid or a tempid depending on a flag"""
-    global use_temp_id
-    is_face = isinstance(entity, adsk.fusion.BRepFace)
-    is_edge = isinstance(entity, adsk.fusion.BRepEdge)
-    if use_temp_id and (is_face or is_edge):
-        return str(entity.tempId)
-    else:
-        return name.set_uuid(entity)

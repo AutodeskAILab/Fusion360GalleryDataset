@@ -11,8 +11,9 @@ import tempfile
 
 class CommandBase():
 
-    def __init__(self, runner):
+    def __init__(self, runner, design_state):
         self.runner = runner
+        self.design_state = design_state
         self.logger = None
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
@@ -24,6 +25,7 @@ class CommandBase():
     def clear(self):
         """Clear the state"""
         self.state = {}
+        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
 
     def get_temp_file(self, file, dest_dir=None):
         """Return a file with a given name in a temp directory"""
