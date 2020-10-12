@@ -4,6 +4,9 @@ Design State for the Fusion 360 Gym
 
 """
 
+import adsk.core
+import adsk.fusion
+
 
 class DesignState():
 
@@ -18,6 +21,7 @@ class DesignState():
         # the target design gets set later if required
         self.target = None
         # The reconstruction design we always setup
+        self.reconstruction = None
         self.setup_reconstruction()
 
     def set_logger(self, logger):
@@ -42,7 +46,7 @@ class DesignState():
             for obj in self.command_objects:
                 obj.clear()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        self.setup_reconstruction_design()
+        self.setup_reconstruction()
         return self.runner.return_success()
 
     def setup_reconstruction(self):
@@ -53,6 +57,7 @@ class DesignState():
         self.reconstruction.activate()
         name = f"Reconstruction_{self.reconstruction.component.name}"
         self.reconstruction.component.name = name
+        adsk.doEvents()
 
     def clear_reconstruction(self):
         """Clear the reconstruction to an empty component"""
@@ -75,3 +80,6 @@ class DesignState():
             self.design.rootComponent
         )
         self.target = imported_designs[0]
+        name = f"Target_{self.target.component.name}"
+        self.target.component.name = name
+        adsk.doEvents()

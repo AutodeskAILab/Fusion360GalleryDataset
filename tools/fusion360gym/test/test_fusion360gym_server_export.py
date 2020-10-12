@@ -35,6 +35,7 @@ class TestFusion360ServerExport(unittest.TestCase):
         # ------------------------------------------
         # TEST FILES
         cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
+        cls.output_dir = cls.data_dir / "output"
         box_design = "SingleSketchExtrude_RootComponent"
         hex_design = "Z0HexagonCutJoin_RootComponent"
         couch_design = "Couch"
@@ -47,22 +48,28 @@ class TestFusion360ServerExport(unittest.TestCase):
         #
         # OUTPUT FILES
         # Mesh stl file
-        cls.test_mesh_stl_file = cls.data_dir / f"{box_design}.stl"
+        cls.test_mesh_stl_file = cls.output_dir / f"{box_design}.stl"
         # Mesh obj file
-        cls.test_mesh_obj_file = cls.data_dir / f"{box_design}.obj"
+        cls.test_mesh_obj_file = cls.output_dir / f"{box_design}.obj"
         # BRep step file
-        cls.test_brep_step_file = cls.data_dir / f"{box_design}.step"
+        cls.test_brep_step_file = cls.output_dir / f"{box_design}.step"
         # BRep smt file
-        cls.test_brep_smt_file = cls.data_dir / f"{box_design}.smt"
+        cls.test_brep_smt_file = cls.output_dir / f"{box_design}.smt"
         # BRep f3d file
-        cls.test_brep_f3d_file = cls.data_dir / f"{box_design}.f3d"
+        cls.test_brep_f3d_file = cls.output_dir / f"{box_design}.f3d"
         # Screenshot png file
-        cls.test_screenshot_png_file = cls.data_dir / f"{box_design}.png"
+        cls.test_screenshot_png_file = cls.output_dir / f"{box_design}.png"
         # Test output temp folder
-        cls.test_output_dir = cls.data_dir / "test_output"
+        cls.test_output_dir = cls.output_dir / "test_output"
         # Make sure it is empty first
+        if cls.output_dir.exists():
+            shutil.rmtree(cls.output_dir)
+        if not cls.output_dir.exists():
+            cls.output_dir.mkdir()
         if cls.test_output_dir.exists():
             shutil.rmtree(cls.test_output_dir)
+        # Clean up after ourselves
+        cls.clean_output = True
         # ------------------------------------------
 
     def test_mesh_invalid_format(self):
@@ -85,7 +92,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.__test_box_mesh(self.test_mesh_stl_file)
         # Clear
         r = self.client.clear()
-        self.test_mesh_stl_file.unlink()
+        if self.clean_output:
+            self.test_mesh_stl_file.unlink()
 
     def test_mesh_obj(self):
         # Reconstruct first
@@ -97,7 +105,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertTrue(self.test_mesh_obj_file.exists())
         # Clear
         r = self.client.clear()
-        self.test_mesh_obj_file.unlink()
+        if self.clean_output:
+            self.test_mesh_obj_file.unlink()
 
     def test_mesh_invalid_format(self):
         # Reconstruct first
@@ -120,7 +129,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertGreater(self.test_brep_step_file.stat().st_size, 0, msg="brep file size greater than 0")
         # Clear
         r = self.client.clear()
-        self.test_brep_step_file.unlink()
+        if self.clean_output:
+            self.test_brep_step_file.unlink()
 
     def test_brep_smt(self):
         # Reconstruct first
@@ -133,7 +143,7 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertGreater(self.test_brep_smt_file.stat().st_size, 0, msg="brep file size greater than 0")
         # Clear
         r = self.client.clear()
-        self.test_brep_smt_file.unlink()
+        # self.test_brep_smt_file.unlink()
 
     def test_brep_f3d(self):
         # Reconstruct first
@@ -146,7 +156,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertGreater(self.test_brep_f3d_file.stat().st_size, 0, msg="brep file size greater than 0")
         # Clear
         r = self.client.clear()
-        self.test_brep_f3d_file.unlink()
+        if self.clean_output:
+            self.test_brep_f3d_file.unlink()
 
     def test_brep_invalid_format(self):
         # Reconstruct first
@@ -174,7 +185,8 @@ class TestFusion360ServerExport(unittest.TestCase):
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch image file size greater than 0")
         # Clear
         r = self.client.clear()
-        shutil.rmtree(self.test_output_dir)
+        if self.clean_output:
+            shutil.rmtree(self.test_output_dir)
 
     def test_sketches_png_multiple(self):
         # Reconstruct first
@@ -190,10 +202,10 @@ class TestFusion360ServerExport(unittest.TestCase):
             sketch_file = self.test_output_dir / f"Sketch{i+1}.png"
             self.assertTrue(sketch_file.exists())
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch image file size greater than 0")
-            sketch_file.unlink()
         # Clear
         r = self.client.clear()
-        self.test_output_dir.rmdir()
+        if self.clean_output:
+            self.test_output_dir.rmdir()
 
     def test_sketches_dxf(self):
         # Reconstruct first
@@ -211,7 +223,8 @@ class TestFusion360ServerExport(unittest.TestCase):
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch dxf file size greater than 0")
         # Clear
         r = self.client.clear()
-        shutil.rmtree(self.test_output_dir)
+        if self.clean_output:
+            shutil.rmtree(self.test_output_dir)
 
     def test_sketches_dxf_multiple(self):
         # Reconstruct first
@@ -229,7 +242,8 @@ class TestFusion360ServerExport(unittest.TestCase):
             self.assertGreater(sketch_file.stat().st_size, 0, msg="sketch dxf file size greater than 0")
         # Clear
         r = self.client.clear()
-        shutil.rmtree(self.test_output_dir)
+        if self.clean_output:
+            shutil.rmtree(self.test_output_dir)
 
     def test_sketches_invalid_format(self):
         # Reconstruct first
@@ -252,7 +266,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertGreater(self.test_screenshot_png_file.stat().st_size, 0, msg="screenshot file size greater than 0")
         # Clear
         r = self.client.clear()
-        self.test_screenshot_png_file.unlink()
+        if self.clean_output:
+            self.test_screenshot_png_file.unlink()
 
     def test_screenshot_with_args(self):
         # Reconstruct first
@@ -265,7 +280,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertGreater(self.test_screenshot_png_file.stat().st_size, 0, msg="screenshot file size greater than 0")
         # Clear
         r = self.client.clear()
-        self.test_screenshot_png_file.unlink()
+        if self.clean_output:
+            self.test_screenshot_png_file.unlink()
 
     def test_screenshot_invalid_format(self):
         # Reconstruct first
@@ -297,7 +313,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertGreater(seq_file.stat().st_size, 0, msg="sequence file size greater than 0")
         # Clear
         r = self.client.clear()
-        shutil.rmtree(self.test_output_dir)
+        if self.clean_output:
+            shutil.rmtree(self.test_output_dir)
 
     def test_graph_per_extrude(self):
         # Reconstruct first
@@ -320,7 +337,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
         # Clear
         r = self.client.clear()
-        shutil.rmtree(self.test_output_dir)
+        if self.clean_output:
+            shutil.rmtree(self.test_output_dir)
 
     def __test_box_mesh(self, mesh_file):
         # Check the mesh data
@@ -332,9 +350,11 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertAlmostEqual(cog[2], 1.25)
         self.assertEqual(len(local_mesh.points), 12)
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     cls.client.detach()
+    @classmethod
+    def tearDownClass(cls):
+        if cls.output_dir.exists():
+            shutil.rmtree(cls.output_dir)
+
 
 if __name__ == "__main__":
     unittest.main()

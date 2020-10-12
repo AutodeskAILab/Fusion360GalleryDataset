@@ -7,7 +7,6 @@ Reconstruct via face extrusion to match a target design
 
 import adsk.core
 import adsk.fusion
-from importlib
 
 import name
 import deserialize
@@ -15,29 +14,22 @@ import deserialize
 
 class FaceReconstructor():
 
-    def __init__(self, target_design, reconstruction_design):
+    def __init__(self, target, reconstruction):
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        self.target_design = target_design
-        self.reconstruction_design = reconstruction_design
+        self.target = target
+        self.set_reconstruction_component(reconstruction)
         self.target_uuid_to_face_map = {}
         self.use_temp_id = True
 
     def setup(self):
         """Setup for reconstruction"""
-        # Create a reconstruction component that we create geometry in
-        self.create_component()
         # Populate the cache with a map from uuids to face indices
         self.target_uuid_to_face_map = self.get_target_uuid_to_face_map()
 
-    def reset(self):
-        """Reset the reconstructor"""
-        self.remove()
-        self.create_component()
-
-    def remove(self):
-        """Remove the reconstructed component"""
-        self.reconstruction.deleteMe()
+    def set_reconstruction_component(self, reconstruction):
+        """Set the reconstruction component"""
+        self.reconstruction = reconstruction
 
     def reconstruct(self, graph_data):
         """Reconstruct from the sequence of faces"""
@@ -55,25 +47,30 @@ class FaceReconstructor():
         if face_uuid not in self.target_uuid_to_face_map:
             return None
         uuid_data = self.target_uuid_to_face_map[face_uuid]
-        # body_index = indices["body_index"]
-        # face_index = indices["face_index"]
-        # body = self.target_design.bRepBodies[body_index]
+        # We get the face by following the entity token
+        face_token = uuid_data["face_token"]
+        entities = self.design.findEntityByToken(face_token)
+        if entities is None:
+            return None
+        return entities[0]
+        # body_index = uuid_data["body_index"]
+        # face_index = uuid_data["face_index"]
+        # body = self.target.bRepBodies[body_index]
         # face = body.faces[face_index]
-        return uuid_data["face"]
+        # return face
 
     def get_target_uuid_to_face_map(self):
         """As we have to find faces multiple times we first
             make a map between uuids and face indices"""
         target_uuid_to_face_map = {}
-        for body_index, body in enumerate(self.target_design.bRepBodies):
+        for body_index, body in enumerate(self.target.bRepBodies):
             for face_index, face in enumerate(body.faces):
-                face_uuid = face.tempId
+                face_uuid = str(face.tempId)
                 assert face_uuid is not None
                 target_uuid_to_face_map[face_uuid] = {
                     "body_index": body_index,
                     "face_index": face_index,
-                    "body": body,
-                    "face": face
+                    "face_token": face.entityToken
                 }
         return target_uuid_to_face_map
 

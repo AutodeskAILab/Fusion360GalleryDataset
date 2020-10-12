@@ -39,12 +39,12 @@ class SketchExtrudeImporter():
     # PUBLIC API CALLS
     # --------------------------------------------------------
 
-    def reconstruct(self, reconstruct_cb=None, target_component=None):
+    def reconstruct(self, reconstruct_cb=None, reconstruction=None):
         """Reconstruct the full design"""
         self.reconstruct_cb = reconstruct_cb
-        self.target_component = target_component
-        if self.target_component is None:
-            self.target_component = self.design.rootComponent
+        self.reconstruction = reconstruction
+        if self.reconstruction is None:
+            self.reconstruction = self.design.rootComponent
         timeline = self.data["timeline"]
         entities = self.data["entities"]
         # Get the profiles used in this design
@@ -72,12 +72,12 @@ class SketchExtrudeImporter():
     def reconstruct_sketch(self, sketch_data, sketch_uuid=None,
                            sketch_index=None, sketch_plane=None,
                            transform=None, reconstruct_cb=None,
-                           target_component=None):
+                           reconstruction=None):
         """Reconstruct and return just a single sketch"""
         self.reconstruct_cb = reconstruct_cb
-        self.target_component = target_component
-        if self.target_component is None:
-            self.target_component = self.design.rootComponent
+        self.reconstruction = reconstruction
+        if self.reconstruction is None:
+            self.reconstruction = self.design.rootComponent
         sketch, sketch_profile_set = self.reconstruct_sketch_feature(
             sketch_data, {},
             sketch_uuid=sketch_uuid, sketch_index=sketch_index,
@@ -87,14 +87,14 @@ class SketchExtrudeImporter():
 
     def reconstruct_profile(self, sketch_data, sketch_name, profile_uuid,
                             transform=None, reconstruct_cb=None,
-                            target_component=None):
+                            reconstruction=None):
         """Reconstruct a single profile from a given sketch"""
         self.reconstruct_cb = reconstruct_cb
-        self.target_component = target_component
-        if self.target_component is None:
-            self.target_component = self.design.rootComponent
+        self.reconstruction = reconstruction
+        if self.reconstruction is None:
+            self.reconstruction = self.design.rootComponent
         profile_data = sketch_data["profiles"][profile_uuid]
-        sketches = self.target_component.sketches
+        sketches = self.reconstruction.sketches
         sketch = sketches.itemByName(sketch_name)
         if transform is None:
             transform = adsk.core.Matrix3D.create()
@@ -104,16 +104,16 @@ class SketchExtrudeImporter():
     def reconstruct_curve(self, sketch_data, sketch_name, curve_uuid,
                           sketch_uuid=None, sketch_index=None,
                           transform=None, reconstruct_cb=None,
-                          target_component=None):
+                          reconstruction=None):
         """Reconstruct a single curve in a given sketch"""
         self.reconstruct_cb = reconstruct_cb
-        self.target_component = target_component
-        if self.target_component is None:
-            self.target_component = self.design.rootComponent
+        self.reconstruction = reconstruction
+        if self.reconstruction is None:
+            self.reconstruction = self.design.rootComponent
 
         curve_data = sketch_data["curves"][curve_uuid]
         points_data = sketch_data["points"]
-        sketches = self.target_component.sketches
+        sketches = self.reconstruction.sketches
         sketch = sketches.itemByName(sketch_name)
         if transform is None:
             transform = adsk.core.Matrix3D.create()
@@ -274,7 +274,7 @@ class SketchExtrudeImporter():
            "points" not in sketch_data):
             return None
 
-        sketches = self.target_component.sketches
+        sketches = self.reconstruction.sketches
         # Find the right sketch plane to use
         if sketch_plane is None:
             sketch_plane = self.get_sketch_plane(sketch_data["reference_plane"], sketch_profiles)
@@ -341,14 +341,14 @@ class SketchExtrudeImporter():
                 # and use that
                 # This preserves the reference indirectly
                 # through the construction plane
-                planes = self.target_component.constructionPlanes
+                planes = self.reconstruction.constructionPlanes
                 plane_input = planes.createInput()
                 offset_distance = adsk.core.ValueInput.createByReal(0)
                 plane_input.setByOffset(sketch_profile, offset_distance)
                 plane = planes.add(plane_input)
                 return plane
 
-        return self.target_component.xYConstructionPlane
+        return self.reconstruction.xYConstructionPlane
 
     def reconstruct_curves(self, sketch, sketch_data, sketch_uuid, sketch_index, transform):
         # Turn off sketch compute until we add all the curves
@@ -753,7 +753,7 @@ class SketchExtrudeImporter():
     # --------------------------------------------------------
 
     def reconstruct_extrude_feature(self, extrude_data, extrude_uuid, extrude_index, sketch_profiles):
-        extrudes = self.target_component.features.extrudeFeatures
+        extrudes = self.reconstruction.features.extrudeFeatures
 
         # There can be more than one profile, so we create an object collection
         extrude_profiles = adsk.core.ObjectCollection.create()

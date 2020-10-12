@@ -68,20 +68,21 @@ class Regraph():
     # GENERATE
     # -------------------------------------------------------------------------
 
-    def generate(self, target_component=None):
+    def generate(self, reconstruction=None):
         """Generate graphs from the design in the timeline"""
         self.timeline = self.app.activeProduct.timeline
-        self.target_component = target_component
-        if self.target_component is None:
-            self.target_component = self.design.rootComponent
-        assert self.target_component.bRepBodies.count > 0
+        self.reconstruction = reconstruction
+        if self.reconstruction is None:
+            self.reconstruction = self.design.rootComponent
+        assert self.reconstruction.bRepBodies.count > 0
         # Iterate over the timeline and populate the face cache
         for timeline_object in self.timeline:
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.add_extrude_to_cache(timeline_object.entity)
         # Check that all faces have uuids
-        for body in self.target_component.bRepBodies:
+        for body in self.reconstruction.bRepBodies:
             for face in body.faces:
+                print(f"Face {face.tempId}")
                 face_uuid = self.get_regraph_uuid(face)
                 assert face_uuid is not None
         prev_extrude_index = 0
@@ -143,14 +144,14 @@ class Regraph():
         if self.mode == "PerFace":
             # Only export if we had some valid extrudes
             if self.current_extrude_index > 0:
-                bbox = geometry.get_bounding_box(self.target_component)
+                bbox = geometry.get_bounding_box(self.reconstruction)
                 bbox_data = serialize.bounding_box3d(bbox)
                 seq_data = {
                     "sequence": self.sequence,
                     "properties": {
                         "bounding_box": bbox_data,
                         "extrude_count": self.current_extrude_index,
-                        "body_count": self.target_component.bRepBodies.count
+                        "body_count": self.reconstruction.bRepBodies.count
                     }
                 }
                 if self.timeline is not None:
@@ -159,6 +160,8 @@ class Regraph():
 
     def generate_from_bodies(self, bodies):
         """Generate a single graph from a collection of bodies"""
+        # TODO: Check is we need to set_fac_uuids()
+        # if not self.use_temp_id:
         self.set_face_uuids(bodies)
         self.add_edges_to_cache(bodies)
         graph = self.get_graph_from_bodies(bodies)
@@ -191,6 +194,7 @@ class Regraph():
         """Update the extrude face cache with the recently added faces"""
         for face in extrude_faces:
             face_uuid = self.set_regraph_uuid(face)
+            print(f"Face {face.tempId}: {face_uuid}")
             assert face_uuid is not None
             # We will have split faces with the same uuid
             # So we need to update them
@@ -204,7 +208,7 @@ class Regraph():
     def add_edges_to_cache(self, bodies=None):
         """Update the edge cache with the latest extrude"""
         if bodies is None:
-            bodies = self.target_component.bRepBodies
+            bodies = self.reconstruction.bRepBodies
         concave_edge_cache = set()
         for body in bodies:
             temp_ids = name.get_temp_ids_from_collection(body.concaveEdges)
@@ -551,7 +555,7 @@ class Regraph():
     def get_graph(self):
         """Get a graph data structure for bodies"""
         graph = self.get_empty_graph()
-        for body in self.target_component.bRepBodies:
+        for body in self.reconstruction.bRepBodies:
             for face in body.faces:
                 if face is not None:
                     face_data = self.get_face_data(face)
@@ -756,7 +760,7 @@ class Regraph():
 
     def get_coplanar_face(self, plane, body):
         """Find a face on the same body that is coplanar to the given plane"""
-        # for body in self.target_component.bRepBodies:
+        # for body in self.reconstruction.bRepBodies:
         for face in body.faces:
             if isinstance(face.geometry, adsk.core.Plane):
                 is_coplanar = plane.isCoPlanarTo(face.geometry)
@@ -764,7 +768,7 @@ class Regraph():
                     return face
         return None
 
-    def get_regraph_uuid(entity):
+    def get_regraph_uuid(self, entity):
         """Get a uuid or a tempid depending on a flag"""
         is_face = isinstance(entity, adsk.fusion.BRepFace)
         is_edge = isinstance(entity, adsk.fusion.BRepEdge)
@@ -773,7 +777,7 @@ class Regraph():
         else:
             return name.get_uuid(entity)
 
-    def set_regraph_uuid(entity):
+    def set_regraph_uuid(self, entity):
         """Set a uuid or a tempid depending on a flag"""
         is_face = isinstance(entity, adsk.fusion.BRepFace)
         is_edge = isinstance(entity, adsk.fusion.BRepEdge)
@@ -800,14 +804,14 @@ class RegraphWriter():
         # The mode we want
         self.mode = mode
 
-    def write(self, file, output_dir, target_component=None, regraph=None):
-        """Reconstruct the design from the json file"""
+    def write(self, file, output_dir, reconstruction, regraph=None):
+        """Write out the design as graph json files"""
         self.output_dir = output_dir
         self.file = file
         if regraph is None:
             regraph = Regraph(mode=self.mode)
-        # Use the target component or rootComponent if none
-        graph_data = regraph.generate(target_component)
+        # Create the graph from the reconstruction component
+        graph_data = regraph.generate(reconstruction=reconstruction)
         # If we don't get any graphs back return None
         if len(graph_data["graphs"]) <= 0:
             return None
@@ -818,7 +822,12 @@ class RegraphWriter():
         regraph_tester.test(graph_data)
         if self.mode == "PerFace":
             # Perform reconstruction to ensure the data is good
-            regraph_tester.reconstruct(graph_data)
+            # The target we want to match is
+            # in the reconstruction component
+            regraph_tester.reconstruct(
+                graph_data,
+                target=reconstruction
+            )
         return self.write_graph_data(graph_data)
 
     def update_sequence_data(self, graph_data):
@@ -898,15 +907,27 @@ class RegraphTester(unittest.TestCase):
                     node_set, link_set = self.test_per_face_graph(graph)
                 self.test_per_face_sequence(sequence, node_set, link_set)
 
-    def reconstruct(self, graph_data, target_component=None):
+    def reconstruct(self, graph_data, target):
         """Reconstruct and test it matches the target"""
-        face_reconstructor = FaceReconstructor(target_component)
+        # We create another temporary test component
+        # to perform reconstruction in
+        test_comp = self.design.rootComponent.occurrences.addNewComponent(
+            adsk.core.Matrix3D.create()
+        )
+        name = f"Test_{self.test_comp.component.name}"
+        test_comp.component.name = name
+
+        face_reconstructor = FaceReconstructor(
+            target=target,
+            reconstruction=test_comp
+        )
         face_reconstructor.reconstruct(graph_data)
+
         # Compare the ground truth with the reconstruction
-        gt = face_reconstructor.target_component
-        rc = face_reconstructor.reconstruction.component
-        self.test_reconstruction(gt, rc)
-        face_reconstructor.remove()
+        self.test_reconstruction(target, test_comp)
+        # Clean up
+        test_comp.deleteMe()
+        adsk.doEvents()
 
     def test_per_extrude_graph(self, graph):
         """Test a per extrude graph"""

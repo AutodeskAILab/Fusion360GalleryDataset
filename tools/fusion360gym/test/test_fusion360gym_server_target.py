@@ -177,9 +177,12 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertIsNotNone(r, msg="set_target response is not None")
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
-        graph = response_json["data"]["graph"]
+        response_data = response_json["data"]
+        graph = response_data["graph"]
+        self.__check_graph_format(response_data)
+
+        # Make an extrude
         nodes = graph["nodes"]
-        # Guessing these based on the order
         start_face = nodes[0]["id"]
         end_face = nodes[2]["id"]
         r = self.client.add_extrude_by_target_face(
@@ -187,10 +190,20 @@ class TestFusion360ServerTarget(unittest.TestCase):
             end_face,
             "NewBodyFeatureOperation"
         )
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.__check_graph_format(response_data)
+
         # Revert to target
         r = self.client.revert_to_target()
         self.assertIsNotNone(r, msg="revert_to_target response is not None")
         self.assertEqual(r.status_code, 200, msg="revert_to_target status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.__check_graph_format(response_data)
+        revert_graph = response_data["graph"]
+        self.assertDictEqual(graph, revert_graph, msg="target graph identical if reverted")
+
         start_face = nodes[0]["id"]
         end_face = nodes[2]["id"]
         r = self.client.add_extrude_by_target_face(
@@ -241,7 +254,11 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertIsNotNone(r, msg="set_target response is not None")
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
-        graph = response_json["data"]["graph"]
+        response_data = response_json["data"]
+        self.__check_graph_format(response_data)
+
+        # Multiple Extrudes
+        graph = response_data["graph"]
         nodes = graph["nodes"]
         actions = [
             {
@@ -258,7 +275,11 @@ class TestFusion360ServerTarget(unittest.TestCase):
         r = self.client.add_extrudes_by_target_face(actions)
         response_json = r.json()
         response_data = response_json["data"]
+        self.__check_graph_format(response_data)
+        self.assertGreater(response_data["iou"], 0, msg="iou > 0")
         prev_iou = response_data["iou"]
+
+        # Reconstruct again but revert this time
         r = self.client.add_extrudes_by_target_face(actions, revert=True)
         self.assertIsNotNone(r, msg="add_extrudes_by_target_face response is not None")
         self.assertEqual(r.status_code, 200, msg="add_extrudes_by_target_face status code")

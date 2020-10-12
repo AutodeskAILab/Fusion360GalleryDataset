@@ -33,9 +33,6 @@ from face_reconstructor import FaceReconstructor
 
 class CommandTarget(CommandBase):
 
-    def __init__(self, runner):
-        CommandBase.__init__(self, runner)
-
     def set_target(self, data):
         """Set the target design"""
         data_file, error = self.check_file(data, [".step", ".stp", ".smt"])
@@ -48,15 +45,10 @@ class CommandTarget(CommandBase):
         with open(temp_file, "w") as f:
             f.write(data["file_data"])
         # We clear the design before importing
+        # This also clears the local state
         self.design_state.clear()
         self.design_state.set_target(temp_file)
-        # Store references to the target bodies
-        self.state["target_bodies"] = []
-        # Rename the bodies with Target-*
-        for body in self.design_state.target.bRepBodies:
-            body.name = f"Target-{body.name}"
-            self.state["target_bodies"].append(body)
-        adsk.doEvents()
+
         # Use temp_ids
         regraph_graph = Regraph(
             logger=self.logger,
@@ -64,14 +56,15 @@ class CommandTarget(CommandBase):
             use_temp_id=True
         )
         self.state["target_graph"] = regraph_graph.generate_from_bodies(
-            self.state["target_bodies"]
+            self.design_state.target.bRepBodies
         )
         bbox = geometry.get_bounding_box(self.design_state.target)
         self.state["target_bounding_box"] = serialize.bounding_box3d(bbox)
         temp_file.unlink()
         # Setup the reconstructor
         self.state["reconstructor"] = FaceReconstructor(
-            target_component=self.target
+            target=self.design_state.target,
+            reconstruction=self.design_state.reconstruction
         )
         self.state["reconstructor"].setup()
         return self.runner.return_success({
@@ -85,9 +78,7 @@ class CommandTarget(CommandBase):
             return self.runner.return_failure("Target not set")
         if "reconstructor" not in self.state:
             return self.runner.return_failure("Target not set")
-        self.state["reconstructor"].reset()
-        if "regraph" in self.state:
-            del self.state["regraph"]
+        self.__clear_reconstruction()
         return self.runner.return_success({
             "graph": self.state["target_graph"],
             "bounding_box": self.state["target_bounding_box"]
@@ -120,7 +111,7 @@ class CommandTarget(CommandBase):
         # Revert if requested
         if "revert" in data:
             if data["revert"]:
-                self.revert_to_target()
+                self.__clear_reconstruction()
         # Loop over the extrude actions and execute them
         actions = data["actions"]
         for action in actions:
@@ -182,12 +173,12 @@ class CommandTarget(CommandBase):
             )
         # Generate the graph from the reconstruction component
         graph = self.state["regraph"].generate_from_bodies(
-            self.state["reconstructor"].reconstruction.bRepBodies
+            self.design_state.reconstruction.bRepBodies
         )
         # Calculate the IoU
         iou = geometry.intersection_over_union(
-            self.target,
-            self.state["reconstructor"].reconstruction
+            self.design_state.target,
+            self.design_state.reconstruction
         )
         if iou is None:
             logger.log("Warning! IoU calculation returned None")
@@ -195,3 +186,12 @@ class CommandTarget(CommandBase):
             "graph": graph,
             "iou": iou
         })
+
+    def __clear_reconstruction(self):
+        self.design_state.clear_reconstruction()
+        # Update the reference to the new reconstruction component
+        self.state["reconstructor"].set_reconstruction_component(
+            self.design_state.reconstruction
+        )
+        if "regraph" in self.state:
+            del self.state["regraph"]

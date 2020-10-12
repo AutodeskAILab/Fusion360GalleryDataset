@@ -28,6 +28,7 @@ if COMMON_DIR not in sys.path:
 import exporter
 import regraph
 importlib.reload(regraph)
+importlib.reload(exporter)
 import view_control
 from sketch_extrude_importer import SketchExtrudeImporter
 from regraph import Regraph
@@ -50,14 +51,13 @@ class CommandExport(CommandBase):
         if error is not None:
             return self.runner.return_failure(error)
         temp_file = self.get_temp_file(data["file"], dest_dir)
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         if suffix == ".obj":
             export_result = exporter.export_obj_from_component(
-                temp_file, design.rootComponent
+                temp_file, self.design_state.reconstruction.component
             )
         elif suffix == ".stl":
             export_result = exporter.export_stl_from_component(
-                temp_file, design.rootComponent
+                temp_file, self.design_state.reconstruction
             )
         file_exists = temp_file.exists()
         if export_result and file_exists:
@@ -74,14 +74,13 @@ class CommandExport(CommandBase):
         if error is not None:
             return self.runner.return_failure(error)
         temp_file = self.get_temp_file(data["file"], dest_dir)
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         if suffix == ".step":
             export_result = exporter.export_step_from_component(
-                temp_file, design.rootComponent
+                temp_file, self.design_state.reconstruction.component
             )
         elif suffix == ".smt":
             export_result = exporter.export_smt_from_component(
-                temp_file, design.rootComponent
+                temp_file, self.design_state.reconstruction.component
             )
         elif suffix == ".f3d":
             export_result = exporter.export_f3d(temp_file)
@@ -95,7 +94,6 @@ class CommandExport(CommandBase):
     def sketches(self, data, dest_dir=None, use_zip=True):
         """Generate sketches in a given format (e.g. .png)
             and return as a binary zip file"""
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         if data is None or "format" not in data:
             return self.runner.return_failure("format not specified")
         suffix = data["format"]
@@ -125,7 +123,6 @@ class CommandExport(CommandBase):
             fit_camera = data["fit_camera"]
 
         temp_file = self.get_temp_file(data["file"], dest_dir)
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         if fit_camera:
             self.app.activeViewport.fit()
         export_result = self.app.activeViewport.saveAsImageFile(
@@ -143,7 +140,6 @@ class CommandExport(CommandBase):
         data_file, error = self.check_file(data, [".json"])
         if error is not None:
             return self.runner.return_failure(error)
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         if "format" not in data:
             return self.runner.return_failure("format not specified")
         mode = data["format"]
@@ -241,10 +237,12 @@ class CommandExport(CommandBase):
         """Export the current design as a graph and return a zip file"""
         if dest_dir is None:
             dest_dir = Path(tempfile.mkdtemp())
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         regraph_writer = RegraphWriter(self.logger, mode)
-        # By default regraph_writer assumes the geometry is in the rootComponent
-        writer_data = regraph_writer.write(file, dest_dir)
+        writer_data = regraph_writer.write(
+            file,
+            dest_dir,
+            reconstruction=self.design_state.reconstruction
+        )
         # writer_data returns a dict of the form
         # [filename] = [{
         #   "graph": graph data
@@ -269,12 +267,11 @@ class CommandExport(CommandBase):
         """Export all sketches as png files and return a zip file"""
         if dest_dir is None:
             dest_dir = Path(tempfile.mkdtemp())
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         # Loop over each sketch and export a PNG
-        for component in design.allComponents:
-            for sketch in component.sketches:
-                png_file = dest_dir / f"{sketch.name}.png"
-                exporter.export_png_from_sketch(png_file, sketch)
+        comp = self.design_state.reconstruction.component
+        for sketch in comp.sketches:
+            png_file = dest_dir / f"{sketch.name}.png"
+            exporter.export_png_from_sketch(png_file, sketch)
         if use_zip:
             return self.__zip_dir(dest_dir)
         else:
@@ -284,16 +281,15 @@ class CommandExport(CommandBase):
         """Export all sketches as dxf files and return a zip file"""
         if dest_dir is None:
             dest_dir = Path(tempfile.mkdtemp())
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         # Then we loop over each sketch and export a DXF
-        for component in design.allComponents:
-            for sketch in component.sketches:
-                try:
-                    dxf_file = dest_dir / f"{sketch.name}.dxf"
-                    sketch.saveAsDXF(str(dxf_file.resolve()))
-                except:
-                    # If the sketch is Null then keep on to the next
-                    pass
+        comp = self.design_state.reconstruction.component
+        for sketch in comp.sketches:
+            try:
+                dxf_file = dest_dir / f"{sketch.name}.dxf"
+                sketch.saveAsDXF(str(dxf_file.resolve()))
+            except:
+                # If the sketch is Null then keep on to the next
+                pass
         if use_zip:
             return self.__zip_dir(dest_dir)
         else:

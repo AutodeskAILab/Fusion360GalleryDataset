@@ -31,7 +31,9 @@ class CommandReconstruct(CommandBase):
     def reconstruct(self, data):
         """Reconstruct a design from the provided json data"""
         importer = SketchExtrudeImporter(data)
-        importer.reconstruct()
+        importer.reconstruct(
+            reconstruction=self.design_state.reconstruction.component
+        )
         return self.runner.return_success()
 
     def reconstruct_sketch(self, data):
@@ -51,7 +53,8 @@ class CommandReconstruct(CommandBase):
         importer = SketchExtrudeImporter()
         sketch = importer.reconstruct_sketch(
             sketch_data,
-            sketch_plane=sketch_plane, transform=transform
+            sketch_plane=sketch_plane, transform=transform,
+            reconstruction=self.design_state.reconstruction.component
         )
         # Serialize the data and return
         profile_data = serialize.sketch_profiles(sketch.profiles)
@@ -76,7 +79,8 @@ class CommandReconstruct(CommandBase):
         importer = SketchExtrudeImporter()
         sketch = importer.reconstruct_profile(
             sketch_data, sketch_name,
-            profile_id, transform=transform
+            profile_id, transform=transform,
+            reconstruction=self.design_state.reconstruction.component
         )
         # Serialize the data and return
         profile_data = serialize.sketch_profiles(sketch.profiles)
@@ -102,7 +106,8 @@ class CommandReconstruct(CommandBase):
         importer = SketchExtrudeImporter()
         sketch = importer.reconstruct_curve(
             sketch_data, sketch_name,
-            curve_id, transform=transform
+            curve_id, transform=transform,
+            reconstruction=self.design_state.reconstruction.component
         )
         # Serialize the data and return
         profile_data = serialize.sketch_profiles(sketch.profiles)

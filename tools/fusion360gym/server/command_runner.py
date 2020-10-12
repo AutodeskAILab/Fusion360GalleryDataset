@@ -27,10 +27,10 @@ class CommandRunner():
         self.app = adsk.core.Application.get()
         self.last_command = ""
         self.design_state = DesignState(self)
-        self.export = CommandExport(self, design_state)
-        self.increment = CommandIncrement(self, design_state)
-        self.target = CommandTarget(self, design_state)
-        self.reconstruct = CommandReconstruct(self, design_state)
+        self.export = CommandExport(self, self.design_state)
+        self.increment = CommandIncrement(self, self.design_state)
+        self.target = CommandTarget(self, self.design_state)
+        self.reconstruct = CommandReconstruct(self, self.design_state)
         self.command_objects = [
             self.export,
             self.increment,
