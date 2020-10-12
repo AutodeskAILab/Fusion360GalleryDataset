@@ -26,13 +26,12 @@ class CommandIncrement(CommandBase):
 
     def add_sketch(self, data):
         """Add a sketch to the existing design"""
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         if data is None or "sketch_plane" not in data:
             return self.runner.return_failure("sketch_plane not specified")
         sketch_plane = match.sketch_plane(data["sketch_plane"])
         if sketch_plane is None:
             return self.runner.return_failure("sketch_plane could not be found")
-        sketches = design.rootComponent.sketches
+        sketches = self.design_state.reconstruction.component.sketches
         sketch = sketches.addWithoutEdges(sketch_plane)
         sketch_uuid = name.set_uuid(sketch)
         return self.runner.return_success({
@@ -111,8 +110,7 @@ class CommandIncrement(CommandBase):
             return self.runner.return_failure("extrude operation not found")
 
         # Make the extrude
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
-        extrudes = design.rootComponent.features.extrudeFeatures
+        extrudes = self.design_state.reconstruction.component.features.extrudeFeatures
         extrude_input = extrudes.createInput(profile, operation)
         distance = adsk.core.ValueInput.createByReal(data["distance"])
         extent_distance = adsk.fusion.DistanceExtentDefinition.create(distance)
@@ -157,7 +155,6 @@ class CommandIncrement(CommandBase):
 
     def __get_extrude_operation(self, operation):
         """Return an appropriate extrude operation"""
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         # Check that the operation is going to work
         body_count = 0
         for component in design.allComponents:

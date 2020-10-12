@@ -111,6 +111,7 @@ class SketchExtrudeImporter():
         if self.reconstruction is None:
             self.reconstruction = self.design.rootComponent
 
+        adsk.doEvents()
         curve_data = sketch_data["curves"][curve_uuid]
         points_data = sketch_data["points"]
         sketches = self.reconstruction.sketches
