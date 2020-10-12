@@ -75,8 +75,6 @@ class CommandRunner():
                 result = self.export.screenshot(data)
             elif command == "graph":
                 result = self.export.graph(data)
-            elif command == "commands":
-                result = self.export.commands(data)
             elif command == "add_sketch":
                 result = self.increment.add_sketch(data)
             elif command == "add_point":

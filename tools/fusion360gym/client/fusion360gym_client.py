@@ -467,42 +467,6 @@ class Fusion360GymClient():
             allowing the Fusion UI to become responsive again"""
         return self.send_command("detach")
 
-    def commands(self, command_list, dir=None):
-        """Send a series of commands to the server"""
-        if dir is not None:
-            if not dir.is_dir():
-                return self.__return_error(f"Not an existing directory")
-        if (command_list is None or not isinstance(command_list, list) or
-           len(command_list) == 0):
-            return self.__return_error(
-                "Command list argument missing or not a populated list")
-        # Flag to mark down if we will get a binary back
-        binary_response = False
-        # Check that each command_set has a command
-        for command_set in command_list:
-            if "command" not in command_set:
-                return self.__return_error(
-                    "Command list command argument missing")
-            command = command_set["command"]
-            if command in ["mesh", "brep", "sketches"]:
-                binary_response = True
-        # We are getting a file back
-        if binary_response:
-            r = self.send_command("commands", data=command_list, stream=True)
-            if r.status_code != 200:
-                return r
-            temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
-            zip_file = Path(temp_file_path)
-            self.__write_file(r, zip_file)
-            # Extract all the files to the given directory
-            with ZipFile(zip_file, "r") as zipObj:
-                zipObj.extractall(dir)
-            os.close(temp_file_handle)
-            zip_file.unlink()
-            return r
-        else:
-            return self.send_command("commands", command_list)
-
     # -------------------------------------------------------------------------
     # PRIVATE
     # -------------------------------------------------------------------------

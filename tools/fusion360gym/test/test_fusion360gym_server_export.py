@@ -205,7 +205,7 @@ class TestFusion360ServerExport(unittest.TestCase):
         # Clear
         r = self.client.clear()
         if self.clean_output:
-            self.test_output_dir.rmdir()
+            shutil.rmtree(self.test_output_dir)
 
     def test_sketches_dxf(self):
         # Reconstruct first

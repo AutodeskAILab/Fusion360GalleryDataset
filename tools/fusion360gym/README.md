@@ -187,32 +187,6 @@ Various utility calls to interact with Fusion 360.
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
-- `commands(command_list, dir)`: Send a list of commands to run in sequence on the server. Currently the export and reconstruction commands are supported.
-    - `command_list`: a list of commands in the following format:
-    ```json
-    [
-        {
-            "command": "reconstruct",
-            "data": {}
-        },
-        {
-            "command": "sketches",
-            "data": {
-                "format": ".png"
-            }
-        },
-        {
-            "command": "mesh",
-            "data": {
-                "file": "test.stl"
-            }
-        },
-        {
-            "command": "clear"
-        }
-    ]
-    ```
-    `dir`: is the (optional) local directory where files will be saved
 
 ## Test
 See the [test directory](test/) for test coverage and additional usage examples.
