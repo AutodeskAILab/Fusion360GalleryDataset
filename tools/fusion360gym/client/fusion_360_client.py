@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from zipfile import ZipFile
 import random
-
+import numpy as np
 
 class Fusion360Client():
 
@@ -310,27 +310,62 @@ class Fusion360Client():
             json_data = json.load(file_handle)
         return [json_data, json_file_dir]
 
-    # def get_distributions(self, data_dir, filter=True, split_file=None):
-    #     """get a list of distributions from
-    #     the provided dataset"""
-    #     if isinstance(data_dir, str):
-    #         data_dir = Path(data_dir)
-    #     if not data_dir.exists():
-    #         return self.__return_error(f"Invalid data directory")
-    #     json_files = self.__get_json_files(data_dir, filter, split_file)
-    #     if not json_files is None and len(json_files) > 0:
-    #         json_data = []
-    #         print("Get distributions begins")
-    #         for json_file in json_files:
-    #             json_file = data_dir / json_file
-    #             with open(json_file, "r", encoding="utf8") as f:
-    #                 data = json.load(f)
-    #                 json_data.append(data)
-    #         print("Get distributions ends")
-    #     else:
-    #         return None
-    #     return len(json_data)
+    def get_distributions(self, data_dir, filter=True, split_file=None):
+        """get a list of distributions from
+        the provided dataset"""
+        if isinstance(data_dir, str):
+            data_dir = Path(data_dir)
+        if not data_dir.exists():
+            return self.__return_error(f"Invalid data directory")
+        json_files = self.__get_json_files(data_dir, filter, split_file)
+        if not json_files is None and len(json_files) > 0:
+            json_data = []
+            print("Get distributions begins")
+            for json_file in json_files:
+                json_file = data_dir / json_file
+                with open(json_file, "r", encoding="utf8") as f:
+                    data = json.load(f)
+                    json_data.append(data)
+            print("Get distributions ends")
+        else:
+            return None
+        # get all the counts 
+        plane_counts = []
+        face_counts = []
+        extrusion_counts = []
+        sequences_counts = []
+        curve_counts = []
+        body_counts = []
+        sketch_areas = []
+        profile_areas = []
+        for data in json_data:
+            timeline = data["timeline"]
+            entities = data["entities"]
+            
+            sequences_counts.append(len(timeline))
+            face_counts.append(data["properties"]["face_count"])
+            body_counts.append(data["properties"]["body_count"])
 
+            curve_count = 0
+            for entity in entities.values():
+                entity_type = entity["type"]
+                if entity_type == "Sketch":
+                    if "curves" in entity:
+                        curves = entity["curves"]
+                        curve_count += len(curves)
+            curve_counts.append(curve_count)
+
+        face_distribution = self.__get_per_distribution(face_counts, 0, 100, 25)
+        sequence_distribution = self.__get_per_distribution(sequences_counts, 0, 21, 21, True)
+        curve_distribution = self.__get_per_distribution(curve_counts, 0, 100, 25)
+        body_distribution = self.__get_per_distribution(body_counts, 0, 11, 11, True)
+
+        distributions = {"num_faces": face_distribution, 
+                        "length_sequences": sequence_distribution,
+                        "num_curves": curve_distribution,
+                        "num_bodies": body_distribution}
+
+        return distributions
 
     def __get_json_files(self, data_dir, filter, split_file):
         """get json files from the data directory and the split file"""    
@@ -358,6 +393,15 @@ class Fusion360Client():
             except FileNotFoundError:
                 return self.__return_error(f"Invalid data directory")
         return json_files
+
+    def __get_per_distribution(self, data, range_min, range_max, num_bins, shift=False):
+        np_counts, np_bins = np.histogram(data, num_bins, range=(range_min,range_max))
+        if not shift:
+            np_bins = np.delete(np_bins, 0)
+        else:
+            np_bins = np.delete(np_bins, np_bins.size-1)
+        np_probs = np_counts / np.sum(np_counts)
+        return [np_probs.tolist(), np_bins.tolist()]
     # -------------------------------------------------------------------------
     # EXPORT
     # -------------------------------------------------------------------------
