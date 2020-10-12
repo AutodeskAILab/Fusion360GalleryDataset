@@ -12,11 +12,13 @@ import deserialize
 import name
 
 
-def sketch_by_name(sketch_name):
+def sketch_by_name(sketch_name, sketches=None):
     """Return a sketch with a given name"""
     app = adsk.core.Application.get()
     design = adsk.fusion.Design.cast(app.activeProduct)
-    return design.rootComponent.sketches.itemByName(sketch_name)
+    if sketches is None:
+        sketches = design.rootComponent.sketches
+    return sketches.itemByName(sketch_name)
 
 
 def sketch_by_id(sketch_id, sketches=None):

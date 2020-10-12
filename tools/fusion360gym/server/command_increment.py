@@ -20,6 +20,7 @@ import name
 import match
 import deserialize
 import serialize
+importlib.reload(match)
 
 
 class CommandIncrement(CommandBase):
@@ -44,7 +45,10 @@ class CommandIncrement(CommandBase):
         if (data is None or "sketch_name" not in data or
                 "pt" not in data):
             return self.runner.return_failure("add_point data not specified")
-        sketch = match.sketch_by_name(data["sketch_name"])
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
         if sketch is None:
             return self.runner.return_failure("sketch not found")
         sketch_uuid = name.get_uuid(sketch)
@@ -66,7 +70,10 @@ class CommandIncrement(CommandBase):
         if (data is None or "sketch_name" not in data or
                 "pt1" not in data or "pt2" not in data):
             return self.runner.return_failure("add_line data not specified")
-        sketch = match.sketch_by_name(data["sketch_name"])
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
         if sketch is None:
             return self.runner.return_failure("sketch not found")
         sketch_uuid = name.get_uuid(sketch)
@@ -78,7 +85,10 @@ class CommandIncrement(CommandBase):
            by joining the first point to the last"""
         if data is None or "sketch_name" not in data:
             return self.runner.return_failure("close_profile data not specified")
-        sketch = match.sketch_by_name(data["sketch_name"])
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
         if sketch is None:
             return self.runner.return_failure("sketch not found")
         sketch_uuid = name.get_uuid(sketch)
@@ -99,7 +109,10 @@ class CommandIncrement(CommandBase):
                 "profile_id" not in data or "distance" not in data or
                 "operation" not in data):
             return self.runner.return_failure("add_extrude data not specified")
-        sketch = match.sketch_by_name(data["sketch_name"])
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
         if sketch is None:
             return self.runner.return_failure("extrude sketch not found")
         profile = match.sketch_profile_by_id(data["profile_id"], [sketch])
@@ -156,9 +169,7 @@ class CommandIncrement(CommandBase):
     def __get_extrude_operation(self, operation):
         """Return an appropriate extrude operation"""
         # Check that the operation is going to work
-        body_count = 0
-        for component in design.allComponents:
-            body_count += component.bRepBodies.count
+        body_count = self.design_state.reconstruction.bRepBodies.count
         # If there are no other bodies, we have to make a new body
         if body_count == 0:
             operation = "NewBodyFeatureOperation"
