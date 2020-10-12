@@ -50,8 +50,10 @@ class TestFusion360RandomizedReconstruction(unittest.TestCase):
         r = self.client.sample_design(self.data_dir, filter=True, split_file=self.void_split_file)
 
     def test_get_distributions(self):
+        # distributions of the whole dataset
         r = self.client.get_distributions(self.data_dir, filter=False)
-        print(r)
+        # distributions of the training dataset
+        r = self.client.get_distributions(self.data_dir, filter=True, split_file=self.split_file)
 
 if __name__ == "__main__":
     unittest.main()

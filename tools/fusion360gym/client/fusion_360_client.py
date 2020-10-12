@@ -310,6 +310,12 @@ class Fusion360Client():
             json_data = json.load(file_handle)
         return [json_data, json_file_dir]
 
+    # to-do
+    def get_default_distributions(self, filter=True):
+        """return a list of distributions of 
+        the reconstruction dataset"""
+        pass
+
     def get_distributions(self, data_dir, filter=True, split_file=None):
         """get a list of distributions from
         the provided dataset"""
@@ -329,8 +335,9 @@ class Fusion360Client():
             print("Get distributions ends")
         else:
             return None
+        
         # get all the counts 
-        plane_counts = []
+        plane_counts = {"XY": 0, "XZ": 0, "YZ": 0}
         face_counts = []
         extrusion_counts = []
         sequences_counts = []
@@ -338,32 +345,76 @@ class Fusion360Client():
         body_counts = []
         sketch_areas = []
         profile_areas = []
+        MIN_AREA = 1
+        MAX_AREA = 5000
+
         for data in json_data:
             timeline = data["timeline"]
             entities = data["entities"]
-            
+            # get sequence, face, and body counts     
             sequences_counts.append(len(timeline))
             face_counts.append(data["properties"]["face_count"])
             body_counts.append(data["properties"]["body_count"])
-
+            # get plane counts 
+            for timeline_object in timeline:
+                entity_index = timeline_object["index"]
+                if entity_index == 0:
+                    entity_uuid = timeline_object["entity"]
+                    entity = entities[entity_uuid]
+                    if entity["reference_plane"]["name"] == "XY":
+                        plane_counts["XY"] += 1
+                    elif entity["reference_plane"]["name"] == "XZ":
+                        plane_counts["XZ"] += 1
+                    elif entity["reference_plane"]["name"] == "YZ":
+                        plane_counts["YZ"] += 1
+            # get extrusion counts
+            sequences = data["sequence"]
+            extrude_count = 0
+            for sequence in sequences:
+                if sequence["type"] == "ExtrudeFeature":
+                    extrude_count += 1
+            extrusion_counts.append(extrude_count)
+            # get curve counts, sketch areas, profile areas  
             curve_count = 0
+            sketch_area = 0
             for entity in entities.values():
                 entity_type = entity["type"]
                 if entity_type == "Sketch":
                     if "curves" in entity:
                         curves = entity["curves"]
                         curve_count += len(curves)
+                    if "profiles" in entity:
+                        for profile in entity["profiles"].values():
+                            profile_area = profile["properties"]["area"]
+                            if profile_area > MIN_AREA and profile_area < MAX_AREA:
+                                profile_areas.append(profile_area)
+                                sketch_area += profile_area
             curve_counts.append(curve_count)
+            sketch_areas.append(sketch_area)
 
+        # calculate distributions 
+        plane_distribution = {}
+        for plane in plane_counts:
+            plane_distribution[plane] = plane_counts[plane] / sum(plane_counts.values())
         face_distribution = self.__get_per_distribution(face_counts, 0, 100, 25)
+        extrusion_distribution = self.__get_per_distribution(extrusion_counts, 0, 16, 16, True)
         sequence_distribution = self.__get_per_distribution(sequences_counts, 0, 21, 21, True)
         curve_distribution = self.__get_per_distribution(curve_counts, 0, 100, 25)
         body_distribution = self.__get_per_distribution(body_counts, 0, 11, 11, True)
+        sketch_area_distribution = self.__get_per_distribution(sketch_areas, 0, 500, 25)
+        profile_area_distribution = self.__get_per_distribution(profile_areas, 0, 100, 25)
 
-        distributions = {"num_faces": face_distribution, 
+        distributions = {"starting_plane": plane_distribution,
+                        "num_faces": face_distribution,
+                        "num_extrusions": extrusion_distribution, 
                         "length_sequences": sequence_distribution,
                         "num_curves": curve_distribution,
-                        "num_bodies": body_distribution}
+                        "num_bodies": body_distribution,
+                        "sketch_areas": sketch_area_distribution,
+                        "profile_areas": profile_area_distribution}
+                        # import statistics
+                        # "sketch_areas": [statistics.mean(sketch_areas), statistics.median(sketch_areas), max(sketch_areas)],
+                        # "profiles_areas": [statistics.mean(profile_areas), statistics.median(profile_areas), max(profile_areas)],}
 
         return distributions
 
