@@ -8,7 +8,7 @@ The *Fusion 360 Gallery Dataset* contains rich 2D and 3D geometry data derived f
 ## Datasets
 From the approximately 20,000 designs available we derive several datasets focused on specific areas of research. Currently the following data subsets are available, with more to be released on an ongoing basis.
 
-- [Segmentation Dataset](docs/segmentation.md): Segmented 3D models based on the modeling operation used to create each face, e.g. Extrude, Fillet, Chamfer etc... 
+- [Segmentation Dataset](docs/segmentation.md): A segmentation of 3D models based on the modeling operation used to create each face, e.g. Extrude, Fillet, Chamfer etc... 
 -  [Reconstruction Dataset](docs/reconstruction.md): Sequential construction sequence information from a subset of simple 'sketch and extrude' designs.
 
 
