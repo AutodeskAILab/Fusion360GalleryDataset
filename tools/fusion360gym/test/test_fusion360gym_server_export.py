@@ -388,6 +388,25 @@ class TestFusion360ServerExport(unittest.TestCase):
         if self.clean_output:
             shutil.rmtree(self.test_output_dir)
 
+    def test_graph_sequence_invalid_dir(self):
+        # Save out the graphs
+        r = self.client.graph(
+            self.box_design_json_file,
+            Path("xksksksl"),
+            format="PerExtrude",
+            sequence=True
+        )
+        self.assertIsNone(r, msg="graph response is None")
+
+    def test_graph_empty(self):
+        # Save out the graphs
+        r = self.client.graph()
+        self.assertIsNotNone(r, msg="graph response is not None")
+        self.assertEqual(r.status_code, 200, msg="graph status code")
+        response_json = r.json()
+        common_test.check_empty_graph_format(self, response_json["data"])
+        common_test.check_bounding_box(self, response_json["data"])
+
     def __test_box_mesh(self, mesh_file):
         # Check the mesh data
         local_mesh = mesh.Mesh.from_file(mesh_file)

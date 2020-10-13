@@ -36,6 +36,25 @@ def check_graph_format(self, response_data):
         self.assertIn(link["target"], node_set, msg="Graph link target in node set")
 
 
+def check_empty_graph_format(self, response_data):
+    """Check the graph data that comes back is in the right format"""
+    self.assertIn("graph", response_data, msg="graph in response_data")
+    graph = response_data["graph"]
+    # Metadata check
+    self.assertIsNotNone(graph, msg="Graph is not None")
+    self.assertIn("directed", graph, msg="Graph has directed")
+    self.assertFalse(graph["directed"], msg="Directs is false")
+    self.assertIn("multigraph", graph, msg="Graph has multigraph")
+    self.assertIn("graph", graph, msg="Graph has graph")
+    self.assertFalse(graph["multigraph"], msg="Multigraph is false")
+    self.assertIsInstance(graph["graph"], dict, msg="Graph graph is dict")
+    # Node and link check
+    self.assertIn("nodes", graph, msg="Graph has nodes")
+    self.assertIsInstance(graph["nodes"], list, msg="Nodes is list")
+    self.assertIn("links", graph, msg="Graph has links")
+    self.assertIsInstance(graph["links"], list, msg="Links is list")
+
+
 def check_bounding_box(self, response_data):
     """Check the bounding box data that comes back is in the right format"""
     self.assertIn("bounding_box", response_data, msg="bounding_box in response_data")
