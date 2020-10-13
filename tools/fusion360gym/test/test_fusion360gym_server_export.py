@@ -14,6 +14,8 @@ import importlib
 import json
 import shutil
 
+import common_test
+
 # Add the client folder to sys.path
 CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
@@ -299,7 +301,48 @@ class TestFusion360ServerExport(unittest.TestCase):
         if not self.test_output_dir.exists():
             self.test_output_dir.mkdir()
         # Save out the graphs
-        r = self.client.graph(self.couch_design_json_file, self.test_output_dir, format="PerFace")
+        r = self.client.graph(
+            format="PerFace",
+            sequence=False
+        )
+        self.assertIsNotNone(r, msg="graph response is not None")
+        self.assertEqual(r.status_code, 200, msg="graph status code")
+        response_json = r.json()
+        common_test.check_graph_format(self, response_json["data"])
+        common_test.check_bounding_box(self, response_json["data"])
+        r = self.client.clear()
+
+    def test_graph_per_extrude(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.couch_design_json_file)
+        # Make the folder
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
+        # Save out the graphs
+        r = self.client.graph(
+            format="PerExtrude",
+            sequence=False
+        )
+        self.assertIsNotNone(r, msg="graph response is not None")
+        self.assertEqual(r.status_code, 200, msg="graph status code")
+        response_json = r.json()
+        common_test.check_graph_format(self, response_json["data"])
+        common_test.check_bounding_box(self, response_json["data"])
+        r = self.client.clear()
+
+    def test_graph_sequence_per_face(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.couch_design_json_file)
+        # Make the folder
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
+        # Save out the graphs
+        r = self.client.graph(
+            self.couch_design_json_file,
+            self.test_output_dir,
+            format="PerFace",
+            sequence=True
+        )
         self.assertIsNotNone(r, msg="graph response is not None")
         self.assertEqual(r.status_code, 200, msg="graph status code")
         graph_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_0000.json"
@@ -316,14 +359,19 @@ class TestFusion360ServerExport(unittest.TestCase):
         if self.clean_output:
             shutil.rmtree(self.test_output_dir)
 
-    def test_graph_per_extrude(self):
+    def test_graph_sequence_per_extrude(self):
         # Reconstruct first
         r = self.client.reconstruct(self.hex_design_json_file)
         # Make the folder
         if not self.test_output_dir.exists():
             self.test_output_dir.mkdir()
         # Save out the graphs
-        r = self.client.graph(self.hex_design_json_file, self.test_output_dir, format="PerExtrude")
+        r = self.client.graph(
+            self.hex_design_json_file,
+            self.test_output_dir,
+            format="PerExtrude",
+            sequence=True
+        )
         self.assertIsNotNone(r, msg="graph response is not None")
         self.assertEqual(r.status_code, 200, msg="graph status code")
         graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0000.json"

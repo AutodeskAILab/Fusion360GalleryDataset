@@ -51,6 +51,7 @@ class CommandTarget(CommandBase):
 
         # Use temp_ids
         regraph_graph = Regraph(
+            reconstruction=self.design_state.reconstruction,
             logger=self.logger,
             mode="PerFace",
             use_temp_id=True
@@ -166,6 +167,7 @@ class CommandTarget(CommandBase):
         # If this is the first extrude, we initialize regraph
         if "regraph" not in self.state:
             self.state["regraph"] = Regraph(
+                reconstruction=self.design_state.reconstruction,
                 logger=self.logger,
                 mode="PerFace",
                 use_temp_id=True

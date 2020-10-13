@@ -15,6 +15,8 @@ import shutil
 import time
 import math
 
+import common_test
+
 # Add the client folder to sys.path
 CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
@@ -58,8 +60,8 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertIsNotNone(r, msg="set_target response is not None")
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
-        self.__check_graph_format(response_json["data"])
-        self.__check_bounding_box(response_json["data"])
+        common_test.check_graph_format(self, response_json["data"])
+        common_test.check_bounding_box(self, response_json["data"])
         r = self.client.clear()
 
     def test_set_target_step(self):
@@ -67,8 +69,8 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertIsNotNone(r, msg="set_target response is not None")
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
-        self.__check_graph_format(response_json["data"])
-        self.__check_bounding_box(response_json["data"])
+        common_test.check_graph_format(self, response_json["data"])
+        common_test.check_bounding_box(self, response_json["data"])
         r = self.client.clear()
 
     def test_set_target_box(self):
@@ -76,8 +78,8 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertIsNotNone(r, msg="set_target response is not None")
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
-        self.__check_graph_format(response_json["data"])
-        self.__check_bounding_box(response_json["data"])
+        common_test.check_graph_format(self, response_json["data"])
+        common_test.check_bounding_box(self, response_json["data"])
         # Check the bounding box result is correct
         bbox = response_json["data"]["bounding_box"]
         maxp = bbox["max_point"]
@@ -95,8 +97,8 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertIsNotNone(r, msg="set_target response is not None")
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
-        self.__check_graph_format(response_json["data"])
-        self.__check_bounding_box(response_json["data"])
+        common_test.check_graph_format(self, response_json["data"])
+        common_test.check_bounding_box(self, response_json["data"])
         bbox = response_json["data"]["bounding_box"]
         # Check the bounding box result is correct
         bbox = response_json["data"]["bounding_box"]
@@ -129,7 +131,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="add_extrude_by_target_face status code")
         response_json = r.json()
         response_data = response_json["data"]
-        self.__check_graph_format(response_data)
+        common_test.check_graph_format(self, response_data)
         self.assertIn("iou", response_data, msg="response has iou")
         self.assertIsInstance(response_data["iou"], float, msg="iou is float")
         self.assertAlmostEqual(response_data["iou"], 1, places=4, msg="iou ~= 1")
@@ -179,7 +181,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         response_json = r.json()
         response_data = response_json["data"]
         graph = response_data["graph"]
-        self.__check_graph_format(response_data)
+        common_test.check_graph_format(self, response_data)
 
         # Make an extrude
         nodes = graph["nodes"]
@@ -192,7 +194,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         )
         response_json = r.json()
         response_data = response_json["data"]
-        self.__check_graph_format(response_data)
+        common_test.check_graph_format(self, response_data)
 
         # Revert to target
         r = self.client.revert_to_target()
@@ -200,7 +202,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="revert_to_target status code")
         response_json = r.json()
         response_data = response_json["data"]
-        self.__check_graph_format(response_data)
+        common_test.check_graph_format(self, response_data)
         revert_graph = response_data["graph"]
         self.assertDictEqual(graph, revert_graph, msg="target graph identical if reverted")
 
@@ -215,7 +217,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="add_extrude_by_target_face status code")
         response_json = r.json()
         response_data = response_json["data"]
-        self.__check_graph_format(response_data)
+        common_test.check_graph_format(self, response_data)
         self.assertIn("iou", response_data, msg="response has iou")
         self.assertIsInstance(response_data["iou"], float, msg="iou is float")
         self.assertAlmostEqual(response_data["iou"], 1, places=4, msg="iou ~= 1")
@@ -244,7 +246,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="add_extrudes_by_target_face status code")
         response_json = r.json()
         response_data = response_json["data"]
-        self.__check_graph_format(response_data)
+        common_test.check_graph_format(self, response_data)
         self.assertIn("iou", response_data, msg="response has iou")
         self.assertIsInstance(response_data["iou"], float, msg="iou is float")
         self.assertGreater(response_data["iou"], 0, msg="iou > 0")
@@ -255,7 +257,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="set_target status code")
         response_json = r.json()
         response_data = response_json["data"]
-        self.__check_graph_format(response_data)
+        common_test.check_graph_format(self, response_data)
 
         # Multiple Extrudes
         graph = response_data["graph"]
@@ -275,7 +277,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         r = self.client.add_extrudes_by_target_face(actions)
         response_json = r.json()
         response_data = response_json["data"]
-        self.__check_graph_format(response_data)
+        common_test.check_graph_format(self, response_data)
         self.assertGreater(response_data["iou"], 0, msg="iou > 0")
         prev_iou = response_data["iou"]
 
@@ -285,7 +287,7 @@ class TestFusion360ServerTarget(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="add_extrudes_by_target_face status code")
         response_json = r.json()
         response_data = response_json["data"]
-        self.__check_graph_format(response_data)
+        common_test.check_graph_format(self, response_data)
         self.assertIn("iou", response_data, msg="response has iou")
         self.assertIsInstance(response_data["iou"], float, msg="iou is float")
         self.assertEqual(response_data["iou"], prev_iou, msg="iou == prev_iou")

@@ -32,14 +32,19 @@ from logger import Logger
 class Regraph():
     """Reconstruction Graph generation"""
 
-    def __init__(self, logger=None, mode="PerExtrude", use_temp_id=False):
+    def __init__(self, reconstruction=None, logger=None, mode="PerExtrude", use_temp_id=False):
+        self.reconstruction = reconstruction
+        if self.reconstruction is None:
+            self.reconstruction = self.design.rootComponent
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
+
         # References to the Fusion design
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         self.product = self.app.activeProduct
+        self.timeline = self.app.activeProduct.timeline
         # Data structure to return
         self.data = {
             "graphs": [],
@@ -70,17 +75,11 @@ class Regraph():
     # GENERATE
     # -------------------------------------------------------------------------
 
-    def generate(self, reconstruction=None):
+    def generate(self):
         """Generate graphs from the design in the timeline"""
-        self.timeline = self.app.activeProduct.timeline
-        self.reconstruction = reconstruction
-        if self.reconstruction is None:
-            self.reconstruction = self.design.rootComponent
         assert self.reconstruction.bRepBodies.count > 0
-        # Iterate over the timeline and populate the face cache
-        for timeline_object in self.timeline:
-            if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
-                self.add_extrude_to_cache(timeline_object.entity)
+        # We (likely) need to first populate the face cache first
+        self.add_faces_to_cache()
         # Check that all faces have uuids
         # Iterate over the occurrence bodies, not the component
         for body in self.reconstruction.bRepBodies:
@@ -162,9 +161,11 @@ class Regraph():
 
     def generate_from_bodies(self, bodies):
         """Generate a single graph from a collection of bodies"""
-        # TODO: Check is we need to set_fac_uuids()
-        # if not self.use_temp_id:
-        self.set_face_uuids(bodies)
+        if not self.use_temp_id:
+            self.set_face_uuids(bodies)
+        if self.mode == "PerExtrude":
+            # We need to pull gt labels from the timeline
+            self.add_faces_to_cache()
         self.add_edges_to_cache(bodies)
         graph = self.get_graph_from_bodies(bodies)
         return graph
@@ -173,14 +174,11 @@ class Regraph():
     # DATA CACHING
     # -------------------------------------------------------------------------
 
-    def get_extrude_operation(self, extrude_operation):
-        """Get the extrude operation as short string and regular string"""
-        operation = serialize.feature_operation(extrude_operation)
-        operation_short = operation.replace("FeatureOperation", "")
-        assert operation_short != "NewComponent"
-        if operation_short == "NewBody" or operation_short == "Join":
-            operation_short = "Extrude"
-        return operation, operation_short
+    def add_faces_to_cache(self):
+        """Iterate over the timeline and populate the face cache"""
+        for timeline_object in self.timeline:
+            if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
+                self.add_extrude_to_cache(timeline_object.entity)
 
     def add_extrude_to_cache(self, extrude):
         """Add the data from the latest extrude to the cache"""
@@ -191,6 +189,15 @@ class Regraph():
         self.add_extrude_faces_to_cache(extrude.startFaces, operation_short, "Start")
         self.add_extrude_faces_to_cache(extrude.endFaces, operation_short, "End")
         self.add_extrude_faces_to_cache(extrude.sideFaces, operation_short, "Side")
+
+    def get_extrude_operation(self, extrude_operation):
+        """Get the extrude operation as short string and regular string"""
+        operation = serialize.feature_operation(extrude_operation)
+        operation_short = operation.replace("FeatureOperation", "")
+        assert operation_short != "NewComponent"
+        if operation_short == "NewBody" or operation_short == "Join":
+            operation_short = "Extrude"
+        return operation, operation_short
 
     def add_extrude_faces_to_cache(self, extrude_faces, operation_short, extrude_face_location):
         """Update the extrude face cache with the recently added faces"""
@@ -818,9 +825,12 @@ class RegraphWriter():
         self.output_dir = output_dir
         self.file = file
         if regraph is None:
-            regraph = Regraph(mode=self.mode)
+            regraph = Regraph(
+                reconstruction=reconstruction,
+                mode=self.mode
+            )
         # Create the graph from the reconstruction component
-        graph_data = regraph.generate(reconstruction=reconstruction)
+        graph_data = regraph.generate()
         # If we don't get any graphs back return None
         if len(graph_data["graphs"]) <= 0:
             return None

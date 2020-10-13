@@ -423,32 +423,39 @@ class Fusion360GymClient():
         self.__write_file(r, file)
         return r
 
-    def graph(self, file, dir, format="PerFace"):
+    def graph(self, file=None, dir=None, format="PerFace", sequence=False):
         """Retreive a face adjacency graph in a given format"""
-        if isinstance(file, str):
-            file = Path(file)
-        if not dir.is_dir():
-            return self.__return_error(f"Not an existing directory")
+        if sequence:
+            if file is None:
+                return self.__return_error("Invalid value for file")
+            if isinstance(file, str):
+                file = Path(file)
+            if dir is None or not dir.is_dir():
+                return self.__return_error(f"Not an existing directory")
         valid_formats = ["PerFace", "PerExtrude"]
         if format not in valid_formats:
             return self.__return_error(f"Invalid graph format: {format}")
         command_data = {
-            "file": file.name,
-            "format": format
+            "format": format,
+            "sequence": sequence
         }
-        r = self.send_command("graph", data=command_data, stream=True)
-        if r.status_code != 200:
+        if sequence:
+            command_data["file"] = file.name
+            r = self.send_command("graph", data=command_data, stream=True)
+            if r.status_code != 200:
+                return r
+            # Save out the zip file with the graph data
+            temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
+            zip_file = Path(temp_file_path)
+            self.__write_file(r, zip_file)
+            # Extract all the files to the given directory
+            with ZipFile(zip_file, "r") as zipObj:
+                zipObj.extractall(dir)
+            os.close(temp_file_handle)
+            zip_file.unlink()
             return r
-        # Save out the zip file with the graph data
-        temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
-        zip_file = Path(temp_file_path)
-        self.__write_file(r, zip_file)
-        # Extract all the files to the given directory
-        with ZipFile(zip_file, "r") as zipObj:
-            zipObj.extractall(dir)
-        os.close(temp_file_handle)
-        zip_file.unlink()
-        return r
+        else:
+            return self.send_command("graph", command_data)
 
     # -------------------------------------------------------------------------
     # UTILITY
