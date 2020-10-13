@@ -14,16 +14,12 @@ import deserialize
 
 class FaceReconstructor():
 
-    def __init__(self, target, reconstruction):
+    def __init__(self, target, reconstruction, use_temp_id=True):
+        self.target = target
+        self.reconstruction = reconstruction
+        self.use_temp_id = use_temp_id
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        self.target = target
-        self.set_reconstruction_component(reconstruction)
-        self.target_uuid_to_face_map = {}
-        self.use_temp_id = True
-
-    def setup(self):
-        """Setup for reconstruction"""
         # Populate the cache with a map from uuids to face indices
         self.target_uuid_to_face_map = self.get_target_uuid_to_face_map()
 
@@ -34,7 +30,6 @@ class FaceReconstructor():
     def reconstruct(self, graph_data):
         """Reconstruct from the sequence of faces"""
         self.sequence = graph_data["sequences"][0]
-        self.setup()
         for seq in self.sequence["sequence"]:
             self.add_extrude_from_uuid(
                 seq["start_face"],
@@ -65,7 +60,7 @@ class FaceReconstructor():
         target_uuid_to_face_map = {}
         for body_index, body in enumerate(self.target.bRepBodies):
             for face_index, face in enumerate(body.faces):
-                face_uuid = str(face.tempId)
+                face_uuid = self.get_regraph_uuid(face)
                 assert face_uuid is not None
                 target_uuid_to_face_map[face_uuid] = {
                     "body_index": body_index,
@@ -76,6 +71,9 @@ class FaceReconstructor():
 
     def add_extrude_from_uuid(self, start_face_uuid, end_face_uuid, operation):
         """Create an extrude from a start face uuid to an end face uuid"""
+        print(f"Start: {start_face_uuid} End: {end_face_uuid} Operation: {operation}")
+        # Start and end face have to reference the occurrence
+        # in order to perform extrude operations between components
         start_face = self.get_face_from_uuid(start_face_uuid)
         end_face = self.get_face_from_uuid(end_face_uuid)
         operation = deserialize.feature_operations(operation)
@@ -100,3 +98,12 @@ class FaceReconstructor():
         extrude_input.participantBodies = tools
         extrude = extrudes.add(extrude_input)
         return extrude
+
+    def get_regraph_uuid(self, entity):
+        """Get a uuid or a tempid depending on a flag"""
+        is_face = isinstance(entity, adsk.fusion.BRepFace)
+        is_edge = isinstance(entity, adsk.fusion.BRepEdge)
+        if self.use_temp_id and (is_face or is_edge):
+            return str(entity.tempId)
+        else:
+            return name.get_uuid(entity)

@@ -14,7 +14,7 @@ import sys
 import time
 import copy
 from pathlib import Path
-from importlib import reload
+import importlib
 import unittest
 import math
 
@@ -23,6 +23,8 @@ import geometry
 import exporter
 import serialize
 import exceptions
+import face_reconstructor
+importlib.reload(face_reconstructor)
 from face_reconstructor import FaceReconstructor
 from logger import Logger
 
@@ -80,9 +82,9 @@ class Regraph():
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
                 self.add_extrude_to_cache(timeline_object.entity)
         # Check that all faces have uuids
+        # Iterate over the occurrence bodies, not the component
         for body in self.reconstruction.bRepBodies:
             for face in body.faces:
-                print(f"Face {face.tempId}")
                 face_uuid = self.get_regraph_uuid(face)
                 assert face_uuid is not None
         prev_extrude_index = 0
@@ -193,8 +195,10 @@ class Regraph():
     def add_extrude_faces_to_cache(self, extrude_faces, operation_short, extrude_face_location):
         """Update the extrude face cache with the recently added faces"""
         for face in extrude_faces:
-            face_uuid = self.set_regraph_uuid(face)
-            print(f"Face {face.tempId}: {face_uuid}")
+            # We want to set a uuid on the face in the assembly context
+            # of the reconstruction, rather than on the component face
+            proxy_face = face.createForAssemblyContext(self.reconstruction)
+            face_uuid = self.set_regraph_uuid(proxy_face)
             assert face_uuid is not None
             # We will have split faces with the same uuid
             # So we need to update them
@@ -208,6 +212,7 @@ class Regraph():
     def add_edges_to_cache(self, bodies=None):
         """Update the edge cache with the latest extrude"""
         if bodies is None:
+            # We want the occurrence bodies, not the component
             bodies = self.reconstruction.bRepBodies
         concave_edge_cache = set()
         for body in bodies:
@@ -269,13 +274,17 @@ class Regraph():
         if start_face is None or start_end_flipped is None:
             start_face, start_end_flipped = self.get_extrude_start_face(extrude)
         assert start_face is not None
-        start_face_uuid = self.get_regraph_uuid(start_face)
+        # Get the face uuid in the context of the occurrence, not the component
+        proxy_start_face = start_face.createForAssemblyContext(self.reconstruction)
+        start_face_uuid = self.get_regraph_uuid(proxy_start_face)
         assert start_face_uuid is not None
 
         # End face
         end_face = self.get_extrude_end_face(extrude, start_end_flipped, start_face.body)
         assert end_face is not None
-        end_face_uuid = self.get_regraph_uuid(end_face)
+        # Get the face uuid in the context of the occurrence, not the component
+        proxy_end_face = end_face.createForAssemblyContext(self.reconstruction)
+        end_face_uuid = self.get_regraph_uuid(proxy_end_face)
         assert end_face_uuid is not None
 
         operation = serialize.feature_operation(extrude.operation)
@@ -911,18 +920,19 @@ class RegraphTester(unittest.TestCase):
         """Reconstruct and test it matches the target"""
         # We create another temporary test component
         # to perform reconstruction in
-        test_comp = self.design.rootComponent.occurrences.addNewComponent(
+        app = adsk.core.Application.get()
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        test_comp = design.rootComponent.occurrences.addNewComponent(
             adsk.core.Matrix3D.create()
         )
-        name = f"Test_{self.test_comp.component.name}"
+        name = f"Test_{test_comp.component.name}"
         test_comp.component.name = name
-
         face_reconstructor = FaceReconstructor(
             target=target,
-            reconstruction=test_comp
+            reconstruction=test_comp,
+            use_temp_id=False
         )
         face_reconstructor.reconstruct(graph_data)
-
         # Compare the ground truth with the reconstruction
         self.test_reconstruction(target, test_comp)
         # Clean up
@@ -1009,6 +1019,8 @@ class RegraphTester(unittest.TestCase):
 
     def test_reconstruction(self, gt, rc, places=1):
         """Test the reconstruction"""
+        # Update the UI so bounding boxes are accurate
+        adsk.doEvents()        
         self.assertEqual(
             len(gt.bRepBodies),
             len(rc.bRepBodies),

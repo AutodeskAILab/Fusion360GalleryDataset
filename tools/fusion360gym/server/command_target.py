@@ -66,7 +66,6 @@ class CommandTarget(CommandBase):
             target=self.design_state.target,
             reconstruction=self.design_state.reconstruction
         )
-        self.state["reconstructor"].setup()
         return self.runner.return_success({
             "graph": self.state["target_graph"],
             "bounding_box": self.state["target_bounding_box"]
