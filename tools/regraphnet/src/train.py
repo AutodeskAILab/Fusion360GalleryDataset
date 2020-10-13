@@ -118,7 +118,7 @@ def load_dataset(args):
     dir_list=os.listdir(dataset_path)
     seqs=[x[:-14] for x in dir_list if (x.endswith('_sequence.json'))]
     if args.augment is not None and os.path.isdir(args.augment):
-        aug_dataset_path = args.augment
+        aug_dataset_path=args.augment
         print('Loading augmentation data from:', aug_dataset_path)
         aug_dir_list=os.listdir(aug_dataset_path)
         aug_seqs=[x[:-14] for x in aug_dir_list if (x.endswith('_sequence.json'))]
@@ -139,10 +139,10 @@ def load_dataset(args):
         # If we are training with synthetic data, ignore real training data
         if args.only_augment and seq in train_test_split["train"]:
             continue
-        alt_dataset_path = dataset_path
-        seq_file = '%s/%s_sequence.json'%(dataset_path,seq)
+        alt_dataset_path=dataset_path
+        seq_file='%s/%s_sequence.json'%(dataset_path,seq)
         if not os.path.isfile(seq_file):
-            alt_dataset_path = aug_dataset_path
+            alt_dataset_path=aug_dataset_path
         with open('%s/%s_sequence.json'%(alt_dataset_path,seq)) as json_data:
             data_seq=json.load(json_data)
         bbox=data_seq['properties']['bounding_box']
@@ -257,8 +257,8 @@ def accuracy_overall(acc_all,output0,output1,output2,labels0,labels1,labels2):
     return acc_all,correct
 
 def train_test(graph_pairs_formatted,args):
-    results = []
-    exp_name = f'model_{time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())}'
+    results=[]
+    exp_name=f'model_{time.strftime("%Y-%m-%d_%H-%M-%S",time.localtime())}'
     if args.exp_name is not None:
         exp_name = args.exp_name
     # Check if this is a full path to a valid file
@@ -361,14 +361,14 @@ if __name__=="__main__":
     parser.add_argument('--dataset',type=str,default='RegraphPerFace_04',help='Dataset name.')
     parser.add_argument('--split',type=str,default='train_test',help='Split name.')
     parser.add_argument('--seed',type=int,default=42,help='Random seed.')
-    parser.add_argument('--epochs',type=int,default=50,help='Number of epochs to train.')
+    parser.add_argument('--epochs',type=int,default=100,help='Number of epochs to train.')
     parser.add_argument('--lr',type=float,default=0.0001,help='Initial learning rate.')
     parser.add_argument('--weight_decay',type=float,default=5e-4,help='Weight decay (L2 loss on parameters).')
     parser.add_argument('--hidden',type=int,default=256,help='Number of hidden units.')
     parser.add_argument('--dropout',type=float,default=0.1,help='Dropout rate.')
     parser.add_argument('--no_gcn',action='store_true',default=False,help='Use GCN.')
     parser.add_argument('--augment',type=str,help='Directory for augmentation data.')
-    parser.add_argument('--only_augment', dest='only_augment', default=False, action='store_true', help='Train with only augmented data')
+    parser.add_argument('--only_augment',dest='only_augment',default=False,action='store_true',help='Train with only augmented data')
     parser.add_argument('--exp_name',type=str,help='Name of the experiment. Used for the checkpoint and log files.')
     args=parser.parse_args()
     args.cuda=not args.no_cuda and torch.cuda.is_available()
