@@ -1,6 +1,6 @@
 """
 
-Reconstruct from a target design
+Face Extrusion Reconstruction
 
 """
 
@@ -31,7 +31,7 @@ from regraph import Regraph
 from face_reconstructor import FaceReconstructor
 
 
-class CommandTarget(CommandBase):
+class CommandFaceExtrusion(CommandBase):
 
     def set_target(self, data):
         """Set the target design"""

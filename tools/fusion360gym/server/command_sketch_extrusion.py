@@ -1,6 +1,6 @@
 """
 
-Incremental geometry construction commands
+Sketch Extrusion Reconstruction
 
 """
 
@@ -23,7 +23,7 @@ import serialize
 importlib.reload(match)
 
 
-class CommandIncrement(CommandBase):
+class CommandSketchExtrusion(CommandBase):
 
     def add_sketch(self, data):
         """Add a sketch to the existing design"""

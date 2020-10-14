@@ -14,8 +14,8 @@ from zipfile import ZipFile
 from pathlib import Path
 
 from .command_export import CommandExport
-from .command_increment import CommandIncrement
-from .command_target import CommandTarget
+from .command_sketch_extrusion import CommandSketchExtrusion
+from .command_face_extrusion import CommandFaceExtrusion
 from .command_reconstruct import CommandReconstruct
 from .design_state import DesignState
 
@@ -28,13 +28,13 @@ class CommandRunner():
         self.last_command = ""
         self.design_state = DesignState(self)
         self.export = CommandExport(self, self.design_state)
-        self.increment = CommandIncrement(self, self.design_state)
-        self.target = CommandTarget(self, self.design_state)
+        self.sketch_extrusion = CommandSketchExtrusion(self, self.design_state)
+        self.face_extrusion = CommandFaceExtrusion(self, self.design_state)
         self.reconstruct = CommandReconstruct(self, self.design_state)
         self.command_objects = [
             self.export,
-            self.increment,
-            self.target,
+            self.sketch_extrusion,
+            self.face_extrusion,
             self.reconstruct
         ]
         self.design_state.set_command_objects(self.command_objects)
@@ -76,23 +76,23 @@ class CommandRunner():
             elif command == "graph":
                 result = self.export.graph(data)
             elif command == "add_sketch":
-                result = self.increment.add_sketch(data)
+                result = self.sketch_extrusion.add_sketch(data)
             elif command == "add_point":
-                result = self.increment.add_point(data)
+                result = self.sketch_extrusion.add_point(data)
             elif command == "add_line":
-                result = self.increment.add_line(data)
+                result = self.sketch_extrusion.add_line(data)
             elif command == "close_profile":
-                result = self.increment.close_profile(data)
+                result = self.sketch_extrusion.close_profile(data)
             elif command == "add_extrude":
-                result = self.increment.add_extrude(data)
+                result = self.sketch_extrusion.add_extrude(data)
             elif command == "set_target":
-                result = self.target.set_target(data)
+                result = self.face_extrusion.set_target(data)
             elif command == "revert_to_target":
-                result = self.target.revert_to_target()
+                result = self.face_extrusion.revert_to_target()
             elif command == "add_extrude_by_target_face":
-                result = self.target.add_extrude_by_target_face(data)
+                result = self.face_extrusion.add_extrude_by_target_face(data)
             elif command == "add_extrudes_by_target_face":
-                result = self.target.add_extrudes_by_target_face(data)
+                result = self.face_extrusion.add_extrudes_by_target_face(data)
             else:
                 return self.return_failure("Unknown command")
             return result
