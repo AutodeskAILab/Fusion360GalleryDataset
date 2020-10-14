@@ -19,6 +19,16 @@ class Fusion360Client():
             "NewBodyFeatureOperation"
         ]
         self.construction_planes = ["XY", "XZ", "YZ"]
+        self.distribution_categories = [
+            "starting_plane", 
+            "num_faces", 
+            "num_extrusions", 
+            "length_sequences",
+            "num_curves",
+            "num_bodies",
+            "sketch_areas",
+            "profile_areas"
+        ]
 
     def send_command(self, command, data=None, stream=False):
         command_data = {
@@ -293,30 +303,9 @@ class Fusion360Client():
 
     # -------------------------------------------------------------------------
     # RANDOMIZED RECONSTRUCTION
-    # -------------------------------------------------------------------------
-    def sample_design(self, data_dir, filter=True, split_file=None):
-        """randomly sample a json file from 
-        the given dataset"""
-        if isinstance(data_dir, str):
-            data_dir = Path(data_dir)
-        if not data_dir.exists():
-            return self.__return_error(f"Invalid data directory")
-        json_files = self.__get_json_files(data_dir, filter, split_file)
-        if not json_files is None and len(json_files) > 0:
-            json_file_dir = data_dir / random.choice(json_files)
-        else:
-            return None
-        with open(json_file_dir, encoding="utf8") as file_handle:
-            json_data = json.load(file_handle)
-        return [json_data, json_file_dir]
-
-    # to-do
-    def get_default_distributions(self, filter=True):
-        """return a list of distributions of 
-        the reconstruction dataset"""
-        pass
-
-    def get_distributions(self, data_dir, filter=True, split_file=None):
+    # -------------------------------------------------------------------------        
+    
+    def get_distributions_from_dataset(self, data_dir, filter=True, split_file=None):
         """get a list of distributions from
         the provided dataset"""
         if isinstance(data_dir, str):
@@ -335,7 +324,6 @@ class Fusion360Client():
             print("Get distributions ends")
         else:
             return None
-        
         # get all the counts 
         plane_counts = {"XY": 0, "XZ": 0, "YZ": 0}
         face_counts = []
@@ -347,7 +335,6 @@ class Fusion360Client():
         profile_areas = []
         MIN_AREA = 1
         MAX_AREA = 5000
-
         for data in json_data:
             timeline = data["timeline"]
             entities = data["entities"]
@@ -391,11 +378,11 @@ class Fusion360Client():
                                 sketch_area += profile_area
             curve_counts.append(curve_count)
             sketch_areas.append(sketch_area)
-
         # calculate distributions 
-        plane_distribution = {}
+        plane_distribution = [[],[]]
         for plane in plane_counts:
-            plane_distribution[plane] = plane_counts[plane] / sum(plane_counts.values())
+            plane_distribution[0].append(plane)
+            plane_distribution[1].append(plane_counts[plane] / sum(plane_counts.values()))
         face_distribution = self.__get_per_distribution(face_counts, 0, 100, 25)
         extrusion_distribution = self.__get_per_distribution(extrusion_counts, 0, 16, 16, True)
         sequence_distribution = self.__get_per_distribution(sequences_counts, 0, 21, 21, True)
@@ -403,7 +390,6 @@ class Fusion360Client():
         body_distribution = self.__get_per_distribution(body_counts, 0, 11, 11, True)
         sketch_area_distribution = self.__get_per_distribution(sketch_areas, 0, 500, 25)
         profile_area_distribution = self.__get_per_distribution(profile_areas, 0, 100, 25)
-
         distributions = {"starting_plane": plane_distribution,
                         "num_faces": face_distribution,
                         "num_extrusions": extrusion_distribution, 
@@ -412,11 +398,98 @@ class Fusion360Client():
                         "num_bodies": body_distribution,
                         "sketch_areas": sketch_area_distribution,
                         "profile_areas": profile_area_distribution}
-                        # import statistics
-                        # "sketch_areas": [statistics.mean(sketch_areas), statistics.median(sketch_areas), max(sketch_areas)],
-                        # "profiles_areas": [statistics.mean(profile_areas), statistics.median(profile_areas), max(profile_areas)],}
-
         return distributions
+
+    def get_distributions_from_json(self, file):
+        """return a list of pre-calculated distributions saved in json"""
+        if isinstance(file, str):
+            file = Path(file)
+        if not file.exists():
+            return self.__return_error("JSON file does not exist")
+        with open(file, encoding="utf8") as file_handle:
+            distributions = json.load(file_handle)
+        return distributions
+
+    def distribution_sampling(self, distributions, parameters=None):
+        """sample distribution matching parameters 
+        for one design from the distributions"""
+        if not isinstance(distributions, dict):
+             return self.__return_error(f"Invalid input distributions")
+        for category in self.distribution_categories:
+            if not category in distributions:
+                return self.__return_error(f"Invalid input distributions")
+        sampled_parameters = {}
+        if parameters is None:
+            for key in distributions:
+                sampled_parameters[key] = np.random.choice(distributions[key][0], 1, p=distributions[key][1])[0]
+            return sampled_parameters
+        else:
+            if not isinstance(parameters, list):
+                return self.__return_error(f"Parameters should be a list")
+            for parameter in parameters:
+                if not parameter in self.distribution_categories:
+                    return self.__return_error(f"Invalid parameters")
+                sampled_parameters[parameter] = np.random.choice(distributions[parameter][0], 1, p=distributions[parameter][1])[0]
+            return sampled_parameters
+
+    def sample_design(self, data_dir, filter=True, split_file=None):
+        """randomly sample a json file from 
+        the given dataset"""
+        if isinstance(data_dir, str):
+            data_dir = Path(data_dir)
+        if not data_dir.exists():
+            return self.__return_error(f"Invalid data directory")
+        json_files = self.__get_json_files(data_dir, filter, split_file)
+        if not json_files is None and len(json_files) > 0:
+            json_file_dir = data_dir / random.choice(json_files)
+        else:
+            return None
+        with open(json_file_dir, encoding="utf8") as file_handle:
+            json_data = json.load(file_handle)
+        return [json_data, json_file_dir]
+
+    def sample_sketch(self, json_data, sampling_type, area_distribution=None):
+        """sample one sketch from the provided design"""
+        if not isinstance(json_data, dict) or not bool(json_data):
+            return self.__return_error("JSON data is invalid")
+        if "timeline" not in json_data or "entities" not in json_data:
+            return self.__return_error("JSON data is invalid")
+        sketches = self.__traverse_sketches(json_data)
+        if sketches is None:
+            return self.__return_error("No valid sketch in JSON data")
+        if not sampling_type == "random" and not sampling_type == "deterministic" and \
+            not sampling_type == "distributive":
+            return self.__return_error("Invalid sampling type")
+        if sampling_type == "random":
+            return np.random.choice(sketches, 1)[0]
+        elif sampling_type == "deterministic":
+            max_area = 0
+            returned_sketch = None
+            for sketch in sketches:
+                sketch_area = 0
+                profiles = sketch["profiles"]
+                for profile in profiles:
+                    sketch_area += profiles[profile]["properties"]["area"]
+                if sketch_area > max_area:
+                    max_area = sketch_area
+                    returned_sketch = sketch
+            return returned_sketch
+        elif sampling_type == "distributive":
+            if area_distribution is None or not isinstance(area_distribution, list) or \
+                not len(area_distribution) == 2:
+                return self.__return_error("Invalid area distribution")
+            sampled_area = np.random.choice(area_distribution[0], 1, p=area_distribution[1])[0]
+            area_difference = 1e6
+            returned_sketch = None
+            for sketch in sketches:
+                sketch_area = 0
+                profiles = sketch["profiles"]
+                for profile in profiles:
+                    sketch_area += profiles[profile]["properties"]["area"]
+                if abs(sketch_area - sampled_area) < area_difference:
+                    area_difference = abs(sketch_area - sampled_area)
+                    returned_sketch = sketch
+            return returned_sketch
 
     def __get_json_files(self, data_dir, filter, split_file):
         """get json files from the data directory and the split file"""    
@@ -452,7 +525,21 @@ class Fusion360Client():
         else:
             np_bins = np.delete(np_bins, np_bins.size-1)
         np_probs = np_counts / np.sum(np_counts)
-        return [np_probs.tolist(), np_bins.tolist()]
+        return [np_bins.tolist(), np_probs.tolist()]
+
+    def __traverse_sketches(self, json_data):
+        sketches = []
+        timeline = json_data["timeline"]
+        entities = json_data["entities"]
+        for timeline_object in timeline:
+            entity_uuid = timeline_object["entity"]
+            entity_index = timeline_object["index"]
+            entity = entities[entity_uuid]
+            # we only want sketches with profiles
+            if entity["type"] == "Sketch" and "profiles" in entity:
+                sketches.append(entity)
+        return None if len(sketches) == 0 else sketches
+
     # -------------------------------------------------------------------------
     # EXPORT
     # -------------------------------------------------------------------------
@@ -628,3 +715,5 @@ class Fusion360Client():
             with open(file, "wb") as file_handle:
                 for chunk in r.iter_content(chunk_size=128):
                     file_handle.write(chunk)
+
+    
