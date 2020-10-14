@@ -316,6 +316,7 @@ class Fusion360Client():
         if not json_files is None and len(json_files) > 0:
             json_data = []
             print("Get distributions begins")
+            print("It will take a few seconds")
             for json_file in json_files:
                 json_file = data_dir / json_file
                 with open(json_file, "r", encoding="utf8") as f:
@@ -490,6 +491,69 @@ class Fusion360Client():
                     area_difference = abs(sketch_area - sampled_area)
                     returned_sketch = sketch
             return returned_sketch
+    
+    def sample_profiles(self, sketch_data, max_number_profiles, sampling_type, area_distribution=None):
+            """sample profiles from the provided sketch"""
+            if not isinstance(sketch_data, dict) or not sketch_data:
+                return self.__return_error("Sketch data is invalid")
+            if not "profiles" in sketch_data:
+                return self.__return_error("No profile data in the sketch")
+            profiles = sketch_data["profiles"]
+            if not isinstance(max_number_profiles, int) or max_number_profiles < 1:
+                return self.__return_error("Invalid max number of profiles")
+            if max_number_profiles < len(profiles):
+                num_sampled_profiles = max_number_profiles
+            else:
+                num_sampled_profiles = len(profiles)
+            if not sampling_type == "random" and not sampling_type == "deterministic" and \
+                not sampling_type == "distributive":
+                return self.__return_error("Invalid sampling type")
+            if sampling_type == "random":
+                profile_objects = list(profiles.values())
+                return np.random.choice(profile_objects, num_sampled_profiles)
+            elif sampling_type == "deterministic":
+                # calculate average area of profiles
+                average_area = 0
+                profile_areas = {}
+                for profile_id, profile_object in profiles.items():
+                    average_area += profile_object["properties"]["area"]
+                    profile_areas[profile_id] = profile_object["properties"]["area"]
+                average_area /= len(profiles)
+                # get profiles larger than the average area and reserved sort it
+                filtered_profile_areas = {}
+                for profile_id in profile_areas:
+                    if profile_areas[profile_id] >= average_area:
+                        filtered_profile_areas[profile_id] = profile_areas[profile_id]
+                sorted_profile_areas = {k: v for k, v in sorted(filtered_profile_areas.items(), key=lambda item: item[1], reverse=True)}
+                # retrun the sampled profiles 
+                sampled_profiles = []
+                index = 0
+                for profile_id in sorted_profile_areas:
+                    sampled_profiles.append(profiles[profile_id])
+                    index += 1
+                    if index == max_number_profiles or index == len(sorted_profile_areas):
+                        break
+                return sampled_profiles
+            elif sampling_type == "distributive":
+                if area_distribution is None or not isinstance(area_distribution, list) or \
+                    not len(area_distribution) == 2:
+                    return self.__return_error("Invalid area distribution")
+                sampled_area = np.random.choice(area_distribution[0], 1, p=area_distribution[1])[0]
+                filtered_profile_areas = {}
+                for profile_id, profile_object in profiles.items():
+                    if profile_object["properties"]["area"] > sampled_area:
+                        filtered_profile_areas[profile_id] = profile_object["properties"]["area"]
+                # get profiles larger than the average area and reserved sort it
+                sorted_profile_areas = {k: v for k, v in sorted(filtered_profile_areas.items(), key=lambda item: item[1], reverse=True)}
+                # retrun the sampled profiles 
+                sampled_profiles = []
+                index = 0
+                for profile_id in sorted_profile_areas:
+                    sampled_profiles.append(profiles[profile_id])
+                    index += 1
+                    if index == max_number_profiles or index == len(sorted_profile_areas):
+                        break
+                return sampled_profiles
 
     def __get_json_files(self, data_dir, filter, split_file):
         """get json files from the data directory and the split file"""    

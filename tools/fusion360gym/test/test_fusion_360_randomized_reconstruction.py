@@ -96,5 +96,22 @@ class TestFusion360RandomizedReconstruction(unittest.TestCase):
         # test invalid area distribution
         r = self.client.sample_sketch(json_data, sampling_type = "distributive", area_distribution=["invalid"])
 
+    def test_sample_profiles(self):
+        json_data, _ = self.client.sample_design(self.data_dir, filter=True, split_file=self.split_file)
+        sketch_data = self.client.sample_sketch(json_data, sampling_type = "random")
+        # test invalid sketch data
+        r = self.client.sample_profiles({"data":"invalid"}, max_number_profiles = 1, sampling_type = "random")
+        # test invalid max number of profiles
+        r = self.client.sample_profiles(sketch_data, max_number_profiles = -1, sampling_type = "random")
+        # random sampling
+        r = self.client.sample_profiles(sketch_data, max_number_profiles = 2, sampling_type = "random")
+        # deterministic sampling
+        r = self.client.sample_profiles(sketch_data, max_number_profiles = 2, sampling_type = "deterministic")
+        # distributive sampling
+        distributions = self.client.get_distributions_from_json(self.distributions_training_only_json)
+        r = self.client.sample_sketch(json_data, sampling_type = "distributive", area_distribution=distributions["profile_areas"])
+        # test invalid area distribution
+        r = self.client.sample_sketch(json_data, sampling_type = "distributive", area_distribution=["invalid"])
+
 if __name__ == "__main__":
     unittest.main()
