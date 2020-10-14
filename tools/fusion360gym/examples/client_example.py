@@ -2,9 +2,15 @@ from pathlib import Path
 import sys
 import os
 import json
+
+# Add the client folder to sys.path
+CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
+if CLIENT_DIR not in sys.path:
+    sys.path.append(CLIENT_DIR)
+
 from fusion360gym_client import Fusion360GymClient
 
-# Before running ensure the Fusion360Server is running
+# Before running ensure the Fusion360GymServer is running
 # and configured with the same host name and port number
 HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
@@ -54,43 +60,6 @@ def main():
     r = client.sketches(sketch_dir)
     # Or we can export vector data as .dxf
     r = client.sketches(sketch_dir, ".dxf")
-    r = client.clear()
-
-    # COMMANDS
-    # Send a list of commands directly to the server to run in sequence
-    # We need to load the json as a dict to reconstruct
-    hex_design_json_file = data_dir / "Z0HexagonCutJoin_RootComponent.json"
-    with open(hex_design_json_file) as file_handle:
-        hex_design_json_data = json.load(file_handle)
-    # All the output will go into this folder
-    hex_design_dir = output_dir / "hex_design"
-    if not hex_design_dir.exists():
-        hex_design_dir.mkdir()
-    # Set a name for the mesh file we will get back
-    hex_design_mesh_file = hex_design_dir / "hex_design.stl"
-    # Construct the command list
-    command_list = [
-        {
-            "command": "reconstruct",
-            "data": hex_design_json_data
-        },
-        {
-            "command": "sketches",
-            "data": {
-                "format": ".png"
-            }
-        },
-        {
-            "command": "mesh",
-            "data": {
-                "file": hex_design_mesh_file.name
-            }
-        },
-        {"command": "clear"}
-    ]
-    # Run the command
-    r = client.commands(command_list, hex_design_dir)
-    r = client.clear()
 
     # OTHER
     # Ping: check if the server is responding
@@ -109,6 +78,7 @@ def main():
     # print(f"[{r.status_code}] Response message: {response_data['message']}")
 
     print(f"Done! Check this folder for exported files: {output_dir}")
+
 
 if __name__ == "__main__":
     main()

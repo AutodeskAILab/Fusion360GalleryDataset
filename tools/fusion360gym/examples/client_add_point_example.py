@@ -1,6 +1,6 @@
 """"
 
-Example client usage of incremental construction using add_point()
+Example client usage of construction using add_point()
 
 """
 
@@ -9,6 +9,12 @@ import sys
 import os
 import json
 import random
+
+# Add the client folder to sys.path
+CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
+if CLIENT_DIR not in sys.path:
+    sys.path.append(CLIENT_DIR)
+
 from fusion360gym_client import Fusion360GymClient
 
 
@@ -53,7 +59,7 @@ def main():
     # Pick a random face for the next sketch
     response_json = r.json()
     response_data = response_json["data"]
-    faces = response_data["faces"]
+    faces = response_data["extrude"]["faces"]
     random_face = random.choice(faces)
     # Create a second sketch on a random face
     r = client.add_sketch(random_face["face_id"])
@@ -82,6 +88,9 @@ def main():
     # Its also possible to do different extrude operations here, for example a cut with a negative extrude value
     # random_distance = random.randrange(-5, -1)
     # r = client.add_extrude(sketch_name, profile_id, random_distance, "CutFeatureOperation")
+
+    print("Finished creating design using add_point and add_extrude")
+
 
 if __name__ == "__main__":
     main()
