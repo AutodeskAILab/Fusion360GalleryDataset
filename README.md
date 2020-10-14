@@ -13,8 +13,8 @@ From the approximately 20,000 designs available we derive several datasets focus
 
 | Dataset | Designs | Documentation | Download | Paper |
 | - | - | - | - | - |
-| Reconstruction | 8,625 | [Documentation](docs/reconstruction.md) | [r1.0.0](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0.zip) | [Paper](https://arxiv.org/abs/2010.02392) |
-| Segmentation |  35,858 | [Documentation](docs/segmentation.md) | [s1.0.0](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s1.0.0/s1.0.0.zip) | Forthcoming |
+| Reconstruction | 8,625 | [Documentation](docs/reconstruction.md) | [r1.0.0 - 2.0 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0.zip) | [Paper](https://arxiv.org/abs/2010.02392) |
+| Segmentation |  35,858 | [Documentation](docs/segmentation.md) | [s1.0.0 - 2.9 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s1.0.0/s1.0.0.zip) | Forthcoming |
 
 ## Publications
 Please cite the relevant paper below if you use the Fusion 360 Gallery dataset in your research.
