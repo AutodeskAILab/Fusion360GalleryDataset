@@ -308,7 +308,7 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertIsNotNone(r, msg="graph response is not None")
         self.assertEqual(r.status_code, 200, msg="graph status code")
         response_json = r.json()
-        common_test.check_graph_format(self, response_json["data"])
+        common_test.check_graph_format(self, response_json["data"], mode="PerFace")
         common_test.check_bounding_box(self, response_json["data"])
         r = self.client.clear()
 
@@ -326,7 +326,7 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertIsNotNone(r, msg="graph response is not None")
         self.assertEqual(r.status_code, 200, msg="graph status code")
         response_json = r.json()
-        common_test.check_graph_format(self, response_json["data"])
+        common_test.check_graph_format(self, response_json["data"], mode="PerExtrude")
         common_test.check_bounding_box(self, response_json["data"])
         r = self.client.clear()
 
@@ -348,9 +348,13 @@ class TestFusion360ServerExport(unittest.TestCase):
         graph_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_0000.json"
         self.assertTrue(graph_file.exists(), msg="graph file exists")
         self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerFace")
+
         graph_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_0001.json"
         self.assertTrue(graph_file.exists(), msg="graph file exists")
         self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerFace")
+
         seq_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_sequence.json"
         self.assertTrue(seq_file.exists(), msg="sequence file exists")
         self.assertGreater(seq_file.stat().st_size, 0, msg="sequence file size greater than 0")
@@ -377,12 +381,18 @@ class TestFusion360ServerExport(unittest.TestCase):
         graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0000.json"
         self.assertTrue(graph_file.exists(), msg="graph file exists")
         self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerExtrude")
+
         graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0001.json"
         self.assertTrue(graph_file.exists(), msg="graph file exists")
-        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")        
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerExtrude")
+
         graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0002.json"
         self.assertTrue(graph_file.exists(), msg="graph file exists")
         self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerExtrude")
+
         # Clear
         r = self.client.clear()
         if self.clean_output:
@@ -419,8 +429,9 @@ class TestFusion360ServerExport(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if cls.output_dir.exists():
-            shutil.rmtree(cls.output_dir)
+        if cls.clean_output:
+            if cls.output_dir.exists():
+                shutil.rmtree(cls.output_dir)
 
 
 if __name__ == "__main__":

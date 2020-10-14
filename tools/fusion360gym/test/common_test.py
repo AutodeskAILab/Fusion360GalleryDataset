@@ -1,10 +1,18 @@
 import math
+import json
+from pathlib import Path
 
 
-def check_graph_format(self, response_data):
+def check_graph_format(self, response_data, mode=None):
     """Check the graph data that comes back is in the right format"""
-    self.assertIn("graph", response_data, msg="graph in response_data")
-    graph = response_data["graph"]
+    # If this is a json file, open it and load the data
+    if isinstance(response_data, Path):
+        with open(response_data, "r", encoding="utf8") as f:
+            json_data = json.load(f)
+        graph = json_data
+    else:
+        self.assertIn("graph", response_data, msg="graph in response_data")
+        graph = response_data["graph"]
     # Metadata check
     self.assertIsNotNone(graph, msg="Graph is not None")
     self.assertIn("directed", graph, msg="Graph has directed")
@@ -34,6 +42,115 @@ def check_graph_format(self, response_data):
         self.assertIn(link["source"], node_set, msg="Graph link source in node set")
         self.assertIn("target", link, msg="Graph link has target")
         self.assertIn(link["target"], node_set, msg="Graph link target in node set")
+
+    if mode is None:
+        return
+
+    check_graph_node_features(self, graph["nodes"], mode)
+    check_graph_link_features(self, graph["links"], mode)
+
+
+def check_graph_node_features(self, nodes, mode):
+    """Check the graph node features"""
+    surface_types = {
+        "ConeSurfaceType",
+        "CylinderSurfaceType",
+        "EllipticalConeSurfaceType",
+        "EllipticalCylinderSurfaceType",
+        "NurbsSurfaceType",
+        "PlaneSurfaceType",
+        "SphereSurfaceType",
+        "TorusSurfaceType"
+    }
+    per_extrude_features = {
+        "reversed": bool,
+        "area": float,
+        "normal_x": float,
+        "normal_y": float,
+        "normal_z": float,
+        "max_tangent_x": float,
+        "max_tangent_y": float,
+        "max_tangent_z": float,
+        "max_curvature": float,
+        "min_curvature": float,
+        "last_operation_label": bool
+    }
+    operations_labels = {
+        "ExtrudeStart",
+        "ExtrudeSide",
+        "ExtrudeEnd",
+        "CutStart",
+        "CutSide",
+        "CutEnd",
+    }
+    for node in nodes:
+        self.assertIn("surface_type", node, msg="Graph node has surface_type")
+        self.assertIn(node["surface_type"], surface_types, msg="Valid surface type")
+
+        if mode == "PerFace":
+            self.assertIn("points", node, msg="Graph node has points")
+            self.assertIsInstance(node["points"], list, msg="Points is a list")
+            for point in node["points"]:
+                self.assertIsInstance(point, float, msg="Point is a float")
+                self.assertFalse(math.isinf(point), msg="Normal != inf")
+
+            self.assertIn("normals", node, msg="Graph node has normals")
+            self.assertIsInstance(node["normals"], list, msg="Normals is a list")
+            for normal in node["normals"]:
+                self.assertIsInstance(normal, float, msg="Normal is a float")
+                self.assertFalse(math.isinf(normal), msg="Normal != inf")
+
+            self.assertIn("trimming_mask", node, msg="Graph node has trimming_mask")
+            self.assertIsInstance(node["trimming_mask"], list, msg="trimming_mask is a list")
+            for tm in node["trimming_mask"]:
+                self.assertIsInstance(tm, int, msg="Trimming mask is an int")
+            points_len = len(node["points"])
+            normals_len = len(node["normals"])
+            self.assertEqual(points_len, normals_len, msg="#points == #normals")
+            tm_len = len(node["trimming_mask"])
+            self.assertEqual(int(points_len / 3), tm_len, msg="#points/3 == #trimming mask")
+
+        elif mode == "PerExtrude":
+            for feature, feature_type in per_extrude_features.items():
+                self.assertIn(feature, node, msg=f"Graph node has {feature}")
+                self.assertIsInstance(node[feature], feature_type, msg=f"{feature} is {str(feature_type)}")
+            self.assertIn("operation_label", node, msg="Graph node has operation_label")
+            self.assertIn(node["operation_label"], operations_labels, msg="Valid operation_label")
+
+
+def check_graph_link_features(self, links, mode):
+    """Check the graph link (edge) features"""
+    curve_types = {
+        "Line3DCurveType",
+        "Arc3DCurveType"
+        "Circle3DCurveType",
+        "Ellipse3DCurveType",
+        "EllipticalArc3DCurveType",
+        "InfiniteLine3DCurveType",
+        "Line3DCurveType",
+        "NurbsCurve3DCurveType",
+    }
+    convexity_types = {
+        "Concave",
+        "Convex"
+    }
+    edge_features = {
+        "length": float,
+        "perpendicular": bool,
+        "direction_x": float,
+        "direction_y": float,
+        "direction_z": float,
+        "curvature": float
+    }
+    for link in links:
+        if mode == "PerExtrude":
+            for feature, feature_type in edge_features.items():
+                self.assertIn(feature, link, msg=f"Graph link has {feature}")
+                self.assertIsInstance(link[feature], feature_type, msg=f"{feature} is {str(feature_type)}")
+            self.assertIn("curve_type", link, msg="Graph link has curve_type")
+            self.assertIn(link["curve_type"], curve_types, msg="Valid curve_type")
+            self.assertIn("convexity", link, msg="Graph link has convexity")
+            self.assertIn(link["convexity"], convexity_types, msg="Valid convexity")            
 
 
 def check_empty_graph_format(self, response_data):
