@@ -178,9 +178,9 @@ Export the existing design in a number of formats.
 - `graph(file, dir, format, sequence)`: Retreive a face adjacency graph for a B-Rep design, or construction sequence.
     - `file` (optional): the base json file name to be used for all graph files when `sequence` is `True`
     - `dir` (optional): the local directory where the output will be saved  when `sequence` is `True`
-    - `format` (optional): a string with the values `PerFace` or `PerExtrude` see [here](../regraph) for a description of each format. Default is `PerFace`.
+    - `format` (optional): a string with the values `PerFace` or `PerExtrude` indicating the type of features and format returned, see [here](../regraph) for a description of each format. Default is `PerFace`.
     - `sequence` (optional): a boolean indicating whether to generate graphs for each step in the construction sequence or just the current B-Rep design. Default is `False`.
-    - `labels` (optional): a boolean indicating whether to include labels in the graph data returned, default is False.
+    - `labels` (optional): a boolean indicating whether to include labels (`timeline_index`, `operation`, `location_in_feature`) in the graph data returned, default is False.
 
 
 

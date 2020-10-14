@@ -14,16 +14,10 @@ Data is exported in json that can be read using networkx. See [regraph_viewer.ip
 ## PerExtrude Mode
 When `mode` is set to `PerExtrude`, a graph is created for each extrude operation in the timeline.
 
-### Face Labels
-The following labels are given for each face:
-- `operation_label`: The type of extrude operation combined with the location of the extrude operation. Can be one of: `ExtrudeSide`, `ExtrudeStart`, `ExtrudeEnd`, `CutSide`, `CutStart`, `CutEnd`.
-- `last_operation_label`: The true/false flag to indicate if this face was created with the last extrude operation.
-
 ### Face Features
 The following features are given for each face:
 - `surface_type`: The type of surface, see [API reference](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/SurfaceTypes.htm).
 - `reversed`: If the normal of this face is reversed with respect to the surface geometry associated with this face, see [API Reference](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-54B1FCE4-25BB-4C37-BF2A-A984739B13E1).
- 
 - `area`: The area of the face.
 - `normal_*`: The normal vector of the face.
 - `max_tangent_*`: The output directions of maximum curvature at a point at or near the center of the face.
@@ -59,3 +53,9 @@ Currently the following features are given for each edge (see [UV-Net](https://a
 - `points`: Points sampled on the face in model space. The order is by xyz point in row first order `u0_v0, u0_v1, u0_v2... uN_vN`.
 - `normals`: Normals at the corresponding point location.
 - `trimming_mask`: Binary value indicating if the corresponding point is inside/outside the trimming boundary.
+
+## Face Labels
+The following labels are given for each face:
+- `operation_label`: The type of extrude operation. Can be one of: `CutFeatureOperation`, `IntersectFeatureOperation`, `JoinFeatureOperation`.
+- `location_in_feature_label`: The location of the face in the extrude feature. Can be one of `StartFace`, `SideFace`, or `EndFace`.
+- `timeline_index_label`: An integer value indicating the position in the timeline when the face was created.
