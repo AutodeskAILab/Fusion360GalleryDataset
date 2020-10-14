@@ -25,7 +25,7 @@ class TestDetachUtil(unittest.TestCase):
     def setUpClass(cls):
         cls.client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
 
-    # @unittest.skip("Skipping detach")
+    @unittest.skip("Skipping detach")
     def test_detach(self):
         r = self.client.detach()
         self.assertEqual(r.status_code, 200)

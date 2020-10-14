@@ -32,13 +32,20 @@ from logger import Logger
 class Regraph():
     """Reconstruction Graph generation"""
 
-    def __init__(self, reconstruction=None, logger=None, mode="PerExtrude", use_temp_id=False):
+    def __init__(self, reconstruction=None, logger=None, mode="PerExtrude", use_temp_id=False, include_labels=True):
         self.reconstruction = reconstruction
         if self.reconstruction is None:
             self.reconstruction = self.design.rootComponent
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
+
+        # The mode we want
+        self.mode = mode
+        # Global flag defining which id's to get for regraph
+        self.use_temp_id = use_temp_id
+        # Include labels when we output the graph
+        self.include_labels = include_labels
 
         # References to the Fusion design
         self.app = adsk.core.Application.get()
@@ -66,10 +73,6 @@ class Regraph():
         self.current_extrude_index = 0
         # Current overall action index
         self.current_action_index = 0
-        # The mode we want
-        self.mode = mode
-        # Global flag defining which id's to get for regraph
-        self.use_temp_id = use_temp_id
 
     # -------------------------------------------------------------------------
     # GENERATE
@@ -99,7 +102,7 @@ class Regraph():
                     skip_reason = unsupported_reason
                     break
                 # Populate the cache again
-                self.add_extrude_to_cache(extrude)
+                self.add_extrude_to_cache(extrude, timeline_object.index)
                 self.add_edges_to_cache()
                 self.generate_from_extrude(extrude)
                 prev_extrude_index = self.timeline.markerPosition
@@ -163,7 +166,7 @@ class Regraph():
         """Generate a single graph from a collection of bodies"""
         if not self.use_temp_id:
             self.set_face_uuids(bodies)
-        if self.mode == "PerExtrude":
+        if self.include_labels:
             # We need to pull gt labels from the timeline
             self.add_faces_to_cache()
         self.add_edges_to_cache(bodies)
@@ -178,28 +181,16 @@ class Regraph():
         """Iterate over the timeline and populate the face cache"""
         for timeline_object in self.timeline:
             if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
-                self.add_extrude_to_cache(timeline_object.entity)
+                self.add_extrude_to_cache(timeline_object.entity, timeline_object.index)
 
-    def add_extrude_to_cache(self, extrude):
+    def add_extrude_to_cache(self, extrude, timeline_index):
         """Add the data from the latest extrude to the cache"""
-        # First toggle the previous extrude last_operation label
-        for face_data in self.face_cache.values():
-            face_data["last_operation_label"] = False
-        operation, operation_short = self.get_extrude_operation(extrude.operation)
-        self.add_extrude_faces_to_cache(extrude.startFaces, operation_short, "Start")
-        self.add_extrude_faces_to_cache(extrude.endFaces, operation_short, "End")
-        self.add_extrude_faces_to_cache(extrude.sideFaces, operation_short, "Side")
+        operation = serialize.feature_operation(extrude.operation)
+        self.add_extrude_faces_to_cache(extrude.startFaces, operation, "StartFace", timeline_index)
+        self.add_extrude_faces_to_cache(extrude.endFaces, operation, "EndFace", timeline_index)
+        self.add_extrude_faces_to_cache(extrude.sideFaces, operation, "SideFace", timeline_index)
 
-    def get_extrude_operation(self, extrude_operation):
-        """Get the extrude operation as short string and regular string"""
-        operation = serialize.feature_operation(extrude_operation)
-        operation_short = operation.replace("FeatureOperation", "")
-        assert operation_short != "NewComponent"
-        if operation_short == "NewBody" or operation_short == "Join":
-            operation_short = "Extrude"
-        return operation, operation_short
-
-    def add_extrude_faces_to_cache(self, extrude_faces, operation_short, extrude_face_location):
+    def add_extrude_faces_to_cache(self, extrude_faces, operation, location_in_feature, timeline_index):
         """Update the extrude face cache with the recently added faces"""
         for face in extrude_faces:
             # We want to set a uuid on the face in the assembly context
@@ -211,9 +202,9 @@ class Regraph():
             # So we need to update them
             # assert face_uuid not in self.face_cache
             self.face_cache[face_uuid] = {
-                # "timeline_label": self.current_extrude_index / self.extrude_count,
-                "operation_label": f"{operation_short}{extrude_face_location}",
-                "last_operation_label": True
+                "operation_label": operation,
+                "timeline_index_label": timeline_index,
+                "location_in_feature_label": location_in_feature
             }
 
     def add_edges_to_cache(self, bodies=None):
@@ -393,89 +384,6 @@ class Regraph():
                 face_uuid = self.set_regraph_uuid(face)
 
     # -------------------------------------------------------------------------
-    # FEATURES
-    # -------------------------------------------------------------------------
-
-    def get_edge_convexity(self, edge, is_concave):
-        # is_concave = self.is_concave_edge(edge.tempId)
-        is_tc = geometry.are_faces_tangentially_connected(edge.faces[0], edge.faces[1])
-        convexity = "Convex"
-        # edge_data["convex"] = self.is_convex_edge(edge.tempId)
-        if is_concave:
-            convexity = "Concave"
-        elif is_tc:
-            convexity = "Smooth"
-        return convexity
-
-    def get_trimming_mask(self, pt, body):
-        """Return a trimming mask value indicating if a point should be masked or not"""
-        containment = body.pointContainment(pt)
-        binary_containment = 1
-        if containment == adsk.fusion.PointContainment.PointOutsidePointContainment:
-            binary_containment = 0
-        elif containment == adsk.fusion.PointContainment.UnknownPointContainment:
-            binary_containment = 0
-        return binary_containment
-
-    def linspace(self, start, stop, n):
-        if n == 1:
-            yield stop
-            return
-        h = (stop - start) / (n - 1)
-        for i in range(n):
-            yield start + h * i
-
-    def get_edge_parameter_features(self, edge):
-        param_features = {}
-        samples = 10
-        evaluator = edge.evaluator
-        result, start_param, end_param = evaluator.getParameterExtents()
-        assert result
-        parameters = list(self.linspace(start_param, end_param, samples))
-        result, points = evaluator.getPointsAtParameters(parameters)
-        assert result
-        param_features["points"] = []
-        for pt in points:
-            param_features["points"].append(pt.x)
-            param_features["points"].append(pt.y)
-            param_features["points"].append(pt.z)
-        return param_features
-
-    def get_face_parameter_features(self, face):
-        param_features = {}
-        samples = 10
-        evaluator = face.evaluator
-        range_bbox = evaluator.parametricRange()
-        u_min = range_bbox.minPoint.x
-        u_max = range_bbox.maxPoint.x
-        v_min = range_bbox.minPoint.y
-        v_max = range_bbox.maxPoint.y
-        u_params = list(self.linspace(u_min, u_max, samples+2))[1:-1]
-        v_params = list(self.linspace(v_min, v_max, samples+2))[1:-1]
-        params = []
-        for u in range(samples):
-            for v in range(samples):
-                pt = adsk.core.Point2D.create(u_params[u], v_params[v])
-                params.append(pt)
-        result, points = evaluator.getPointsAtParameters(params)
-        result, normals = evaluator.getNormalsAtParameters(params)
-        assert result
-        param_features["points"] = []
-        param_features["normals"] = []
-        param_features["trimming_mask"] = []
-        for i, pt in enumerate(points):
-            param_features["points"].append(pt.x)
-            param_features["points"].append(pt.y)
-            param_features["points"].append(pt.z)
-            normal = normals[i]
-            param_features["normals"].append(normal.x)
-            param_features["normals"].append(normal.y)
-            param_features["normals"].append(normal.z)
-            trim_mask = self.get_trimming_mask(pt, face.body)
-            param_features["trimming_mask"].append(trim_mask)
-        return param_features
-
-    # -------------------------------------------------------------------------
     # FILTER
     # -------------------------------------------------------------------------
 
@@ -555,6 +463,135 @@ class Regraph():
         return False
 
     # -------------------------------------------------------------------------
+    # FEATURES
+    # -------------------------------------------------------------------------
+
+    def get_face_custom_features(self, face):
+        """Custom face features derived from the B-Rep"""
+        face_data = {}
+        face_data["reversed"] = face.isParamReversed
+        # face_data["surface_type_id"] = face.geometry.surfaceType
+        face_data["area"] = face.area
+        normal = geometry.get_face_normal(face)
+        face_data["normal_x"] = normal.x
+        face_data["normal_y"] = normal.y
+        face_data["normal_z"] = normal.z
+        # face_data["normal_length"] = normal.length
+        parameter_result, parameter_at_point = face.evaluator.getParameterAtPoint(face.pointOnFace)
+        assert parameter_result
+        curvature_result, max_tangent, max_curvature, min_curvature = face.evaluator.getCurvature(parameter_at_point)
+        assert curvature_result
+        face_data["max_tangent_x"] = max_tangent.x
+        face_data["max_tangent_y"] = max_tangent.y
+        face_data["max_tangent_z"] = max_tangent.z
+        # face_data["max_tangent_length"] = max_tangent.length
+        face_data["max_curvature"] = max_curvature
+        face_data["min_curvature"] = min_curvature
+        return face_data
+
+    def get_edge_custom_features(self, edge, edge_metadata):
+        """Custom edge features derived from the B-Rep"""
+        edge_data = {}
+        edge_data["curve_type"] = serialize.curve_type(edge.geometry)
+        # edge_data["curve_type_id"] = edge.geometry.curveType
+        edge_data["length"] = edge.length
+        # Create a feature for the edge convexity
+        edge_data["convexity"] = edge_metadata["convexity"]
+        edge_data["perpendicular"] = geometry.are_faces_perpendicular(edge.faces[0], edge.faces[1])
+        point_on_edge = edge.pointOnEdge
+        evaluator = edge.evaluator
+        parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
+        assert parameter_result
+        curvature_result, direction, curvature = evaluator.getCurvature(parameter_at_point)
+        edge_data["direction_x"] = direction.x
+        edge_data["direction_y"] = direction.y
+        edge_data["direction_z"] = direction.z
+        # edge_data["direction_length"] = direction.length
+        edge_data["curvature"] = curvature
+        return edge_data
+
+    def get_edge_convexity(self, edge, is_concave):
+        # is_concave = self.is_concave_edge(edge.tempId)
+        is_tc = geometry.are_faces_tangentially_connected(edge.faces[0], edge.faces[1])
+        convexity = "Convex"
+        # edge_data["convex"] = self.is_convex_edge(edge.tempId)
+        if is_concave:
+            convexity = "Concave"
+        elif is_tc:
+            convexity = "Smooth"
+        return convexity
+
+    def get_trimming_mask(self, pt, body):
+        """Return a trimming mask value indicating if a point should be masked or not"""
+        containment = body.pointContainment(pt)
+        binary_containment = 1
+        if containment == adsk.fusion.PointContainment.PointOutsidePointContainment:
+            binary_containment = 0
+        elif containment == adsk.fusion.PointContainment.UnknownPointContainment:
+            binary_containment = 0
+        return binary_containment
+
+    def linspace(self, start, stop, n):
+        if n == 1:
+            yield stop
+            return
+        h = (stop - start) / (n - 1)
+        for i in range(n):
+            yield start + h * i
+
+    def get_edge_parameter_features(self, edge):
+        """UV-Net style parameter edge features"""
+        param_features = {}
+        samples = 10
+        evaluator = edge.evaluator
+        result, start_param, end_param = evaluator.getParameterExtents()
+        assert result
+        parameters = list(self.linspace(start_param, end_param, samples))
+        result, points = evaluator.getPointsAtParameters(parameters)
+        assert result
+        param_features["points"] = []
+        for pt in points:
+            param_features["points"].append(pt.x)
+            param_features["points"].append(pt.y)
+            param_features["points"].append(pt.z)
+        return param_features
+
+    def get_face_parameter_features(self, face):
+        """UV-Net style parameter face features"""
+        param_features = {}
+        samples = 10
+        evaluator = face.evaluator
+        range_bbox = evaluator.parametricRange()
+        u_min = range_bbox.minPoint.x
+        u_max = range_bbox.maxPoint.x
+        v_min = range_bbox.minPoint.y
+        v_max = range_bbox.maxPoint.y
+        u_params = list(self.linspace(u_min, u_max, samples+2))[1:-1]
+        v_params = list(self.linspace(v_min, v_max, samples+2))[1:-1]
+        params = []
+        for u in range(samples):
+            for v in range(samples):
+                pt = adsk.core.Point2D.create(u_params[u], v_params[v])
+                params.append(pt)
+        result, points = evaluator.getPointsAtParameters(params)
+        result, normals = evaluator.getNormalsAtParameters(params)
+        assert result
+        param_features["points"] = []
+        param_features["normals"] = []
+        param_features["trimming_mask"] = []
+        for i, pt in enumerate(points):
+            param_features["points"].append(pt.x)
+            param_features["points"].append(pt.y)
+            param_features["points"].append(pt.z)
+            normal = normals[i]
+            param_features["normals"].append(normal.x)
+            param_features["normals"].append(normal.y)
+            param_features["normals"].append(normal.z)
+            trim_mask = self.get_trimming_mask(pt, face.body)
+            param_features["trimming_mask"].append(trim_mask)
+        return param_features
+
+    # -------------------------------------------------------------------------
     # GRAPH CONSTRUCTION
     # -------------------------------------------------------------------------
 
@@ -618,51 +655,47 @@ class Regraph():
         """Get the features for a face"""
         face_uuid = self.get_regraph_uuid(face)
         assert face_uuid is not None
-        if self.mode == "PerExtrude":
+        face_metadata = None
+        if self.include_labels:
             face_metadata = self.face_cache[face_uuid]
+        if self.mode == "PerExtrude":
             return self.get_face_data_per_extrude(face, face_uuid, face_metadata)
         elif self.mode == "PerFace":
-            return self.get_face_data_per_face(face, face_uuid)
+            return self.get_face_data_per_face(face, face_uuid, face_metadata)
 
     def get_common_face_data(self, face, face_uuid):
         """Get common edge data"""
         face_data = {}
         face_data["id"] = face_uuid
+        face_data["surface_type"] = serialize.surface_type(face.geometry)
         return face_data
 
-    def get_face_data_per_extrude(self, face, face_uuid, face_metadata):
+    def get_face_labels(self, face_metadata):
+        """Get the face labels"""
+        face_data = {}
+        face_data["location_in_feature_label"] = face_metadata["location_in_feature_label"]
+        face_data["timeline_index_label"] = face_metadata["timeline_index_label"]
+        face_data["operation_label"] = face_metadata["operation_label"]
+        return face_data
+
+    def get_face_data_per_extrude(self, face, face_uuid, face_metadata=None):
         """Get the features for a face for a per extrude graph"""
         face_data = self.get_common_face_data(face, face_uuid)
-        face_data["surface_type"] = serialize.surface_type(face.geometry)
-        face_data["reversed"] = face.isParamReversed
-        # face_data["surface_type_id"] = face.geometry.surfaceType
-        face_data["area"] = face.area
-        normal = geometry.get_face_normal(face)
-        face_data["normal_x"] = normal.x
-        face_data["normal_y"] = normal.y
-        face_data["normal_z"] = normal.z
-        # face_data["normal_length"] = normal.length
-        parameter_result, parameter_at_point = face.evaluator.getParameterAtPoint(face.pointOnFace)
-        assert parameter_result
-        curvature_result, max_tangent, max_curvature, min_curvature = face.evaluator.getCurvature(parameter_at_point)
-        assert curvature_result
-        face_data["max_tangent_x"] = max_tangent.x
-        face_data["max_tangent_y"] = max_tangent.y
-        face_data["max_tangent_z"] = max_tangent.z
-        # face_data["max_tangent_length"] = max_tangent.length
-        face_data["max_curvature"] = max_curvature
-        face_data["min_curvature"] = min_curvature
-        # face_data["timeline_label"] = face_metadata["timeline_label"]
-        face_data["operation_label"] = face_metadata["operation_label"]
-        face_data["last_operation_label"] = face_metadata["last_operation_label"]
+        face_features = self.get_face_custom_features(face)
+        face_data.update(face_features)
+        if self.include_labels and face_metadata is not None:
+            face_labels = self.get_face_labels(face_metadata)
+            face_data.update(face_labels)
         return face_data
 
-    def get_face_data_per_face(self, face, face_uuid):
+    def get_face_data_per_face(self, face, face_uuid, face_metadata=None):
         """Get the features for a face for a per curve graph"""
         face_data = self.get_common_face_data(face, face_uuid)
-        face_data["surface_type"] = serialize.surface_type(face.geometry)
         face_param_feat = self.get_face_parameter_features(face)
         face_data.update(face_param_feat)
+        if self.include_labels and face_metadata is not None:
+            face_labels = self.get_face_labels(face_metadata)
+            face_data.update(face_labels)
         return face_data
 
     def get_edge_data(self, edge):
@@ -686,29 +719,13 @@ class Regraph():
     def get_edge_data_per_extrude(self, edge, edge_uuid, edge_metadata):
         """Get the features for an edge for a per extrude graph"""
         edge_data = self.get_common_edge_data(edge_uuid, edge_metadata)
-        edge_data["curve_type"] = serialize.curve_type(edge.geometry)
-        # edge_data["curve_type_id"] = edge.geometry.curveType
-        edge_data["length"] = edge.length
-        # Create a feature for the edge convexity
-        edge_data["convexity"] = edge_metadata["convexity"]
-        edge_data["perpendicular"] = geometry.are_faces_perpendicular(edge.faces[0], edge.faces[1])
-        point_on_edge = edge.pointOnEdge
-        evaluator = edge.evaluator
-        parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
-        assert parameter_result
-        curvature_result, direction, curvature = evaluator.getCurvature(parameter_at_point)
-        edge_data["direction_x"] = direction.x
-        edge_data["direction_y"] = direction.y
-        edge_data["direction_z"] = direction.z
-        # edge_data["direction_length"] = direction.length
-        edge_data["curvature"] = curvature
+        edge_features = self.get_edge_custom_features(edge, edge_metadata)
+        edge_data.update(edge_features)
         return edge_data
 
     def get_edge_data_per_face(self, edge, edge_uuid, edge_metadata):
         """Get the features for an edge for a per curve graph"""
         edge_data = self.get_common_edge_data(edge_uuid, edge_metadata)
-        # edge_param_feat = self.get_edge_parameter_features(edge)
-        # edge_data.update(edge_param_feat)
         return edge_data
 
     def get_extrude_start_plane(self, extrude):
@@ -813,12 +830,13 @@ class RegraphWriter():
         Takes a design and writes out a graph
         representing B-Rep topology"""
 
-    def __init__(self, logger=None, mode="PerExtrude"):
+    def __init__(self, logger=None, mode="PerExtrude", include_labels=True):
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
         # The mode we want
         self.mode = mode
+        self.include_labels = include_labels
 
     def write(self, file, output_dir, reconstruction, regraph=None):
         """Write out the design as graph json files"""
@@ -827,7 +845,8 @@ class RegraphWriter():
         if regraph is None:
             regraph = Regraph(
                 reconstruction=reconstruction,
-                mode=self.mode
+                mode=self.mode,
+                include_labels=self.include_labels
             )
         # Create the graph from the reconstruction component
         graph_data = regraph.generate()

@@ -180,6 +180,7 @@ Export the existing design in a number of formats.
     - `dir` (optional): the local directory where the output will be saved  when `sequence` is `True`
     - `format` (optional): a string with the values `PerFace` or `PerExtrude` see [here](../regraph) for a description of each format. Default is `PerFace`.
     - `sequence` (optional): a boolean indicating whether to generate graphs for each step in the construction sequence or just the current B-Rep design. Default is `False`.
+    - `labels` (optional): a boolean indicating whether to include labels in the graph data returned, default is False.
 
 
 

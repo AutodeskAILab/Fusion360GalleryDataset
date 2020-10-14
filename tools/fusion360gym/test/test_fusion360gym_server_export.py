@@ -297,10 +297,7 @@ class TestFusion360ServerExport(unittest.TestCase):
     def test_graph_per_face(self):
         # Reconstruct first
         r = self.client.reconstruct(self.couch_design_json_file)
-        # Make the folder
-        if not self.test_output_dir.exists():
-            self.test_output_dir.mkdir()
-        # Save out the graphs
+        # Get the graph
         r = self.client.graph(
             format="PerFace",
             sequence=False
@@ -312,13 +309,26 @@ class TestFusion360ServerExport(unittest.TestCase):
         common_test.check_bounding_box(self, response_json["data"])
         r = self.client.clear()
 
+    def test_graph_per_face_labels(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.couch_design_json_file)
+        r = self.client.graph(
+            format="PerFace",
+            sequence=False,
+            labels=True
+        )
+        self.assertIsNotNone(r, msg="graph response is not None")
+        self.assertEqual(r.status_code, 200, msg="graph status code")
+        response_json = r.json()
+        common_test.check_graph_format(
+            self, response_json["data"],mode="PerFace", labels=True)
+        common_test.check_bounding_box(self, response_json["data"])
+        r = self.client.clear()
+
     def test_graph_per_extrude(self):
         # Reconstruct first
         r = self.client.reconstruct(self.couch_design_json_file)
-        # Make the folder
-        if not self.test_output_dir.exists():
-            self.test_output_dir.mkdir()
-        # Save out the graphs
+        # Get the graph
         r = self.client.graph(
             format="PerExtrude",
             sequence=False
@@ -327,6 +337,22 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="graph status code")
         response_json = r.json()
         common_test.check_graph_format(self, response_json["data"], mode="PerExtrude")
+        common_test.check_bounding_box(self, response_json["data"])
+        r = self.client.clear()
+
+    def test_graph_per_extrude_labels(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.couch_design_json_file)
+        r = self.client.graph(
+            format="PerExtrude",
+            sequence=False,
+            labels=True
+        )
+        self.assertIsNotNone(r, msg="graph response is not None")
+        self.assertEqual(r.status_code, 200, msg="graph status code")
+        response_json = r.json()
+        common_test.check_graph_format(
+            self, response_json["data"], mode="PerExtrude", labels=True)
         common_test.check_bounding_box(self, response_json["data"])
         r = self.client.clear()
 
@@ -354,6 +380,40 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertTrue(graph_file.exists(), msg="graph file exists")
         self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
         common_test.check_graph_format(self, graph_file, mode="PerFace")
+
+        seq_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_sequence.json"
+        self.assertTrue(seq_file.exists(), msg="sequence file exists")
+        self.assertGreater(seq_file.stat().st_size, 0, msg="sequence file size greater than 0")
+        # Clear
+        r = self.client.clear()
+        if self.clean_output:
+            shutil.rmtree(self.test_output_dir)
+
+    def test_graph_sequence_per_face_labels(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.couch_design_json_file)
+        # Make the folder
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
+        # Save out the graphs
+        r = self.client.graph(
+            self.couch_design_json_file,
+            self.test_output_dir,
+            format="PerFace",
+            sequence=True,
+            labels=True
+        )
+        self.assertIsNotNone(r, msg="graph response is not None")
+        self.assertEqual(r.status_code, 200, msg="graph status code")
+        graph_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_0000.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerFace", labels=True)
+
+        graph_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_0001.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerFace", labels=True)
 
         seq_file = self.test_output_dir / f"{self.couch_design_json_file.stem}_sequence.json"
         self.assertTrue(seq_file.exists(), msg="sequence file exists")
@@ -392,6 +452,42 @@ class TestFusion360ServerExport(unittest.TestCase):
         self.assertTrue(graph_file.exists(), msg="graph file exists")
         self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
         common_test.check_graph_format(self, graph_file, mode="PerExtrude")
+
+        # Clear
+        r = self.client.clear()
+        if self.clean_output:
+            shutil.rmtree(self.test_output_dir)
+
+    def test_graph_sequence_per_extrude_labels(self):
+        # Reconstruct first
+        r = self.client.reconstruct(self.hex_design_json_file)
+        # Make the folder
+        if not self.test_output_dir.exists():
+            self.test_output_dir.mkdir()
+        # Save out the graphs
+        r = self.client.graph(
+            self.hex_design_json_file,
+            self.test_output_dir,
+            format="PerExtrude",
+            sequence=True,
+            labels=True
+        )
+        self.assertIsNotNone(r, msg="graph response is not None")
+        self.assertEqual(r.status_code, 200, msg="graph status code")
+        graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0000.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerExtrude", labels=True)
+
+        graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0001.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerExtrude", labels=True)
+
+        graph_file = self.test_output_dir / f"{self.hex_design_json_file.stem}_0002.json"
+        self.assertTrue(graph_file.exists(), msg="graph file exists")
+        self.assertGreater(graph_file.stat().st_size, 0, msg="graph file size greater than 0")
+        common_test.check_graph_format(self, graph_file, mode="PerExtrude", labels=True)
 
         # Clear
         r = self.client.clear()

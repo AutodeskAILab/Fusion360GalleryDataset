@@ -143,8 +143,11 @@ class CommandExport(CommandBase):
             return self.runner.return_failure("format not specified")
         if "sequence" not in data:
             return self.runner.return_failure("sequence not specified")
+        if "labels" not in data:
+            return self.runner.return_failure("labels not specified")
         mode = data["format"]
         is_sequence = data["sequence"]
+        include_labels = data["labels"]
         error = None
         if is_sequence:
             data_file, error = self.check_file(data, [".json"])
@@ -155,22 +158,23 @@ class CommandExport(CommandBase):
             return self.runner.return_failure("invalid format specified")
         if is_sequence:
             return_data, error = self.__export_graph_sequence(
-                data_file, mode, dest_dir, use_zip
+                data_file, mode, include_labels, dest_dir, use_zip
             )
         else:
-            return_data = self.__export_graph(mode)
+            return_data = self.__export_graph(mode, include_labels)
         if error is None:
             return self.runner.return_success(return_data)
         else:
             return self.runner.return_failure(error)
 
-    def __export_graph(self, mode):
+    def __export_graph(self, mode, include_labels):
         """Export the current design as a graph"""
         regraph_graph = Regraph(
             reconstruction=self.design_state.reconstruction,
             logger=self.logger,
             mode=mode,
-            use_temp_id=True
+            use_temp_id=True,
+            include_labels=include_labels
         )
         graph = regraph_graph.generate_from_bodies(
             self.design_state.reconstruction.bRepBodies
@@ -182,11 +186,16 @@ class CommandExport(CommandBase):
             "bounding_box": bbox_data
         }
 
-    def __export_graph_sequence(self, file, mode, dest_dir=None, use_zip=True):
+    def __export_graph_sequence(self, file, mode,
+                                include_labels, dest_dir=None, use_zip=True):
         """Export the current timeline as a graph sequence and return a zip file"""
         if dest_dir is None:
             dest_dir = Path(tempfile.mkdtemp())
-        regraph_writer = RegraphWriter(self.logger, mode)
+        regraph_writer = RegraphWriter(
+            logger=self.logger,
+            mode=mode,
+            include_labels=include_labels
+        )
         writer_data = regraph_writer.write(
             file,
             dest_dir,

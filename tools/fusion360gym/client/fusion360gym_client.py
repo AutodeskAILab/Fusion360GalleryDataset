@@ -423,7 +423,7 @@ class Fusion360GymClient():
         self.__write_file(r, file)
         return r
 
-    def graph(self, file=None, dir=None, format="PerFace", sequence=False):
+    def graph(self, file=None, dir=None, format="PerFace", sequence=False, labels=False):
         """Retreive a face adjacency graph in a given format"""
         if sequence:
             if file is None:
@@ -437,7 +437,8 @@ class Fusion360GymClient():
             return self.__return_error(f"Invalid graph format: {format}")
         command_data = {
             "format": format,
-            "sequence": sequence
+            "sequence": sequence,
+            "labels": labels
         }
         if sequence:
             command_data["file"] = file.name

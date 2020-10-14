@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 
-def check_graph_format(self, response_data, mode=None):
+def check_graph_format(self, response_data, mode=None, labels=False):
     """Check the graph data that comes back is in the right format"""
     # If this is a json file, open it and load the data
     if isinstance(response_data, Path):
@@ -48,6 +48,35 @@ def check_graph_format(self, response_data, mode=None):
 
     check_graph_node_features(self, graph["nodes"], mode)
     check_graph_link_features(self, graph["links"], mode)
+    check_node_labels(self, graph["nodes"], labels)
+
+
+def check_node_labels(self, nodes, labels):
+    """Check the labels in the graph"""
+    operations_labels = {
+        "CutFeatureOperation",
+        "IntersectFeatureOperation",
+        "JoinFeatureOperation",
+        "NewBodyFeatureOperation",
+        "NewComponentFeatureOperation"
+    }
+    location_in_feature_labels = {
+        "SideFace",
+        "StartFace",
+        "EndFace"
+    }
+    for node in nodes:
+        if labels:
+            self.assertIn("operation_label", node, msg="Graph node has operation_label")
+            self.assertIn(node["operation_label"], operations_labels, msg="Valid operation_label")
+            self.assertIn("timeline_index_label", node, msg="Graph node has timeline_index_label")
+            self.assertIsInstance(node["timeline_index_label"], int, msg="timeline_index_label is an int")
+            self.assertIn("location_in_feature_label", node, msg="Graph node has location_in_feature_label")
+            self.assertIn(node["location_in_feature_label"], location_in_feature_labels, msg="Valid location_in_feature_label")
+        else:
+            self.assertNotIn("operation_label", node, msg="Graph node has no operation_label")
+            self.assertNotIn("timeline_index_label", node, msg="Graph node has no timeline_index_label")
+            self.assertNotIn("location_in_feature_label", node, msg="Graph node has no location_in_feature_label")
 
 
 def check_graph_node_features(self, nodes, mode):
@@ -73,16 +102,8 @@ def check_graph_node_features(self, nodes, mode):
         "max_tangent_z": float,
         "max_curvature": float,
         "min_curvature": float,
-        "last_operation_label": bool
     }
-    operations_labels = {
-        "ExtrudeStart",
-        "ExtrudeSide",
-        "ExtrudeEnd",
-        "CutStart",
-        "CutSide",
-        "CutEnd",
-    }
+
     for node in nodes:
         self.assertIn("surface_type", node, msg="Graph node has surface_type")
         self.assertIn(node["surface_type"], surface_types, msg="Valid surface type")
@@ -114,8 +135,6 @@ def check_graph_node_features(self, nodes, mode):
             for feature, feature_type in per_extrude_features.items():
                 self.assertIn(feature, node, msg=f"Graph node has {feature}")
                 self.assertIsInstance(node[feature], feature_type, msg=f"{feature} is {str(feature_type)}")
-            self.assertIn("operation_label", node, msg="Graph node has operation_label")
-            self.assertIn(node["operation_label"], operations_labels, msg="Valid operation_label")
 
 
 def check_graph_link_features(self, links, mode):
