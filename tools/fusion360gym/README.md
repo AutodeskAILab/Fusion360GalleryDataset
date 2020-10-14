@@ -108,8 +108,14 @@ Reconstruct entire designs or parts of them from the json files provided with th
 
 #### Target Reconstruction
 Set the target design to be used with reconstruction.
-- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. Returns `graph` as a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph) and a `bounding_box` of the target that can be used for normalization.
+- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. 
+    - Returns:
+        - `graph`: Face adjacency graph of the target design in "PerFace" format, see [here](../regraph) for a description.
+        - `bounding_box`: bounding box of the target design that can be used for normalization.
 - `revert_to_target()`: Reverts to the target design, removing all reconstruction geometry. Returns the same data as `set_target(file)`.
+    - Returns:
+        - `graph`: Face adjacency graph of the target design in "PerFace" format, see [here](../regraph) for a description.
+        - `bounding_box`: bounding box of the target design that can be used for normalization.
 
 #### Sketch Extrusion
 Incrementally create designs by generating the underlying sketch primitives and extruding them. 
@@ -135,16 +141,32 @@ Incrementally create designs by generating the underlying sketch primitives and 
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
     - `profile_id`: is the uuid of the profile returned by `add_line()`
     - `distance`: is the extrude distance perpendicular to the profile plane
-    - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
-    - Returns BRep vertices of the resulting body, BRep face information
+    - `operation`: a string with the values defining the type of extrude:
+        - `JoinFeatureOperation`
+        - `CutFeatureOperation`
+        - `IntersectFeatureOperation`
+        - `NewBodyFeatureOperation`
+    - Returns a data structure with:
+        - `extrude`: B-Rep face information, including vertices, generated from the extrusion.
+        - `graph`: Face adjacency graph of the current design in "PerFace" format (see [here](../regraph) for a description) 
+        - `bounding_box`: bounding box of the current design that can be used for normalization.
+        - `iou`: intersection over union result if a target design has been set with `set_target()`.
 
 #### Face Extrusion
 Use simplified face extrusion actions that reference a target design set with `set_target()`.
 - `add_extrude_by_target_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
     - `start_face`: is the uuid of the start face in the target
     - `end_face`: is the uuid of the end face in the target
-    - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
-    - Returns a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph), and an intersection over union value calculated between the target and the reconstruction.
+    - `operation`: a string with the values defining the type of extrude: 
+        - `JoinFeatureOperation`
+        - `CutFeatureOperation`
+        - `IntersectFeatureOperation`
+        - `NewBodyFeatureOperation`
+    - Returns a data structure with:
+        - `extrude`: B-Rep face information, including vertices, generated from the extrusion.
+        - `graph`: Face adjacency graph of the current design in "PerFace" format (see [here](../regraph) for a description) 
+        - `bounding_box`: bounding box of the current design that can be used for normalization.
+        - `iou`: intersection over union result.
 - `add_extrudes_by_target_face(actions, revert)`: Executes multiple extrude operations, between two faces of the target, in sequence.
     - `actions`: A list of actions in the following format:
     ```json
@@ -162,6 +184,11 @@ Use simplified face extrusion actions that reference a target design set with `s
     ]
     ```
     - `revert` (optional): Revert to the target design before executing the extrude actions.
+    - Returns a data structure with:
+        - `extrude`: B-Rep face information, including vertices, generated from the last extrusion.
+        - `graph`: Face adjacency graph of the current design in "PerFace" format (see [here](../regraph) for a description) 
+        - `bounding_box`: bounding box of the current design that can be used for normalization.
+        - `iou`: intersection over union result.
 
 #### Export
 Export the existing design in a number of formats.
@@ -186,7 +213,7 @@ Export the existing design in a number of formats.
 
 #### Utility
 Various utility calls to interact with Fusion 360.
-- `clear()`: Clear (i.e. close) all open designs in Fusion
+- `clear()`: Clear (i.e. close) all open designs in Fusion and clear the target
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 

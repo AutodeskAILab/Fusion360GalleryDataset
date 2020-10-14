@@ -45,6 +45,7 @@ class DesignState():
             # Reset state in all command objects
             for obj in self.command_objects:
                 obj.clear()
+        self.target = None
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         self.setup_reconstruction()
         return self.runner.return_success()

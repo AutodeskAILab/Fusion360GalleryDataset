@@ -128,10 +128,9 @@ class CommandIncrement(CommandBase):
         distance = adsk.core.ValueInput.createByReal(data["distance"])
         extent_distance = adsk.fusion.DistanceExtentDefinition.create(distance)
         extrude_input.setOneSideExtent(extent_distance, adsk.fusion.ExtentDirections.PositiveExtentDirection)
-        extrude_feature = extrudes.add(extrude_input)
+        extrude = extrudes.add(extrude_input)
         # Serialize the data and return
-        extrude_feature_data = serialize.extrude_feature_brep(extrude_feature)
-        return self.runner.return_success(extrude_feature_data)
+        return self.return_extrude_data(extrude)
 
     def __add_line(self, sketch, sketch_uuid, pt1, pt2, transform=None):
         start_point = deserialize.point3d(pt1)

@@ -236,3 +236,28 @@ def check_bounding_box(self, response_data):
         math.isinf(bbox["min_point"]["z"]),
         msg="bounding_box_min_z != inf"
     )
+
+
+def check_extrude_data(self, response_data, has_iou=False):
+    """Check the data returned from extrude operations"""
+    # Extrude
+    self.assertIn("extrude", response_data, msg="extrude data has extrude")
+    self.assertIsInstance(response_data["extrude"], dict, msg="extrude data is dict")
+    extrude_data = response_data["extrude"]
+    self.assertIn("type", extrude_data, msg="extrude data response has type")
+    self.assertIn("faces", extrude_data, msg="extrude data response has faces")
+    self.assertIsInstance(extrude_data["faces"], list, msg="extrude data faces is list")
+    self.assertGreater(len(extrude_data["faces"]), 0, msg="extrude data faces length greater than 0")
+    # Graph
+    self.assertIn("graph", response_data, msg="extrude data has graph")
+    self.assertIsInstance(response_data["graph"], dict, msg="extrude graph is dict")
+    check_graph_format(self, response_data, mode="PerFace")
+    # IoU
+    if has_iou:
+        self.assertIn("iou", response_data, msg="response has iou")
+        self.assertIsInstance(response_data["iou"], float, msg="iou is float")
+        self.assertGreaterEqual(response_data["iou"], 0, msg="iou >= 0")
+    # Bounding Box
+    self.assertIn("bounding_box", response_data, msg="extrude data has bounding_box")
+    self.assertIsInstance(response_data["bounding_box"], dict, msg="extrude bounding_box is dict")
+    check_bounding_box(self, response_data)

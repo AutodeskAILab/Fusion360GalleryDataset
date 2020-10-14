@@ -54,7 +54,8 @@ class CommandTarget(CommandBase):
             reconstruction=self.design_state.reconstruction,
             logger=self.logger,
             mode="PerFace",
-            use_temp_id=True
+            use_temp_id=True,
+            include_labels=False
         )
         self.state["target_graph"] = regraph_graph.generate_from_bodies(
             self.design_state.target.bRepBodies
@@ -94,13 +95,13 @@ class CommandTarget(CommandBase):
         if error is not None:
             return self.runner.return_failure(error)
         # Add the extrude
-        self.state["reconstructor"].add_extrude(
+        extrude = self.state["reconstructor"].add_extrude(
             action["start_face"],
             action["end_face"],
             action["operation"]
         )
         adsk.doEvents()
-        return self.__return_graph_iou()
+        return self.return_extrude_data(extrude)
 
     def add_extrudes_by_target_face(self, data):
         """Executes multiple extrude operations,
@@ -114,19 +115,20 @@ class CommandTarget(CommandBase):
                 self.__clear_reconstruction()
         # Loop over the extrude actions and execute them
         actions = data["actions"]
+        extrude = None
         for action in actions:
             valid_action, error = self.__check_extrude_actions(
                 action["start_face"], action["end_face"], action["operation"])
             if error is not None:
                 return self.runner.return_failure(error)
             # Add the extrude
-            self.state["reconstructor"].add_extrude(
+            extrude = self.state["reconstructor"].add_extrude(
                 valid_action["start_face"],
                 valid_action["end_face"],
                 valid_action["operation"]
             )
         adsk.doEvents()
-        return self.__return_graph_iou()
+        return self.return_extrude_data(extrude)
 
     def __check_extrude_actions(self, start_face_uuid, end_face_uuid, operation_data):
         """Check the extrude actions are valid"""
@@ -161,32 +163,6 @@ class CommandTarget(CommandBase):
         result["end_face"] = end_face
         result["operation"] = operation
         return result, None
-
-    def __return_graph_iou(self):
-        """Return the graph and IoU"""
-        # If this is the first extrude, we initialize regraph
-        if "regraph" not in self.state:
-            self.state["regraph"] = Regraph(
-                reconstruction=self.design_state.reconstruction,
-                logger=self.logger,
-                mode="PerFace",
-                use_temp_id=True
-            )
-        # Generate the graph from the reconstruction component
-        graph = self.state["regraph"].generate_from_bodies(
-            self.design_state.reconstruction.bRepBodies
-        )
-        # Calculate the IoU
-        iou = geometry.intersection_over_union(
-            self.design_state.target,
-            self.design_state.reconstruction
-        )
-        if iou is None:
-            logger.log("Warning! IoU calculation returned None")
-        return self.runner.return_success({
-            "graph": graph,
-            "iou": iou
-        })
 
     def __clear_reconstruction(self):
         self.design_state.clear_reconstruction()
