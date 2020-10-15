@@ -38,7 +38,7 @@ class OnlineStatusChangedHandler(adsk.core.ApplicationEventHandler):
         start_server()
 
 
-class Fusion360ServerRequestHandler(BaseHTTPRequestHandler):
+class Fusion360GymServerRequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, logger, runner, *args):
         self.logger = logger
@@ -165,7 +165,7 @@ def start_server():
 
     # Workaround to pass the logger and runner
     def handler(*args):
-        Fusion360ServerRequestHandler(logger, runner, *args)
+        Fusion360GymServerRequestHandler(logger, runner, *args)
 
     # Check if we need to use a different host name and port
     host_name, port_number = get_launch_endpoint()

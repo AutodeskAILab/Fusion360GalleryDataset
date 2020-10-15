@@ -16,29 +16,32 @@ import json
 import shutil
 import time
 
+import common_test
+
 # Add the client folder to sys.path
 CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
 
-from fusion_360_client import Fusion360Client
+from fusion360gym_client import Fusion360GymClient
 
 HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
 
 
-class TestFusion360ServerInc(unittest.TestCase):
+class TestFusion360ServerSketchExtrusion(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
+        cls.client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
         # Clear all documents so we start with a clean slate
         cls.client.clear()
         # ------------------------------------------
         # TEST FILES
         cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
-        hex_design = "Z0HexagonCutJoin_RootComponent"
+        hex_design = "Hexagon"
         cls.hex_design_json_file = cls.data_dir / f"{hex_design}.json"
+        cls.box_design_smt_file = cls.data_dir / "Box.smt"
 
     def test_add_sketch(self):
         self.client.clear()
@@ -173,11 +176,46 @@ class TestFusion360ServerInc(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="add_extrude status code")
         response_json = r.json()
         response_data = response_json["data"]
+        common_test.check_extrude_data(self, response_data)
 
-        self.assertIn("type", response_data, msg="add_extrude response has type")
-        self.assertIn("faces", response_data, msg="add_extrude response has faces")
-        self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
-        self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
+    def test_set_target_add_extrude(self):
+        # Set target box
+        r = self.client.set_target(self.box_design_smt_file)
+        self.assertIsNotNone(r, msg="set_target response is not None")
+        self.assertEqual(r.status_code, 200, msg="set_target status code")
+        response_json = r.json()
+        common_test.check_graph_format(self, response_json["data"])
+        common_test.check_bounding_box(self, response_json["data"])
+
+        # Sketch
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        sketch_name = response_json["data"]["sketch_name"]
+        self.assertIsInstance(sketch_name, str, msg="sketch_name is string")
+        pts = [
+            {"x": -1, "y": 0},
+            {"x": 1, "y": 0},
+            {"x": 1, "y": 1},
+            {"x": -1, "y": 1},
+            {"x": -1, "y": 0}
+        ]
+        for index in range(4):
+            r = self.client.add_line(sketch_name, pts[index], pts[index + 1])
+            self.assertEqual(r.status_code, 200, msg="add_line status code")
+
+        response_json = r.json()
+        response_data = response_json["data"]
+        # Pull out the first profile id
+        profile_id = next(iter(response_data["profiles"]))
+
+        # Extrude
+        r = self.client.add_extrude(sketch_name, profile_id, 1.0, "NewBodyFeatureOperation")
+        self.assertEqual(r.status_code, 200, msg="add_extrude status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        common_test.check_extrude_data(self, response_data, has_iou=True)
+        self.assertAlmostEqual(response_data["iou"], 0.5, places=2, msg="iou ~= 0.5")
+        r = self.client.clear()
 
     def test_add_double_extrude_by_id(self):
         self.client.clear()
@@ -204,11 +242,11 @@ class TestFusion360ServerInc(unittest.TestCase):
         profile_id = next(iter(response_data["profiles"]))
         # Extrude by a given distance to make a new body
         r = self.client.add_extrude(sketch_name, profile_id, 5.0, "NewBodyFeatureOperation")
-
-        # Find the end face
         response_json = r.json()
         response_data = response_json["data"]
-        faces = response_data["faces"]
+        common_test.check_extrude_data(self, response_data)
+        # Find the end face
+        faces = response_data["extrude"]["faces"]
         for face in faces:
             if face["location_in_feature"] == "EndFace":
                 xy_face = face
@@ -233,14 +271,9 @@ class TestFusion360ServerInc(unittest.TestCase):
         profile_id = next(iter(response_data["profiles"]))
         # Extrude by a given distance, adding to the existing body
         r = self.client.add_extrude(sketch_name, profile_id, 2.0, "JoinFeatureOperation")
-
         response_json = r.json()
         response_data = response_json["data"]
-
-        self.assertIn("type", response_data, msg="add_extrude response has type")
-        self.assertIn("faces", response_data, msg="add_extrude response has faces")
-        self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
-        self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
+        common_test.check_extrude_data(self, response_data)
 
     def test_add_double_extrude_by_point(self):
         self.client.clear()
@@ -265,7 +298,8 @@ class TestFusion360ServerInc(unittest.TestCase):
         r = self.client.add_extrude(sketch_name, profile_id, 5.0, "NewBodyFeatureOperation")
         response_json = r.json()
         response_data = response_json["data"]
-        faces = response_data["faces"]
+        common_test.check_extrude_data(self, response_data)
+        faces = response_data["extrude"]["faces"]
 
         # Start the second sketch with a point on the end face
         r = self.client.add_sketch({
@@ -293,14 +327,7 @@ class TestFusion360ServerInc(unittest.TestCase):
         r = self.client.add_extrude(sketch_name, profile_id, 2.0, "JoinFeatureOperation")
         response_json = r.json()
         response_data = response_json["data"]
-
-        self.assertIn("type", response_data, msg="add_extrude response has type")
-        self.assertIn("faces", response_data, msg="add_extrude response has faces")
-        self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
-        self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
-
-        # self.client.clear()
-        # r = self.client.detach()
+        common_test.check_extrude_data(self, response_data)
 
     def test_add_point(self):
         self.client.clear()
@@ -511,11 +538,7 @@ class TestFusion360ServerInc(unittest.TestCase):
         self.assertEqual(r.status_code, 200, msg="add_extrude status code")
         response_json = r.json()
         response_data = response_json["data"]
-
-        self.assertIn("type", response_data, msg="add_extrude response has type")
-        self.assertIn("faces", response_data, msg="add_extrude response has faces")
-        self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
-        self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
+        common_test.check_extrude_data(self, response_data)
 
     def test_add_point_world(self):
         self.client.clear()
@@ -540,7 +563,8 @@ class TestFusion360ServerInc(unittest.TestCase):
         r = self.client.add_extrude(sketch_name, profile_id, 10.0, "NewBodyFeatureOperation")
         response_json = r.json()
         response_data = response_json["data"]
-        faces = response_data["faces"]
+        common_test.check_extrude_data(self, response_data)
+        faces = response_data["extrude"]["faces"]
 
         # Start the second sketch with a point on the side face
         r = self.client.add_sketch({
@@ -569,11 +593,7 @@ class TestFusion360ServerInc(unittest.TestCase):
         r = self.client.add_extrude(sketch_name, profile_id, 2.0, "JoinFeatureOperation")
         response_json = r.json()
         response_data = response_json["data"]
-
-        self.assertIn("type", response_data, msg="add_extrude response has type")
-        self.assertIn("faces", response_data, msg="add_extrude response has faces")
-        self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
-        self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
+        common_test.check_extrude_data(self, response_data)
 
     def test_add_line_world(self):
         self.client.clear()
@@ -599,7 +619,8 @@ class TestFusion360ServerInc(unittest.TestCase):
             sketch_name, profile_id, 10.0, "NewBodyFeatureOperation")
         response_json = r.json()
         response_data = response_json["data"]
-        faces = response_data["faces"]
+        common_test.check_extrude_data(self, response_data)
+        faces = response_data["extrude"]["faces"]
 
         # Start the second sketch with a point on the side face
         r = self.client.add_sketch({
@@ -630,11 +651,7 @@ class TestFusion360ServerInc(unittest.TestCase):
             sketch_name, profile_id, 2.0, "JoinFeatureOperation")
         response_json = r.json()
         response_data = response_json["data"]
-
-        self.assertIn("type", response_data, msg="add_extrude response has type")
-        self.assertIn("faces", response_data, msg="add_extrude response has faces")
-        self.assertIsInstance(response_data["faces"], list, msg="add_extrude faces is list")
-        self.assertGreater(len(response_data["faces"]), 0, msg="add_extrude faces length greater than 0")
+        common_test.check_extrude_data(self, response_data)
 
 
 if __name__ == "__main__":

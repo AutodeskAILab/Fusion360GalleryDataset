@@ -1,6 +1,6 @@
 """
 
-Reconstruct from a target design
+Face Extrusion Reconstruction
 
 """
 
@@ -21,19 +21,17 @@ import deserialize
 import serialize
 import geometry
 import regraph
+import face_reconstructor
 importlib.reload(deserialize)
 importlib.reload(serialize)
 importlib.reload(geometry)
 importlib.reload(regraph)
+importlib.reload(face_reconstructor)
 from regraph import Regraph
-from regraph import RegraphReconstructor
+from face_reconstructor import FaceReconstructor
 
 
-class CommandTarget(CommandBase):
-
-    def __init__(self, runner):
-        CommandBase.__init__(self, runner)
-        self.target_component = None
+class CommandFaceExtrusion(CommandBase):
 
     def set_target(self, data):
         """Set the target design"""
@@ -47,47 +45,29 @@ class CommandTarget(CommandBase):
         with open(temp_file, "w") as f:
             f.write(data["file_data"])
         # We clear the design before importing
-        self.runner.clear()
-        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        # Switch to direct design mode for performance
-        # self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
-        # Import the geometry
-        if suffix == ".step" or suffix == ".stp":
-            import_options = self.app.importManager.createSTEPImportOptions(
-                str(temp_file.resolve())
-            )
-        else:
-            import_options = self.app.importManager.createSMTImportOptions(
-                str(temp_file.resolve())
-            )
-        import_options.isViewFit = False
-        imported_designs = self.app.importManager.importToTarget2(
-            import_options,
-            self.design.rootComponent
+        # This also clears the local state
+        self.design_state.clear()
+        self.design_state.set_target(temp_file)
+
+        # Use temp_ids
+        regraph_graph = Regraph(
+            reconstruction=self.design_state.reconstruction,
+            logger=self.logger,
+            mode="PerFace",
+            use_temp_id=True,
+            include_labels=False
         )
-        self.target = imported_designs[0]
-        # Store references to the target bodies
-        self.state["target_bodies"] = []
-        # Rename the bodies with Target-*
-        for body in self.target.bRepBodies:
-            body.name = f"Target-{body.name}"
-            self.state["target_bodies"].append(body)
-        adsk.doEvents()
-        # Flag to switch to using temp_ids
-        regraph.use_temp_id = True
-        regraph_graph = Regraph(logger=self.logger, mode="PerFace")
         self.state["target_graph"] = regraph_graph.generate_from_bodies(
-            self.state["target_bodies"]
+            self.design_state.target.bRepBodies
         )
-        print("Target object type", self.target.objectType)
-        bbox = geometry.get_bounding_box(self.target)
+        bbox = geometry.get_bounding_box(self.design_state.target)
         self.state["target_bounding_box"] = serialize.bounding_box3d(bbox)
         temp_file.unlink()
         # Setup the reconstructor
-        self.state["reconstructor"] = RegraphReconstructor(
-            target_component=self.target
+        self.state["reconstructor"] = FaceReconstructor(
+            target=self.design_state.target,
+            reconstruction=self.design_state.reconstruction
         )
-        self.state["reconstructor"].setup()
         return self.runner.return_success({
             "graph": self.state["target_graph"],
             "bounding_box": self.state["target_bounding_box"]
@@ -99,9 +79,7 @@ class CommandTarget(CommandBase):
             return self.runner.return_failure("Target not set")
         if "reconstructor" not in self.state:
             return self.runner.return_failure("Target not set")
-        self.state["reconstructor"].reset()
-        if "regraph" in self.state:
-            del self.state["regraph"]
+        self.__clear_reconstruction()
         return self.runner.return_success({
             "graph": self.state["target_graph"],
             "bounding_box": self.state["target_bounding_box"]
@@ -117,13 +95,13 @@ class CommandTarget(CommandBase):
         if error is not None:
             return self.runner.return_failure(error)
         # Add the extrude
-        self.state["reconstructor"].add_extrude(
+        extrude = self.state["reconstructor"].add_extrude(
             action["start_face"],
             action["end_face"],
             action["operation"]
         )
         adsk.doEvents()
-        return self.__return_graph_iou()
+        return self.return_extrude_data(extrude)
 
     def add_extrudes_by_target_face(self, data):
         """Executes multiple extrude operations,
@@ -134,22 +112,23 @@ class CommandTarget(CommandBase):
         # Revert if requested
         if "revert" in data:
             if data["revert"]:
-                self.revert_to_target()
+                self.__clear_reconstruction()
         # Loop over the extrude actions and execute them
         actions = data["actions"]
+        extrude = None
         for action in actions:
             valid_action, error = self.__check_extrude_actions(
                 action["start_face"], action["end_face"], action["operation"])
             if error is not None:
                 return self.runner.return_failure(error)
             # Add the extrude
-            self.state["reconstructor"].add_extrude(
+            extrude = self.state["reconstructor"].add_extrude(
                 valid_action["start_face"],
                 valid_action["end_face"],
                 valid_action["operation"]
             )
         adsk.doEvents()
-        return self.__return_graph_iou()
+        return self.return_extrude_data(extrude)
 
     def __check_extrude_actions(self, start_face_uuid, end_face_uuid, operation_data):
         """Check the extrude actions are valid"""
@@ -185,23 +164,11 @@ class CommandTarget(CommandBase):
         result["operation"] = operation
         return result, None
 
-    def __return_graph_iou(self):
-        """Return the graph and IoU"""
-        # If this is the first extrude, we initialize regraph
-        if "regraph" not in self.state:
-            self.state["regraph"] = Regraph(logger=self.logger, mode="PerFace")
-        # Generate the graph from the reconstruction component
-        graph = self.state["regraph"].generate_from_bodies(
-            self.state["reconstructor"].reconstruction.bRepBodies
+    def __clear_reconstruction(self):
+        self.design_state.clear_reconstruction()
+        # Update the reference to the new reconstruction component
+        self.state["reconstructor"].set_reconstruction_component(
+            self.design_state.reconstruction
         )
-        # Calculate the IoU
-        iou = geometry.intersection_over_union(
-            self.target,
-            self.state["reconstructor"].reconstruction
-        )
-        if iou is None:
-            logger.log("Warning! IoU calculation returned None")
-        return self.runner.return_success({
-            "graph": graph,
-            "iou": iou
-        })
+        if "regraph" in self.state:
+            del self.state["regraph"]

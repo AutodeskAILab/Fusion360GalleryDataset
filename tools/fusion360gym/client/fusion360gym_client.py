@@ -7,7 +7,7 @@ import tempfile
 from zipfile import ZipFile
 
 
-class Fusion360Client():
+class Fusion360GymClient():
 
     def __init__(self, url="http://127.0.0.1:8080"):
         self.url = url
@@ -423,32 +423,40 @@ class Fusion360Client():
         self.__write_file(r, file)
         return r
 
-    def graph(self, file, dir, format="PerFace"):
+    def graph(self, file=None, dir=None, format="PerFace", sequence=False, labels=False):
         """Retreive a face adjacency graph in a given format"""
-        if isinstance(file, str):
-            file = Path(file)
-        if not dir.is_dir():
-            return self.__return_error(f"Not an existing directory")
+        if sequence:
+            if file is None:
+                return self.__return_error("Invalid value for file")
+            if isinstance(file, str):
+                file = Path(file)
+            if dir is None or not dir.is_dir():
+                return self.__return_error(f"Not an existing directory")
         valid_formats = ["PerFace", "PerExtrude"]
         if format not in valid_formats:
             return self.__return_error(f"Invalid graph format: {format}")
         command_data = {
-            "file": file.name,
-            "format": format
+            "format": format,
+            "sequence": sequence,
+            "labels": labels
         }
-        r = self.send_command("graph", data=command_data, stream=True)
-        if r.status_code != 200:
+        if sequence:
+            command_data["file"] = file.name
+            r = self.send_command("graph", data=command_data, stream=True)
+            if r.status_code != 200:
+                return r
+            # Save out the zip file with the graph data
+            temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
+            zip_file = Path(temp_file_path)
+            self.__write_file(r, zip_file)
+            # Extract all the files to the given directory
+            with ZipFile(zip_file, "r") as zipObj:
+                zipObj.extractall(dir)
+            os.close(temp_file_handle)
+            zip_file.unlink()
             return r
-        # Save out the zip file with the graph data
-        temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
-        zip_file = Path(temp_file_path)
-        self.__write_file(r, zip_file)
-        # Extract all the files to the given directory
-        with ZipFile(zip_file, "r") as zipObj:
-            zipObj.extractall(dir)
-        os.close(temp_file_handle)
-        zip_file.unlink()
-        return r
+        else:
+            return self.send_command("graph", command_data)
 
     # -------------------------------------------------------------------------
     # UTILITY
@@ -466,42 +474,6 @@ class Fusion360Client():
         """Detach the server from Fusion, taking it offline,
             allowing the Fusion UI to become responsive again"""
         return self.send_command("detach")
-
-    def commands(self, command_list, dir=None):
-        """Send a series of commands to the server"""
-        if dir is not None:
-            if not dir.is_dir():
-                return self.__return_error(f"Not an existing directory")
-        if (command_list is None or not isinstance(command_list, list) or
-           len(command_list) == 0):
-            return self.__return_error(
-                "Command list argument missing or not a populated list")
-        # Flag to mark down if we will get a binary back
-        binary_response = False
-        # Check that each command_set has a command
-        for command_set in command_list:
-            if "command" not in command_set:
-                return self.__return_error(
-                    "Command list command argument missing")
-            command = command_set["command"]
-            if command in ["mesh", "brep", "sketches"]:
-                binary_response = True
-        # We are getting a file back
-        if binary_response:
-            r = self.send_command("commands", data=command_list, stream=True)
-            if r.status_code != 200:
-                return r
-            temp_file_handle, temp_file_path = tempfile.mkstemp(suffix=".zip")
-            zip_file = Path(temp_file_path)
-            self.__write_file(r, zip_file)
-            # Extract all the files to the given directory
-            with ZipFile(zip_file, "r") as zipObj:
-                zipObj.extractall(dir)
-            os.close(temp_file_handle)
-            zip_file.unlink()
-            return r
-        else:
-            return self.send_command("commands", command_list)
 
     # -------------------------------------------------------------------------
     # PRIVATE

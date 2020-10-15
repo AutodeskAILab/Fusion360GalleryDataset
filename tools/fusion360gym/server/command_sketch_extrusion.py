@@ -1,6 +1,6 @@
 """
 
-Incremental geometry construction commands
+Sketch Extrusion Reconstruction
 
 """
 
@@ -20,19 +20,19 @@ import name
 import match
 import deserialize
 import serialize
+importlib.reload(match)
 
 
-class CommandIncrement(CommandBase):
+class CommandSketchExtrusion(CommandBase):
 
     def add_sketch(self, data):
         """Add a sketch to the existing design"""
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         if data is None or "sketch_plane" not in data:
             return self.runner.return_failure("sketch_plane not specified")
         sketch_plane = match.sketch_plane(data["sketch_plane"])
         if sketch_plane is None:
             return self.runner.return_failure("sketch_plane could not be found")
-        sketches = design.rootComponent.sketches
+        sketches = self.design_state.reconstruction.component.sketches
         sketch = sketches.addWithoutEdges(sketch_plane)
         sketch_uuid = name.set_uuid(sketch)
         return self.runner.return_success({
@@ -45,7 +45,10 @@ class CommandIncrement(CommandBase):
         if (data is None or "sketch_name" not in data or
                 "pt" not in data):
             return self.runner.return_failure("add_point data not specified")
-        sketch = match.sketch_by_name(data["sketch_name"])
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
         if sketch is None:
             return self.runner.return_failure("sketch not found")
         sketch_uuid = name.get_uuid(sketch)
@@ -67,7 +70,10 @@ class CommandIncrement(CommandBase):
         if (data is None or "sketch_name" not in data or
                 "pt1" not in data or "pt2" not in data):
             return self.runner.return_failure("add_line data not specified")
-        sketch = match.sketch_by_name(data["sketch_name"])
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
         if sketch is None:
             return self.runner.return_failure("sketch not found")
         sketch_uuid = name.get_uuid(sketch)
@@ -79,7 +85,10 @@ class CommandIncrement(CommandBase):
            by joining the first point to the last"""
         if data is None or "sketch_name" not in data:
             return self.runner.return_failure("close_profile data not specified")
-        sketch = match.sketch_by_name(data["sketch_name"])
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
         if sketch is None:
             return self.runner.return_failure("sketch not found")
         sketch_uuid = name.get_uuid(sketch)
@@ -100,7 +109,10 @@ class CommandIncrement(CommandBase):
                 "profile_id" not in data or "distance" not in data or
                 "operation" not in data):
             return self.runner.return_failure("add_extrude data not specified")
-        sketch = match.sketch_by_name(data["sketch_name"])
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
         if sketch is None:
             return self.runner.return_failure("extrude sketch not found")
         profile = match.sketch_profile_by_id(data["profile_id"], [sketch])
@@ -111,16 +123,14 @@ class CommandIncrement(CommandBase):
             return self.runner.return_failure("extrude operation not found")
 
         # Make the extrude
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
-        extrudes = design.rootComponent.features.extrudeFeatures
+        extrudes = self.design_state.reconstruction.component.features.extrudeFeatures
         extrude_input = extrudes.createInput(profile, operation)
         distance = adsk.core.ValueInput.createByReal(data["distance"])
         extent_distance = adsk.fusion.DistanceExtentDefinition.create(distance)
         extrude_input.setOneSideExtent(extent_distance, adsk.fusion.ExtentDirections.PositiveExtentDirection)
-        extrude_feature = extrudes.add(extrude_input)
+        extrude = extrudes.add(extrude_input)
         # Serialize the data and return
-        extrude_feature_data = serialize.extrude_feature_brep(extrude_feature)
-        return self.runner.return_success(extrude_feature_data)
+        return self.return_extrude_data(extrude)
 
     def __add_line(self, sketch, sketch_uuid, pt1, pt2, transform=None):
         start_point = deserialize.point3d(pt1)
@@ -157,11 +167,8 @@ class CommandIncrement(CommandBase):
 
     def __get_extrude_operation(self, operation):
         """Return an appropriate extrude operation"""
-        design = adsk.fusion.Design.cast(self.app.activeProduct)
         # Check that the operation is going to work
-        body_count = 0
-        for component in design.allComponents:
-            body_count += component.bRepBodies.count
+        body_count = self.design_state.reconstruction.bRepBodies.count
         # If there are no other bodies, we have to make a new body
         if body_count == 0:
             operation = "NewBodyFeatureOperation"

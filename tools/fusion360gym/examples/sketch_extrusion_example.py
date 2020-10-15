@@ -1,6 +1,6 @@
 """"
 
-Example client usage of construction from a json file using add_line()
+Fusion 360 Gym sketch extrusion based construction using lines
 
 """
 
@@ -8,7 +8,13 @@ from pathlib import Path
 import sys
 import os
 import json
-from fusion_360_client import Fusion360Client
+
+# Add the client folder to sys.path
+CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
+if CLIENT_DIR not in sys.path:
+    sys.path.append(CLIENT_DIR)
+
+from fusion360gym_client import Fusion360GymClient
 
 
 # Before running ensure the Fusion360Server is running
@@ -18,33 +24,29 @@ PORT_NUMBER = 8080
 
 
 def main():
+    # SETUP
+    # Create the client class to interact with the server
+    client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
+    # Clear to force close all documents in Fusion
+    # Do this before a new reconstruction
+    r = client.clear()
+
     current_dir = Path(__file__).resolve().parent
     data_dir = current_dir.parent.parent / "testdata"
     output_dir = data_dir / "output"
     if not output_dir.exists():
         output_dir.mkdir()
 
-    # SETUP
-    # Create the client class to interact with the server
-    client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
-    # Clear to force close all documents in Fusion
-    # Do this before a new reconstruction
-    r = client.clear()
-    # Example of how we read the response data
-    response_data = r.json()
-    print(f"[{r.status_code}] Response: {response_data['message']}")
-
-    # INCREMENTAL RECONSTRUCT
     # Send a list of commands directly to the server to run in sequence
     # We need to load the json as a dict to reconstruct
     # NOTE: this will not work for all files
     # only ones with single profiles (or the first profile used) in a sketch
-    hex_design_json_file = data_dir / "Couch.json"
-    with open(hex_design_json_file) as file_handle:
-        hex_design_json_data = json.load(file_handle)
+    couch_design_json_file = data_dir / "Couch.json"
+    with open(couch_design_json_file) as file_handle:
+        couch_design_json_data = json.load(file_handle)
 
-    timeline = hex_design_json_data["timeline"]
-    entities = hex_design_json_data["entities"]
+    timeline = couch_design_json_data["timeline"]
+    entities = couch_design_json_data["entities"]
     # Pull out just the profiles that are used for extrude operations
     profiles_used = get_extrude_profiles(timeline, entities)
 
@@ -56,6 +58,7 @@ def main():
             sketches[entity_key] = add_sketch(client, entity, entity_key, profiles_used)
         elif entity["type"] == "ExtrudeFeature":
             add_extrude_feature(client, entity, entity_key, sketches)
+    print("Finished creating design using add_line and add_extrude")
 
 
 def get_extrude_profiles(timeline, entities):
@@ -144,7 +147,10 @@ def add_extrude_feature(client, extrude_feature, extrude_feature_id, sketches):
     r = client.add_extrude(sketch_name, profile_id, distance, operation)
     response_json = r.json()
     response_data = response_json["data"]
-    print("Response from add_extrude()", response_data)
+    # response_data contains a lot of information about:
+    # - face adjacency graph: response_data["graph"]
+    # - extrude faces: response_data["extrude"]
+    # - bounding box: response_data["bounding_box"]
 
 
 if __name__ == "__main__":

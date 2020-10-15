@@ -19,7 +19,7 @@ CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
 
-from fusion_360_client import Fusion360Client
+from fusion360gym_client import Fusion360GymClient
 
 HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
@@ -29,14 +29,14 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
+        cls.client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
         # Clear all documents so we start with a clean slate
         cls.client.clear()
         # ------------------------------------------
         # TEST FILES
         cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
-        box_design = "SingleSketchExtrude_RootComponent"
-        hex_design = "Z0HexagonCutJoin_RootComponent"
+        box_design = "SingleSketchExtrude"
+        hex_design = "Hexagon"
         # Box json reconstruction file
         cls.box_design_json_file = cls.data_dir / f"{box_design}.json"
         cls.hex_design_json_file = cls.data_dir / f"{hex_design}.json"
@@ -62,7 +62,7 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
 
     def test_reconstruct_invalid_file(self):
         r = self.client.reconstruct(self.test_json_invalid_file)
-        self.assertIsNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 500, msg="reconstruct status code")
         r = self.client.clear()
 
     def test_reconstruct_sketch_invalid(self):
