@@ -1,7 +1,7 @@
 # Reconstruction Converter
 ![Reconverter Output](https://i.gyazo.com/8639956e2a5bb551a823f8fcad4c7049.gif)
 
-The Reconstruction Converter (aka Reconverter) demonstrates how to batch convert the raw data structure provided with the [Reconstruction Subset](../../docs/reconstruction.md) into other representations:
+The Reconstruction Converter (aka Reconverter) demonstrates how to batch convert the raw data structure provided with the [Reconstruction Dataset](../../docs/reconstruction.md) into other representations:
 - Images for each curve drawn
 - Mesh files after each extrude operation
 - B-Rep files of the final design
