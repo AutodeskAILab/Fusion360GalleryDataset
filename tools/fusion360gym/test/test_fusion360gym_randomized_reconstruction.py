@@ -15,19 +15,18 @@ import json
 CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
-import fusion_360_client
-importlib.reload(fusion_360_client)
-from fusion_360_client import Fusion360Client
+
+from fusion360gym_client import Fusion360GymClient
 
 HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
 
 
-class TestFusion360RandomizedReconstruction(unittest.TestCase):
+class TestFusion360GymRandomizedReconstruction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
+        cls.client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
 
         current_dir = Path(__file__).parent
         test_config_file = current_dir / "test_config.json"
@@ -54,11 +53,11 @@ class TestFusion360RandomizedReconstruction(unittest.TestCase):
         r = self.client.sample_design(self.data_dir, filter=True, split_file=self.split_file)
 
     def test_sample_design_invalid_data_dir(self):
-        # Sample from a non-existent directory 
+        # Sample from a non-existent directory
         r = self.client.sample_design(self.void_data_dir, filter=False)
-        # Sample from a non-existent directory with the split file 
+        # Sample from a non-existent directory with the split file
         r = self.client.sample_design(self.void_data_dir, filter=True, split_file=self.split_file)
-        # Sample from a non-existent string 
+        # Sample from a non-existent string
         r = self.client.sample_design("random_data_dir", filter=False)
 
     def test_sample_design_invalid_split_file(self):
@@ -95,12 +94,12 @@ class TestFusion360RandomizedReconstruction(unittest.TestCase):
         r = self.client.distribution_sampling(distributions, ["invalid"])
         # sample a list of selected parameters
         r = self.client.distribution_sampling(distributions, ["num_faces", "num_bodies"])
-    
+
     def test_sample_sketch(self):
         json_data, _ = self.client.sample_design(self.data_dir, filter=True, split_file=self.split_file)
         # test invlid sampling type
         r = self.client.sample_sketch(json_data, "invalid")
-        # random sampling 
+        # random sampling
         r = self.client.sample_sketch(json_data, sampling_type = "random")
         # deterministic sampling
         r = self.client.sample_sketch(json_data, sampling_type = "deterministic")
@@ -126,6 +125,7 @@ class TestFusion360RandomizedReconstruction(unittest.TestCase):
         r = self.client.sample_sketch(json_data, sampling_type = "distributive", area_distribution=distributions["profile_areas"])
         # test invalid area distribution
         r = self.client.sample_sketch(json_data, sampling_type = "distributive", area_distribution=["invalid"])
+
 
 if __name__ == "__main__":
     unittest.main()
