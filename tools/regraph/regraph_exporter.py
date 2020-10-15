@@ -189,7 +189,7 @@ def start():
     # Get all the files in the data folder
     json_files = [
         data_dir / "Couch.json",
-        data_dir / "SingleSketchExtrude_RootComponent.json"
+        data_dir / "SingleSketchExtrude.json"
     ]
 
     json_count = len(json_files)

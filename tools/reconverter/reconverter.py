@@ -137,7 +137,7 @@ def run(context):
         # Get all the files in the data folder
         json_files = [
             data_dir / "Couch.json",
-            # data_dir / "Z0HexagonCutJoin_RootComponent.json"
+            # data_dir / "Hexagon.json"
         ]
 
         json_count = len(json_files)

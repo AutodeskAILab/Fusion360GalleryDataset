@@ -42,7 +42,7 @@ def main():
 
     # RECONSTRUCT
     # The json file with our design
-    box_design_json_file = data_dir / "SingleSketchExtrude_RootComponent.json"
+    box_design_json_file = data_dir / "SingleSketchExtrude.json"
     # First clear to start fresh
     r = client.clear()
     r = client.reconstruct(box_design_json_file)

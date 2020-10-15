@@ -39,7 +39,7 @@ class TestFusion360ServerSketchExtrusion(unittest.TestCase):
         # ------------------------------------------
         # TEST FILES
         cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
-        hex_design = "Z0HexagonCutJoin_RootComponent"
+        hex_design = "Hexagon"
         cls.hex_design_json_file = cls.data_dir / f"{hex_design}.json"
         cls.box_design_smt_file = cls.data_dir / "Box.smt"
 

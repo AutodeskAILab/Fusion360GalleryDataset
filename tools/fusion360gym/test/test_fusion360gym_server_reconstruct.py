@@ -35,8 +35,8 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
         # ------------------------------------------
         # TEST FILES
         cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
-        box_design = "SingleSketchExtrude_RootComponent"
-        hex_design = "Z0HexagonCutJoin_RootComponent"
+        box_design = "SingleSketchExtrude"
+        hex_design = "Hexagon"
         # Box json reconstruction file
         cls.box_design_json_file = cls.data_dir / f"{box_design}.json"
         cls.hex_design_json_file = cls.data_dir / f"{hex_design}.json"
@@ -62,7 +62,7 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
 
     def test_reconstruct_invalid_file(self):
         r = self.client.reconstruct(self.test_json_invalid_file)
-        self.assertIsNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 500, msg="reconstruct status code")
         r = self.client.clear()
 
     def test_reconstruct_sketch_invalid(self):

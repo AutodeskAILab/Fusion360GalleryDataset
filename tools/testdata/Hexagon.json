@@ -1,6 +1,6 @@
 {
     "metadata": {
-        "parent_project": "Z0HexagonCutJoin_3797e54d",
+        "parent_project": "Hexagon_08596d60",
         "component_name": "Untitled",
         "component_index": 0,
         "identifier": "9_8_1_1_10_1_1_10_8_1_1_13_12_2_1_14_1_1_4_4_0_0_9_8_2_1_19_1_1_5_4_1_0_32_48_19_22_1_1_a016d5_a012d1"
@@ -8,83 +8,83 @@
     "timeline": [
         {
             "index": 0,
-            "entity": "8b0de2fc-d6a6-11ea-b01f-acde48001122"
+            "entity": "b0944a5a-0f10-11eb-8d71-acde48001122"
         },
         {
             "index": 1,
-            "entity": "8b10b9d2-d6a6-11ea-b01f-acde48001122"
+            "entity": "b0983476-0f10-11eb-8d71-acde48001122"
         },
         {
             "index": 2,
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122"
         },
         {
             "index": 3,
-            "entity": "8b15ff96-d6a6-11ea-b01f-acde48001122"
+            "entity": "b09f4b80-0f10-11eb-8d71-acde48001122"
         },
         {
             "index": 4,
-            "entity": "8b161558-d6a6-11ea-b01f-acde48001122"
+            "entity": "b09f65c0-0f10-11eb-8d71-acde48001122"
         },
         {
             "index": 5,
-            "entity": "8b1b388a-d6a6-11ea-b01f-acde48001122"
+            "entity": "b0a63cce-0f10-11eb-8d71-acde48001122"
         }
     ],
     "entities": {
-        "8b0de2fc-d6a6-11ea-b01f-acde48001122": {
+        "b0944a5a-0f10-11eb-8d71-acde48001122": {
             "name": "Sketch1",
             "type": "Sketch",
             "points": {
-                "8b0f9750-d6a6-11ea-b01f-acde48001122": {
+                "b096af20-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "8b0fa682-d6a6-11ea-b01f-acde48001122": {
+                "b096c4f6-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 4.0,
                     "z": 0.0
                 },
-                "8b0fb7f8-d6a6-11ea-b01f-acde48001122": {
+                "b096dbc6-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": -1.0,
                     "y": 3.0,
                     "z": 0.0
                 },
-                "8b0fcb9e-d6a6-11ea-b01f-acde48001122": {
+                "b096f49e-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": -1.0,
                     "y": 1.0,
                     "z": 0.0
                 },
-                "8b0fe19c-d6a6-11ea-b01f-acde48001122": {
+                "b0970722-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "8b0ffb0a-d6a6-11ea-b01f-acde48001122": {
+                "b09721a8-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 2.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "8b10159a-d6a6-11ea-b01f-acde48001122": {
+                "b0974304-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 3.0,
                     "y": 1.0,
                     "z": 0.0
                 },
-                "8b103368-d6a6-11ea-b01f-acde48001122": {
+                "b0976672-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 3.0,
                     "y": 3.0,
                     "z": 0.0
                 },
-                "8b1053fc-d6a6-11ea-b01f-acde48001122": {
+                "b09789c2-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 2.0,
                     "y": 4.0,
@@ -92,120 +92,120 @@
                 }
             },
             "curves": {
-                "8b0ed5a4-d6a6-11ea-b01f-acde48001122": {
+                "b095e98c-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b0fa682-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b0fb7f8-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b096c4f6-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b096dbc6-0f10-11eb-8d71-acde48001122"
                 },
-                "8b0eec92-d6a6-11ea-b01f-acde48001122": {
+                "b0960426-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b0fb7f8-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b0fcb9e-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b096dbc6-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b096f49e-0f10-11eb-8d71-acde48001122"
                 },
-                "8b0eff84-d6a6-11ea-b01f-acde48001122": {
+                "b0961862-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b0fcb9e-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b0fe19c-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b096f49e-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0970722-0f10-11eb-8d71-acde48001122"
                 },
-                "8b0f14c4-d6a6-11ea-b01f-acde48001122": {
+                "b096305e-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b0fe19c-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b0ffb0a-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0970722-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09721a8-0f10-11eb-8d71-acde48001122"
                 },
-                "8b0f2b08-d6a6-11ea-b01f-acde48001122": {
+                "b0964abc-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b0ffb0a-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b10159a-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09721a8-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0974304-0f10-11eb-8d71-acde48001122"
                 },
-                "8b0f44b2-d6a6-11ea-b01f-acde48001122": {
+                "b09667a4-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b10159a-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b103368-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0974304-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0976672-0f10-11eb-8d71-acde48001122"
                 },
-                "8b0f6082-d6a6-11ea-b01f-acde48001122": {
+                "b0967c94-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b103368-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b1053fc-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0976672-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09789c2-0f10-11eb-8d71-acde48001122"
                 },
-                "8b0f7d42-d6a6-11ea-b01f-acde48001122": {
+                "b09692ec-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b1053fc-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b0fa682-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09789c2-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b096c4f6-0f10-11eb-8d71-acde48001122"
                 }
             },
             "constraints": {
-                "8b106f86-d6a6-11ea-b01f-acde48001122": {
-                    "line": "8b0eec92-d6a6-11ea-b01f-acde48001122",
+                "b097ab5a-0f10-11eb-8d71-acde48001122": {
+                    "line": "b0960426-0f10-11eb-8d71-acde48001122",
                     "type": "VerticalConstraint"
                 },
-                "8b107b20-d6a6-11ea-b01f-acde48001122": {
-                    "entity": "8b0f9750-d6a6-11ea-b01f-acde48001122",
-                    "point": "8b0fe19c-d6a6-11ea-b01f-acde48001122",
+                "b097d2f6-0f10-11eb-8d71-acde48001122": {
+                    "entity": "b096af20-0f10-11eb-8d71-acde48001122",
+                    "point": "b0970722-0f10-11eb-8d71-acde48001122",
                     "type": "CoincidentConstraint"
                 },
-                "8b108868-d6a6-11ea-b01f-acde48001122": {
-                    "line_one": "8b0f14c4-d6a6-11ea-b01f-acde48001122",
-                    "line_two": "8b0eec92-d6a6-11ea-b01f-acde48001122",
+                "b097e64c-0f10-11eb-8d71-acde48001122": {
+                    "line_one": "b096305e-0f10-11eb-8d71-acde48001122",
+                    "line_two": "b0960426-0f10-11eb-8d71-acde48001122",
                     "type": "PerpendicularConstraint"
                 },
-                "8b10938a-d6a6-11ea-b01f-acde48001122": {
-                    "line_one": "8b0f44b2-d6a6-11ea-b01f-acde48001122",
-                    "line_two": "8b0f14c4-d6a6-11ea-b01f-acde48001122",
+                "b097f6e6-0f10-11eb-8d71-acde48001122": {
+                    "line_one": "b09667a4-0f10-11eb-8d71-acde48001122",
+                    "line_two": "b096305e-0f10-11eb-8d71-acde48001122",
                     "type": "PerpendicularConstraint"
                 },
-                "8b109dee-d6a6-11ea-b01f-acde48001122": {
-                    "line_one": "8b0f6082-d6a6-11ea-b01f-acde48001122",
-                    "line_two": "8b0f2b08-d6a6-11ea-b01f-acde48001122",
+                "b098053c-0f10-11eb-8d71-acde48001122": {
+                    "line_one": "b0967c94-0f10-11eb-8d71-acde48001122",
+                    "line_two": "b0964abc-0f10-11eb-8d71-acde48001122",
                     "type": "PerpendicularConstraint"
                 },
-                "8b10a866-d6a6-11ea-b01f-acde48001122": {
-                    "line_one": "8b0f7d42-d6a6-11ea-b01f-acde48001122",
-                    "line_two": "8b0f44b2-d6a6-11ea-b01f-acde48001122",
+                "b098139c-0f10-11eb-8d71-acde48001122": {
+                    "line_one": "b09692ec-0f10-11eb-8d71-acde48001122",
+                    "line_two": "b09667a4-0f10-11eb-8d71-acde48001122",
                     "type": "PerpendicularConstraint"
                 }
             },
             "profiles": {
-                "4b4fe0e4-0a6b-31bb-9f4f-ed816c35b06e": {
+                "218c5f68-9d2e-3cf9-b0f8-076e72921c98": {
                     "loops": [
                         {
                             "is_outer": true,
@@ -224,7 +224,7 @@
                                         "y": 4.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b0f7d42-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09692ec-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -240,7 +240,7 @@
                                         "y": 3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b0ed5a4-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b095e98c-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -256,7 +256,7 @@
                                         "y": 1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b0eec92-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0960426-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -272,7 +272,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b0eff84-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0961862-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -288,7 +288,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b0f14c4-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b096305e-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -304,7 +304,7 @@
                                         "y": 1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b0f2b08-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0964abc-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -320,7 +320,7 @@
                                         "y": 3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b0f44b2-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09667a4-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -336,7 +336,7 @@
                                         "y": 4.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b0f6082-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0967c94-0f10-11eb-8d71-acde48001122"
                                 }
                             ]
                         }
@@ -446,13 +446,13 @@
                 }
             }
         },
-        "8b10b9d2-d6a6-11ea-b01f-acde48001122": {
+        "b0983476-0f10-11eb-8d71-acde48001122": {
             "name": "Extrude1",
             "type": "ExtrudeFeature",
             "profiles": [
                 {
-                    "profile": "4b4fe0e4-0a6b-31bb-9f4f-ed816c35b06e",
-                    "sketch": "8b0de2fc-d6a6-11ea-b01f-acde48001122"
+                    "profile": "218c5f68-9d2e-3cf9-b0f8-076e72921c98",
+                    "sketch": "b0944a5a-0f10-11eb-8d71-acde48001122"
                 }
             ],
             "operation": "NewBodyFeatureOperation",
@@ -476,7 +476,7 @@
                 "type": "DistanceExtentDefinition"
             },
             "faces": {
-                "8b21c006-d6a6-11ea-b01f-acde48001122": {
+                "b0b124a4-0f10-11eb-8d71-acde48001122": {
                     "index": 0,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -486,7 +486,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b21e752-d6a6-11ea-b01f-acde48001122": {
+                "b0b1640a-0f10-11eb-8d71-acde48001122": {
                     "index": 1,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -496,7 +496,7 @@
                         "z": 1.0
                     }
                 },
-                "8b221592-d6a6-11ea-b01f-acde48001122": {
+                "b0b1b22a-0f10-11eb-8d71-acde48001122": {
                     "index": 2,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -506,7 +506,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b224b48-d6a6-11ea-b01f-acde48001122": {
+                "b0b20608-0f10-11eb-8d71-acde48001122": {
                     "index": 3,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -516,7 +516,7 @@
                         "z": 1.0
                     }
                 },
-                "8b2288d8-d6a6-11ea-b01f-acde48001122": {
+                "b0b25bda-0f10-11eb-8d71-acde48001122": {
                     "index": 4,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -526,7 +526,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b22cdac-d6a6-11ea-b01f-acde48001122": {
+                "b0b2c2c8-0f10-11eb-8d71-acde48001122": {
                     "index": 5,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -536,7 +536,7 @@
                         "z": 1.0
                     }
                 },
-                "8b231dac-d6a6-11ea-b01f-acde48001122": {
+                "b0b32484-0f10-11eb-8d71-acde48001122": {
                     "index": 6,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -546,7 +546,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b23718a-d6a6-11ea-b01f-acde48001122": {
+                "b0b39ff4-0f10-11eb-8d71-acde48001122": {
                     "index": 7,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -556,7 +556,7 @@
                         "z": 1.0
                     }
                 },
-                "8b23cd60-d6a6-11ea-b01f-acde48001122": {
+                "b0b41ae2-0f10-11eb-8d71-acde48001122": {
                     "index": 8,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -566,7 +566,7 @@
                         "z": 2.0
                     }
                 },
-                "8b2438e0-d6a6-11ea-b01f-acde48001122": {
+                "b0b4a0d4-0f10-11eb-8d71-acde48001122": {
                     "index": 9,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -578,131 +578,132 @@
                 }
             },
             "bodies": {
-                "8b21a2ce-d6a6-11ea-b01f-acde48001122": {
+                "b0b0f3da-0f10-11eb-8d71-acde48001122": {
+                    "index": 0,
                     "name": "Body1",
                     "faces": [
-                        "8b21c006-d6a6-11ea-b01f-acde48001122",
-                        "8b21e752-d6a6-11ea-b01f-acde48001122",
-                        "8b221592-d6a6-11ea-b01f-acde48001122",
-                        "8b224b48-d6a6-11ea-b01f-acde48001122",
-                        "8b2288d8-d6a6-11ea-b01f-acde48001122",
-                        "8b22cdac-d6a6-11ea-b01f-acde48001122",
-                        "8b231dac-d6a6-11ea-b01f-acde48001122",
-                        "8b23718a-d6a6-11ea-b01f-acde48001122",
-                        "8b23cd60-d6a6-11ea-b01f-acde48001122",
-                        "8b2438e0-d6a6-11ea-b01f-acde48001122"
+                        "b0b124a4-0f10-11eb-8d71-acde48001122",
+                        "b0b1640a-0f10-11eb-8d71-acde48001122",
+                        "b0b1b22a-0f10-11eb-8d71-acde48001122",
+                        "b0b20608-0f10-11eb-8d71-acde48001122",
+                        "b0b25bda-0f10-11eb-8d71-acde48001122",
+                        "b0b2c2c8-0f10-11eb-8d71-acde48001122",
+                        "b0b32484-0f10-11eb-8d71-acde48001122",
+                        "b0b39ff4-0f10-11eb-8d71-acde48001122",
+                        "b0b41ae2-0f10-11eb-8d71-acde48001122",
+                        "b0b4a0d4-0f10-11eb-8d71-acde48001122"
                     ]
                 }
             },
             "extrude_bodies": [
-                "8b21a2ce-d6a6-11ea-b01f-acde48001122"
+                "b0b0f3da-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_faces": [
-                "8b22cdac-d6a6-11ea-b01f-acde48001122",
-                "8b23cd60-d6a6-11ea-b01f-acde48001122",
-                "8b2438e0-d6a6-11ea-b01f-acde48001122",
-                "8b23718a-d6a6-11ea-b01f-acde48001122",
-                "8b231dac-d6a6-11ea-b01f-acde48001122",
-                "8b21c006-d6a6-11ea-b01f-acde48001122",
-                "8b2288d8-d6a6-11ea-b01f-acde48001122",
-                "8b224b48-d6a6-11ea-b01f-acde48001122",
-                "8b221592-d6a6-11ea-b01f-acde48001122",
-                "8b21e752-d6a6-11ea-b01f-acde48001122"
+                "b0b1640a-0f10-11eb-8d71-acde48001122",
+                "b0b1b22a-0f10-11eb-8d71-acde48001122",
+                "b0b20608-0f10-11eb-8d71-acde48001122",
+                "b0b25bda-0f10-11eb-8d71-acde48001122",
+                "b0b124a4-0f10-11eb-8d71-acde48001122",
+                "b0b4a0d4-0f10-11eb-8d71-acde48001122",
+                "b0b2c2c8-0f10-11eb-8d71-acde48001122",
+                "b0b41ae2-0f10-11eb-8d71-acde48001122",
+                "b0b32484-0f10-11eb-8d71-acde48001122",
+                "b0b39ff4-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_side_faces": [
-                "8b22cdac-d6a6-11ea-b01f-acde48001122",
-                "8b23718a-d6a6-11ea-b01f-acde48001122",
-                "8b231dac-d6a6-11ea-b01f-acde48001122",
-                "8b21c006-d6a6-11ea-b01f-acde48001122",
-                "8b2288d8-d6a6-11ea-b01f-acde48001122",
-                "8b224b48-d6a6-11ea-b01f-acde48001122",
-                "8b221592-d6a6-11ea-b01f-acde48001122",
-                "8b21e752-d6a6-11ea-b01f-acde48001122"
+                "b0b1640a-0f10-11eb-8d71-acde48001122",
+                "b0b1b22a-0f10-11eb-8d71-acde48001122",
+                "b0b20608-0f10-11eb-8d71-acde48001122",
+                "b0b25bda-0f10-11eb-8d71-acde48001122",
+                "b0b124a4-0f10-11eb-8d71-acde48001122",
+                "b0b2c2c8-0f10-11eb-8d71-acde48001122",
+                "b0b32484-0f10-11eb-8d71-acde48001122",
+                "b0b39ff4-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_end_faces": [
-                "8b23cd60-d6a6-11ea-b01f-acde48001122"
+                "b0b41ae2-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_start_faces": [
-                "8b2438e0-d6a6-11ea-b01f-acde48001122"
+                "b0b4a0d4-0f10-11eb-8d71-acde48001122"
             ]
         },
-        "8b10d11a-d6a6-11ea-b01f-acde48001122": {
+        "b0985014-0f10-11eb-8d71-acde48001122": {
             "name": "Sketch2",
             "type": "Sketch",
             "points": {
-                "8b13b4e8-d6a6-11ea-b01f-acde48001122": {
+                "b09c8f6c-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "8b13d400-d6a6-11ea-b01f-acde48001122": {
+                "b09cb8f2-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": -2.0,
                     "y": -4.0,
                     "z": 0.0
                 },
-                "8b13f5ca-d6a6-11ea-b01f-acde48001122": {
+                "b09ce5a2-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": -4.0,
                     "z": 0.0
                 },
-                "8b1417f8-d6a6-11ea-b01f-acde48001122": {
+                "b09d1108-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 1.0,
                     "y": -3.0,
                     "z": 0.0
                 },
-                "8b143c24-d6a6-11ea-b01f-acde48001122": {
+                "b09d3d04-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 1.0,
                     "y": -1.0,
                     "z": 0.0
                 },
-                "8b14621c-d6a6-11ea-b01f-acde48001122": {
+                "b09d61a8-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "8b148a3a-d6a6-11ea-b01f-acde48001122": {
+                "b09d87f0-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": -2.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "8b14b3c0-d6a6-11ea-b01f-acde48001122": {
+                "b09dba04-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": -3.0,
                     "y": -1.0,
                     "z": 0.0
                 },
-                "8b14deb8-d6a6-11ea-b01f-acde48001122": {
+                "b09de7a4-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": -3.0,
                     "y": -3.0,
                     "z": 0.0
                 },
-                "8b150b90-d6a6-11ea-b01f-acde48001122": {
+                "b09e1d46-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": -3.0,
                     "z": 0.0
                 },
-                "8b153a20-d6a6-11ea-b01f-acde48001122": {
+                "b09e568a-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": -2.0,
                     "y": -3.0,
                     "z": 0.0
                 },
-                "8b156a7c-d6a6-11ea-b01f-acde48001122": {
+                "b09e92bc-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": -2.0,
                     "y": -1.0,
                     "z": 0.0
                 },
-                "8b159cc2-d6a6-11ea-b01f-acde48001122": {
+                "b09ed06a-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": -1.0,
@@ -710,147 +711,147 @@
                 }
             },
             "curves": {
-                "8b11c1ec-d6a6-11ea-b01f-acde48001122": {
+                "b099e74e-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b13d400-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b13f5ca-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09cb8f2-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09ce5a2-0f10-11eb-8d71-acde48001122"
                 },
-                "8b11e884-d6a6-11ea-b01f-acde48001122": {
+                "b09a1886-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b13f5ca-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b1417f8-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09ce5a2-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09d1108-0f10-11eb-8d71-acde48001122"
                 },
-                "8b120e40-d6a6-11ea-b01f-acde48001122": {
+                "b09a46e4-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b1417f8-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b143c24-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09d1108-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09d3d04-0f10-11eb-8d71-acde48001122"
                 },
-                "8b123438-d6a6-11ea-b01f-acde48001122": {
+                "b09a7844-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b143c24-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b14621c-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09d3d04-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09d61a8-0f10-11eb-8d71-acde48001122"
                 },
-                "8b125c1a-d6a6-11ea-b01f-acde48001122": {
+                "b09aacf6-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b14621c-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b148a3a-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09d61a8-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09d87f0-0f10-11eb-8d71-acde48001122"
                 },
-                "8b12849c-d6a6-11ea-b01f-acde48001122": {
+                "b09aee82-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b148a3a-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b14b3c0-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09d87f0-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09dba04-0f10-11eb-8d71-acde48001122"
                 },
-                "8b12ae5e-d6a6-11ea-b01f-acde48001122": {
+                "b09b2758-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b14b3c0-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b14deb8-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09dba04-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09de7a4-0f10-11eb-8d71-acde48001122"
                 },
-                "8b12d820-d6a6-11ea-b01f-acde48001122": {
+                "b09b6164-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b14deb8-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b13d400-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09de7a4-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09cb8f2-0f10-11eb-8d71-acde48001122"
                 },
-                "8b1302b4-d6a6-11ea-b01f-acde48001122": {
+                "b09b9daa-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b150b90-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b153a20-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09e1d46-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09e568a-0f10-11eb-8d71-acde48001122"
                 },
-                "8b132d8e-d6a6-11ea-b01f-acde48001122": {
+                "b09bdc52-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b153a20-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b156a7c-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09e568a-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09e92bc-0f10-11eb-8d71-acde48001122"
                 },
-                "8b135ad4-d6a6-11ea-b01f-acde48001122": {
+                "b09c12c6-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b156a7c-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b159cc2-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09e92bc-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09ed06a-0f10-11eb-8d71-acde48001122"
                 },
-                "8b1389d2-d6a6-11ea-b01f-acde48001122": {
+                "b09c54d4-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b159cc2-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b150b90-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b09ed06a-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b09e1d46-0f10-11eb-8d71-acde48001122"
                 }
             },
             "constraints": {
-                "8b15c512-d6a6-11ea-b01f-acde48001122": {
-                    "line": "8b1302b4-d6a6-11ea-b01f-acde48001122",
+                "b09f0332-0f10-11eb-8d71-acde48001122": {
+                    "line": "b09b9daa-0f10-11eb-8d71-acde48001122",
                     "type": "HorizontalConstraint"
                 },
-                "8b15d1c4-d6a6-11ea-b01f-acde48001122": {
-                    "line": "8b132d8e-d6a6-11ea-b01f-acde48001122",
+                "b09f14e4-0f10-11eb-8d71-acde48001122": {
+                    "line": "b09bdc52-0f10-11eb-8d71-acde48001122",
                     "type": "VerticalConstraint"
                 },
-                "8b15de62-d6a6-11ea-b01f-acde48001122": {
-                    "line": "8b135ad4-d6a6-11ea-b01f-acde48001122",
+                "b09f24e8-0f10-11eb-8d71-acde48001122": {
+                    "line": "b09c12c6-0f10-11eb-8d71-acde48001122",
                     "type": "HorizontalConstraint"
                 },
-                "8b15eb1e-d6a6-11ea-b01f-acde48001122": {
-                    "line": "8b1389d2-d6a6-11ea-b01f-acde48001122",
+                "b09f344c-0f10-11eb-8d71-acde48001122": {
+                    "line": "b09c54d4-0f10-11eb-8d71-acde48001122",
                     "type": "VerticalConstraint"
                 }
             },
             "profiles": {
-                "b4ebfc48-5714-3abb-8ab6-b786e725f060": {
+                "3424fff0-5e13-3184-972a-5e07e27cba63": {
                     "loops": [
                         {
                             "is_outer": false,
@@ -869,7 +870,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b1389d2-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09c54d4-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -885,7 +886,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b1302b4-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09b9daa-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -901,7 +902,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b132d8e-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09bdc52-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -917,7 +918,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b135ad4-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09c12c6-0f10-11eb-8d71-acde48001122"
                                 }
                             ]
                         },
@@ -938,7 +939,7 @@
                                         "y": -4.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b12d820-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09b6164-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -954,7 +955,7 @@
                                         "y": -4.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b11c1ec-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b099e74e-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -970,7 +971,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b11e884-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09a1886-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -986,7 +987,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b120e40-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09a46e4-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1002,7 +1003,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b123438-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09a7844-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1018,7 +1019,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b125c1a-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09aacf6-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1034,7 +1035,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b12849c-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09aee82-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1050,7 +1051,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b12ae5e-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09b2758-0f10-11eb-8d71-acde48001122"
                                 }
                             ]
                         }
@@ -1066,7 +1067,7 @@
                         "perimeter": 21.656854249492383
                     }
                 },
-                "5cafc19e-6679-3160-8f29-ea5e9a14fd13": {
+                "afc3d0c2-6691-3225-aaf5-a017a97f2c6f": {
                     "loops": [
                         {
                             "is_outer": true,
@@ -1085,7 +1086,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b135ad4-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09c12c6-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1101,7 +1102,7 @@
                                         "y": -1.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b132d8e-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09bdc52-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1117,7 +1118,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b1302b4-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09b9daa-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1133,7 +1134,7 @@
                                         "y": -3.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b1389d2-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b09c54d4-0f10-11eb-8d71-acde48001122"
                                 }
                             ]
                         }
@@ -1248,13 +1249,13 @@
                 }
             }
         },
-        "8b15ff96-d6a6-11ea-b01f-acde48001122": {
+        "b09f4b80-0f10-11eb-8d71-acde48001122": {
             "name": "Extrude2",
             "type": "ExtrudeFeature",
             "profiles": [
                 {
-                    "profile": "5cafc19e-6679-3160-8f29-ea5e9a14fd13",
-                    "sketch": "8b10d11a-d6a6-11ea-b01f-acde48001122"
+                    "profile": "afc3d0c2-6691-3225-aaf5-a017a97f2c6f",
+                    "sketch": "b0985014-0f10-11eb-8d71-acde48001122"
                 }
             ],
             "operation": "CutFeatureOperation",
@@ -1278,7 +1279,7 @@
                 "type": "DistanceExtentDefinition"
             },
             "faces": {
-                "8b379156-d6a6-11ea-b01f-acde48001122": {
+                "b0d429b8-0f10-11eb-8d71-acde48001122": {
                     "index": 0,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1288,7 +1289,7 @@
                         "z": 1.0
                     }
                 },
-                "8b380aaa-d6a6-11ea-b01f-acde48001122": {
+                "b0d4c120-0f10-11eb-8d71-acde48001122": {
                     "index": 1,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1298,7 +1299,7 @@
                         "z": 1.0
                     }
                 },
-                "8b38825a-d6a6-11ea-b01f-acde48001122": {
+                "b0d541fe-0f10-11eb-8d71-acde48001122": {
                     "index": 2,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1308,7 +1309,7 @@
                         "z": 1.0
                     }
                 },
-                "8b390630-d6a6-11ea-b01f-acde48001122": {
+                "b0d5d1a0-0f10-11eb-8d71-acde48001122": {
                     "index": 3,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1318,7 +1319,7 @@
                         "z": 1.0
                     }
                 },
-                "8b21c006-d6a6-11ea-b01f-acde48001122": {
+                "b0b124a4-0f10-11eb-8d71-acde48001122": {
                     "index": 4,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1328,7 +1329,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b21e752-d6a6-11ea-b01f-acde48001122": {
+                "b0b1640a-0f10-11eb-8d71-acde48001122": {
                     "index": 5,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1338,7 +1339,7 @@
                         "z": 1.0
                     }
                 },
-                "8b221592-d6a6-11ea-b01f-acde48001122": {
+                "b0b1b22a-0f10-11eb-8d71-acde48001122": {
                     "index": 6,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1348,7 +1349,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b224b48-d6a6-11ea-b01f-acde48001122": {
+                "b0b20608-0f10-11eb-8d71-acde48001122": {
                     "index": 7,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1358,7 +1359,7 @@
                         "z": 1.0
                     }
                 },
-                "8b2288d8-d6a6-11ea-b01f-acde48001122": {
+                "b0b25bda-0f10-11eb-8d71-acde48001122": {
                     "index": 8,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1368,7 +1369,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b22cdac-d6a6-11ea-b01f-acde48001122": {
+                "b0b2c2c8-0f10-11eb-8d71-acde48001122": {
                     "index": 9,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1378,7 +1379,7 @@
                         "z": 1.0
                     }
                 },
-                "8b231dac-d6a6-11ea-b01f-acde48001122": {
+                "b0b32484-0f10-11eb-8d71-acde48001122": {
                     "index": 10,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1388,7 +1389,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b23718a-d6a6-11ea-b01f-acde48001122": {
+                "b0b39ff4-0f10-11eb-8d71-acde48001122": {
                     "index": 11,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1398,7 +1399,7 @@
                         "z": 1.0
                     }
                 },
-                "8b23cd60-d6a6-11ea-b01f-acde48001122": {
+                "b0b41ae2-0f10-11eb-8d71-acde48001122": {
                     "index": 12,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1408,7 +1409,7 @@
                         "z": 2.0
                     }
                 },
-                "8b2438e0-d6a6-11ea-b01f-acde48001122": {
+                "b0b4a0d4-0f10-11eb-8d71-acde48001122": {
                     "index": 13,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1420,97 +1421,98 @@
                 }
             },
             "bodies": {
-                "8b21a2ce-d6a6-11ea-b01f-acde48001122": {
+                "b0b0f3da-0f10-11eb-8d71-acde48001122": {
+                    "index": 0,
                     "name": "Body1",
                     "faces": [
-                        "8b379156-d6a6-11ea-b01f-acde48001122",
-                        "8b380aaa-d6a6-11ea-b01f-acde48001122",
-                        "8b38825a-d6a6-11ea-b01f-acde48001122",
-                        "8b390630-d6a6-11ea-b01f-acde48001122",
-                        "8b21c006-d6a6-11ea-b01f-acde48001122",
-                        "8b21e752-d6a6-11ea-b01f-acde48001122",
-                        "8b221592-d6a6-11ea-b01f-acde48001122",
-                        "8b224b48-d6a6-11ea-b01f-acde48001122",
-                        "8b2288d8-d6a6-11ea-b01f-acde48001122",
-                        "8b22cdac-d6a6-11ea-b01f-acde48001122",
-                        "8b231dac-d6a6-11ea-b01f-acde48001122",
-                        "8b23718a-d6a6-11ea-b01f-acde48001122",
-                        "8b23cd60-d6a6-11ea-b01f-acde48001122",
-                        "8b2438e0-d6a6-11ea-b01f-acde48001122"
+                        "b0d429b8-0f10-11eb-8d71-acde48001122",
+                        "b0d4c120-0f10-11eb-8d71-acde48001122",
+                        "b0d541fe-0f10-11eb-8d71-acde48001122",
+                        "b0d5d1a0-0f10-11eb-8d71-acde48001122",
+                        "b0b124a4-0f10-11eb-8d71-acde48001122",
+                        "b0b1640a-0f10-11eb-8d71-acde48001122",
+                        "b0b1b22a-0f10-11eb-8d71-acde48001122",
+                        "b0b20608-0f10-11eb-8d71-acde48001122",
+                        "b0b25bda-0f10-11eb-8d71-acde48001122",
+                        "b0b2c2c8-0f10-11eb-8d71-acde48001122",
+                        "b0b32484-0f10-11eb-8d71-acde48001122",
+                        "b0b39ff4-0f10-11eb-8d71-acde48001122",
+                        "b0b41ae2-0f10-11eb-8d71-acde48001122",
+                        "b0b4a0d4-0f10-11eb-8d71-acde48001122"
                     ]
                 }
             },
             "extrude_bodies": [
-                "8b21a2ce-d6a6-11ea-b01f-acde48001122"
+                "b0b0f3da-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_faces": [
-                "8b38825a-d6a6-11ea-b01f-acde48001122",
-                "8b390630-d6a6-11ea-b01f-acde48001122",
-                "8b380aaa-d6a6-11ea-b01f-acde48001122",
-                "8b379156-d6a6-11ea-b01f-acde48001122"
+                "b0d429b8-0f10-11eb-8d71-acde48001122",
+                "b0d4c120-0f10-11eb-8d71-acde48001122",
+                "b0d541fe-0f10-11eb-8d71-acde48001122",
+                "b0d5d1a0-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_side_faces": [
-                "8b38825a-d6a6-11ea-b01f-acde48001122",
-                "8b390630-d6a6-11ea-b01f-acde48001122",
-                "8b380aaa-d6a6-11ea-b01f-acde48001122",
-                "8b379156-d6a6-11ea-b01f-acde48001122"
+                "b0d429b8-0f10-11eb-8d71-acde48001122",
+                "b0d4c120-0f10-11eb-8d71-acde48001122",
+                "b0d541fe-0f10-11eb-8d71-acde48001122",
+                "b0d5d1a0-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_end_faces": [],
             "extrude_start_faces": []
         },
-        "8b161558-d6a6-11ea-b01f-acde48001122": {
+        "b09f65c0-0f10-11eb-8d71-acde48001122": {
             "name": "Sketch3",
             "type": "Sketch",
             "points": {
-                "8b18e404-d6a6-11ea-b01f-acde48001122": {
+                "b0a33e7a-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 0.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "8b191be0-d6a6-11ea-b01f-acde48001122": {
+                "b0a38330-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 1.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "8b195696-d6a6-11ea-b01f-acde48001122": {
+                "b0a3c354-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 3.0,
                     "y": 0.0,
                     "z": 0.0
                 },
-                "8b199138-d6a6-11ea-b01f-acde48001122": {
+                "b0a40fc6-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 3.0,
                     "y": 2.0,
                     "z": 0.0
                 },
-                "8b19cd24-d6a6-11ea-b01f-acde48001122": {
+                "b0a45cb0-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 1.0,
                     "y": 2.0,
                     "z": 0.0
                 },
-                "8b1a0bb8-d6a6-11ea-b01f-acde48001122": {
+                "b0a4ab34-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 1.1000000163912773,
                     "y": 1.9000000283122063,
                     "z": 0.0
                 },
-                "8b1a4ae2-d6a6-11ea-b01f-acde48001122": {
+                "b0a4fc4c-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 2.9000000432133675,
                     "y": 1.9000000283122063,
                     "z": 0.0
                 },
-                "8b1a8b7e-d6a6-11ea-b01f-acde48001122": {
+                "b0a54ca6-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 2.9000000432133675,
                     "y": 0.10000000149011612,
                     "z": 0.0
                 },
-                "8b1acc6a-d6a6-11ea-b01f-acde48001122": {
+                "b0a5a1b0-0f10-11eb-8d71-acde48001122": {
                     "type": "Point3D",
                     "x": 1.1000000163912773,
                     "y": 0.10000000149011612,
@@ -1518,107 +1520,107 @@
                 }
             },
             "curves": {
-                "8b17092c-d6a6-11ea-b01f-acde48001122": {
+                "b0a0edb4-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b191be0-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b195696-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0a38330-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0a3c354-0f10-11eb-8d71-acde48001122"
                 },
-                "8b174450-d6a6-11ea-b01f-acde48001122": {
+                "b0a13c6a-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b195696-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b199138-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0a3c354-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0a40fc6-0f10-11eb-8d71-acde48001122"
                 },
-                "8b177e52-d6a6-11ea-b01f-acde48001122": {
+                "b0a181a2-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b199138-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b19cd24-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0a40fc6-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0a45cb0-0f10-11eb-8d71-acde48001122"
                 },
-                "8b17b9da-d6a6-11ea-b01f-acde48001122": {
+                "b0a1c5c2-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": true,
                     "reference": true,
                     "visible": false,
-                    "start_point": "8b19cd24-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b191be0-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0a45cb0-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0a38330-0f10-11eb-8d71-acde48001122"
                 },
-                "8b17f238-d6a6-11ea-b01f-acde48001122": {
+                "b0a20dde-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b1a0bb8-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b1a4ae2-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0a4ab34-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0a4fc4c-0f10-11eb-8d71-acde48001122"
                 },
-                "8b182c26-d6a6-11ea-b01f-acde48001122": {
+                "b0a25780-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b1a4ae2-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b1a8b7e-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0a4fc4c-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0a54ca6-0f10-11eb-8d71-acde48001122"
                 },
-                "8b1868e4-d6a6-11ea-b01f-acde48001122": {
+                "b0a2a406-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b1a8b7e-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b1acc6a-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0a54ca6-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0a5a1b0-0f10-11eb-8d71-acde48001122"
                 },
-                "8b18a656-d6a6-11ea-b01f-acde48001122": {
+                "b0a2efec-0f10-11eb-8d71-acde48001122": {
                     "type": "SketchLine",
                     "construction_geom": false,
                     "fixed": false,
                     "fully_constrained": false,
                     "reference": false,
                     "visible": true,
-                    "start_point": "8b1acc6a-d6a6-11ea-b01f-acde48001122",
-                    "end_point": "8b1a0bb8-d6a6-11ea-b01f-acde48001122"
+                    "start_point": "b0a5a1b0-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b0a4ab34-0f10-11eb-8d71-acde48001122"
                 }
             },
             "constraints": {
-                "8b1aff28-d6a6-11ea-b01f-acde48001122": {
-                    "line": "8b17f238-d6a6-11ea-b01f-acde48001122",
+                "b0a5e864-0f10-11eb-8d71-acde48001122": {
+                    "line": "b0a20dde-0f10-11eb-8d71-acde48001122",
                     "type": "HorizontalConstraint"
                 },
-                "8b1b0c84-d6a6-11ea-b01f-acde48001122": {
-                    "line": "8b182c26-d6a6-11ea-b01f-acde48001122",
+                "b0a5fbba-0f10-11eb-8d71-acde48001122": {
+                    "line": "b0a25780-0f10-11eb-8d71-acde48001122",
                     "type": "VerticalConstraint"
                 },
-                "8b1b1972-d6a6-11ea-b01f-acde48001122": {
-                    "line": "8b1868e4-d6a6-11ea-b01f-acde48001122",
+                "b0a60ed4-0f10-11eb-8d71-acde48001122": {
+                    "line": "b0a2a406-0f10-11eb-8d71-acde48001122",
                     "type": "HorizontalConstraint"
                 },
-                "8b1b26b0-d6a6-11ea-b01f-acde48001122": {
-                    "line": "8b18a656-d6a6-11ea-b01f-acde48001122",
+                "b0a621da-0f10-11eb-8d71-acde48001122": {
+                    "line": "b0a2efec-0f10-11eb-8d71-acde48001122",
                     "type": "VerticalConstraint"
                 }
             },
             "profiles": {
-                "1a69ea23-f42a-35c7-978c-212c6f058605": {
+                "38a6410d-41d5-37bf-a172-7e82da955098": {
                     "loops": [
                         {
                             "is_outer": false,
@@ -1637,7 +1639,7 @@
                                         "y": 1.9000000283122063,
                                         "z": 0.0
                                     },
-                                    "curve": "8b18a656-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a2efec-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1653,7 +1655,7 @@
                                         "y": 1.9000000283122063,
                                         "z": 0.0
                                     },
-                                    "curve": "8b17f238-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a20dde-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1669,7 +1671,7 @@
                                         "y": 0.10000000149011612,
                                         "z": 0.0
                                     },
-                                    "curve": "8b182c26-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a25780-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1685,7 +1687,7 @@
                                         "y": 0.10000000149011612,
                                         "z": 0.0
                                     },
-                                    "curve": "8b1868e4-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a2a406-0f10-11eb-8d71-acde48001122"
                                 }
                             ]
                         },
@@ -1706,7 +1708,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b17b9da-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a1c5c2-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1722,7 +1724,7 @@
                                         "y": 0.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b17092c-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a0edb4-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1738,7 +1740,7 @@
                                         "y": 2.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b174450-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a13c6a-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1754,7 +1756,7 @@
                                         "y": 2.0,
                                         "z": 0.0
                                     },
-                                    "curve": "8b177e52-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a181a2-0f10-11eb-8d71-acde48001122"
                                 }
                             ]
                         }
@@ -1770,7 +1772,7 @@
                         "perimeter": 15.20000010728836
                     }
                 },
-                "b279a691-1984-3ee2-8c02-38543895f974": {
+                "5899d9ad-d4b6-30c3-977c-50975ed3a22c": {
                     "loops": [
                         {
                             "is_outer": true,
@@ -1789,7 +1791,7 @@
                                         "y": 0.10000000149011612,
                                         "z": 0.0
                                     },
-                                    "curve": "8b1868e4-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a2a406-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1805,7 +1807,7 @@
                                         "y": 0.10000000149011612,
                                         "z": 0.0
                                     },
-                                    "curve": "8b182c26-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a25780-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1821,7 +1823,7 @@
                                         "y": 1.9000000283122063,
                                         "z": 0.0
                                     },
-                                    "curve": "8b17f238-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a20dde-0f10-11eb-8d71-acde48001122"
                                 },
                                 {
                                     "type": "Line3D",
@@ -1837,7 +1839,7 @@
                                         "y": 1.9000000283122063,
                                         "z": 0.0
                                     },
-                                    "curve": "8b18a656-d6a6-11ea-b01f-acde48001122"
+                                    "curve": "b0a2efec-0f10-11eb-8d71-acde48001122"
                                 }
                             ]
                         }
@@ -1952,13 +1954,13 @@
                 }
             }
         },
-        "8b1b388a-d6a6-11ea-b01f-acde48001122": {
+        "b0a63cce-0f10-11eb-8d71-acde48001122": {
             "name": "Extrude3",
             "type": "ExtrudeFeature",
             "profiles": [
                 {
-                    "profile": "b279a691-1984-3ee2-8c02-38543895f974",
-                    "sketch": "8b161558-d6a6-11ea-b01f-acde48001122"
+                    "profile": "5899d9ad-d4b6-30c3-977c-50975ed3a22c",
+                    "sketch": "b09f65c0-0f10-11eb-8d71-acde48001122"
                 }
             ],
             "operation": "JoinFeatureOperation",
@@ -1982,7 +1984,7 @@
                 "type": "DistanceExtentDefinition"
             },
             "faces": {
-                "8b4f4a80-d6a6-11ea-b01f-acde48001122": {
+                "b0f8ba9e-0f10-11eb-8d71-acde48001122": {
                     "index": 0,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -1992,7 +1994,7 @@
                         "z": 1.0000000149011612
                     }
                 },
-                "8b4fe486-d6a6-11ea-b01f-acde48001122": {
+                "b0f97f06-0f10-11eb-8d71-acde48001122": {
                     "index": 1,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2002,7 +2004,7 @@
                         "z": 1.9000000283122063
                     }
                 },
-                "8b5070a4-d6a6-11ea-b01f-acde48001122": {
+                "b0fa23d4-0f10-11eb-8d71-acde48001122": {
                     "index": 2,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2012,7 +2014,7 @@
                         "z": 1.0000000149011612
                     }
                 },
-                "8b510046-d6a6-11ea-b01f-acde48001122": {
+                "b0fac442-0f10-11eb-8d71-acde48001122": {
                     "index": 3,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2022,7 +2024,7 @@
                         "z": 0.10000000149011612
                     }
                 },
-                "8b5196fa-d6a6-11ea-b01f-acde48001122": {
+                "b0fb75b8-0f10-11eb-8d71-acde48001122": {
                     "index": 4,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2032,7 +2034,7 @@
                         "z": 1.0000000149011612
                     }
                 },
-                "8b379156-d6a6-11ea-b01f-acde48001122": {
+                "b0d429b8-0f10-11eb-8d71-acde48001122": {
                     "index": 5,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2042,7 +2044,7 @@
                         "z": 1.0
                     }
                 },
-                "8b380aaa-d6a6-11ea-b01f-acde48001122": {
+                "b0d4c120-0f10-11eb-8d71-acde48001122": {
                     "index": 6,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2052,7 +2054,7 @@
                         "z": 1.0
                     }
                 },
-                "8b38825a-d6a6-11ea-b01f-acde48001122": {
+                "b0d541fe-0f10-11eb-8d71-acde48001122": {
                     "index": 7,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2062,7 +2064,7 @@
                         "z": 1.0
                     }
                 },
-                "8b390630-d6a6-11ea-b01f-acde48001122": {
+                "b0d5d1a0-0f10-11eb-8d71-acde48001122": {
                     "index": 8,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2072,7 +2074,7 @@
                         "z": 1.0
                     }
                 },
-                "8b21c006-d6a6-11ea-b01f-acde48001122": {
+                "b0b124a4-0f10-11eb-8d71-acde48001122": {
                     "index": 9,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2082,7 +2084,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b21e752-d6a6-11ea-b01f-acde48001122": {
+                "b0b1640a-0f10-11eb-8d71-acde48001122": {
                     "index": 10,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2092,7 +2094,7 @@
                         "z": 1.0
                     }
                 },
-                "8b221592-d6a6-11ea-b01f-acde48001122": {
+                "b0b1b22a-0f10-11eb-8d71-acde48001122": {
                     "index": 11,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2102,7 +2104,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b224b48-d6a6-11ea-b01f-acde48001122": {
+                "b0b20608-0f10-11eb-8d71-acde48001122": {
                     "index": 12,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2112,7 +2114,7 @@
                         "z": 1.0
                     }
                 },
-                "8b2288d8-d6a6-11ea-b01f-acde48001122": {
+                "b0b25bda-0f10-11eb-8d71-acde48001122": {
                     "index": 13,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2122,7 +2124,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b22cdac-d6a6-11ea-b01f-acde48001122": {
+                "b0b2c2c8-0f10-11eb-8d71-acde48001122": {
                     "index": 14,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2132,7 +2134,7 @@
                         "z": 1.0
                     }
                 },
-                "8b231dac-d6a6-11ea-b01f-acde48001122": {
+                "b0b32484-0f10-11eb-8d71-acde48001122": {
                     "index": 15,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2142,7 +2144,7 @@
                         "z": 1.0000000000000002
                     }
                 },
-                "8b23718a-d6a6-11ea-b01f-acde48001122": {
+                "b0b39ff4-0f10-11eb-8d71-acde48001122": {
                     "index": 16,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2152,7 +2154,7 @@
                         "z": 1.0
                     }
                 },
-                "8b23cd60-d6a6-11ea-b01f-acde48001122": {
+                "b0b41ae2-0f10-11eb-8d71-acde48001122": {
                     "index": 17,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2162,7 +2164,7 @@
                         "z": 2.0
                     }
                 },
-                "8b2438e0-d6a6-11ea-b01f-acde48001122": {
+                "b0b4a0d4-0f10-11eb-8d71-acde48001122": {
                     "index": 18,
                     "surface_type": "PlaneSurfaceType",
                     "point_on_face": {
@@ -2174,49 +2176,50 @@
                 }
             },
             "bodies": {
-                "8b21a2ce-d6a6-11ea-b01f-acde48001122": {
+                "b0b0f3da-0f10-11eb-8d71-acde48001122": {
+                    "index": 0,
                     "name": "Body1",
                     "faces": [
-                        "8b4f4a80-d6a6-11ea-b01f-acde48001122",
-                        "8b4fe486-d6a6-11ea-b01f-acde48001122",
-                        "8b5070a4-d6a6-11ea-b01f-acde48001122",
-                        "8b510046-d6a6-11ea-b01f-acde48001122",
-                        "8b5196fa-d6a6-11ea-b01f-acde48001122",
-                        "8b379156-d6a6-11ea-b01f-acde48001122",
-                        "8b380aaa-d6a6-11ea-b01f-acde48001122",
-                        "8b38825a-d6a6-11ea-b01f-acde48001122",
-                        "8b390630-d6a6-11ea-b01f-acde48001122",
-                        "8b21c006-d6a6-11ea-b01f-acde48001122",
-                        "8b21e752-d6a6-11ea-b01f-acde48001122",
-                        "8b221592-d6a6-11ea-b01f-acde48001122",
-                        "8b224b48-d6a6-11ea-b01f-acde48001122",
-                        "8b2288d8-d6a6-11ea-b01f-acde48001122",
-                        "8b22cdac-d6a6-11ea-b01f-acde48001122",
-                        "8b231dac-d6a6-11ea-b01f-acde48001122",
-                        "8b23718a-d6a6-11ea-b01f-acde48001122",
-                        "8b23cd60-d6a6-11ea-b01f-acde48001122",
-                        "8b2438e0-d6a6-11ea-b01f-acde48001122"
+                        "b0f8ba9e-0f10-11eb-8d71-acde48001122",
+                        "b0f97f06-0f10-11eb-8d71-acde48001122",
+                        "b0fa23d4-0f10-11eb-8d71-acde48001122",
+                        "b0fac442-0f10-11eb-8d71-acde48001122",
+                        "b0fb75b8-0f10-11eb-8d71-acde48001122",
+                        "b0d429b8-0f10-11eb-8d71-acde48001122",
+                        "b0d4c120-0f10-11eb-8d71-acde48001122",
+                        "b0d541fe-0f10-11eb-8d71-acde48001122",
+                        "b0d5d1a0-0f10-11eb-8d71-acde48001122",
+                        "b0b124a4-0f10-11eb-8d71-acde48001122",
+                        "b0b1640a-0f10-11eb-8d71-acde48001122",
+                        "b0b1b22a-0f10-11eb-8d71-acde48001122",
+                        "b0b20608-0f10-11eb-8d71-acde48001122",
+                        "b0b25bda-0f10-11eb-8d71-acde48001122",
+                        "b0b2c2c8-0f10-11eb-8d71-acde48001122",
+                        "b0b32484-0f10-11eb-8d71-acde48001122",
+                        "b0b39ff4-0f10-11eb-8d71-acde48001122",
+                        "b0b41ae2-0f10-11eb-8d71-acde48001122",
+                        "b0b4a0d4-0f10-11eb-8d71-acde48001122"
                     ]
                 }
             },
             "extrude_bodies": [
-                "8b21a2ce-d6a6-11ea-b01f-acde48001122"
+                "b0b0f3da-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_faces": [
-                "8b4f4a80-d6a6-11ea-b01f-acde48001122",
-                "8b5070a4-d6a6-11ea-b01f-acde48001122",
-                "8b4fe486-d6a6-11ea-b01f-acde48001122",
-                "8b510046-d6a6-11ea-b01f-acde48001122",
-                "8b5196fa-d6a6-11ea-b01f-acde48001122"
+                "b0f8ba9e-0f10-11eb-8d71-acde48001122",
+                "b0f97f06-0f10-11eb-8d71-acde48001122",
+                "b0fa23d4-0f10-11eb-8d71-acde48001122",
+                "b0fac442-0f10-11eb-8d71-acde48001122",
+                "b0fb75b8-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_side_faces": [
-                "8b4f4a80-d6a6-11ea-b01f-acde48001122",
-                "8b5070a4-d6a6-11ea-b01f-acde48001122",
-                "8b4fe486-d6a6-11ea-b01f-acde48001122",
-                "8b510046-d6a6-11ea-b01f-acde48001122"
+                "b0f8ba9e-0f10-11eb-8d71-acde48001122",
+                "b0f97f06-0f10-11eb-8d71-acde48001122",
+                "b0fa23d4-0f10-11eb-8d71-acde48001122",
+                "b0fac442-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_end_faces": [
-                "8b5196fa-d6a6-11ea-b01f-acde48001122"
+                "b0fb75b8-0f10-11eb-8d71-acde48001122"
             ],
             "extrude_start_faces": []
         }
@@ -2300,255 +2303,230 @@
     },
     "sequence": [
         {
+            "index": 0,
+            "type": "Sketch",
+            "entity": "b0944a5a-0f10-11eb-8d71-acde48001122",
+            "curve": "b09692ec-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
+        },
+        {
             "index": 1,
             "type": "Sketch",
-            "entity": "8b0de2fc-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b0f7d42-d6a6-11ea-b01f-acde48001122",
-            "timeline": 0,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0001.png"
+            "entity": "b0944a5a-0f10-11eb-8d71-acde48001122",
+            "curve": "b095e98c-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
         },
         {
             "index": 2,
             "type": "Sketch",
-            "entity": "8b0de2fc-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b0ed5a4-d6a6-11ea-b01f-acde48001122",
-            "timeline": 0,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0002.png"
+            "entity": "b0944a5a-0f10-11eb-8d71-acde48001122",
+            "curve": "b0960426-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
         },
         {
             "index": 3,
             "type": "Sketch",
-            "entity": "8b0de2fc-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b0eec92-d6a6-11ea-b01f-acde48001122",
-            "timeline": 0,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0003.png"
+            "entity": "b0944a5a-0f10-11eb-8d71-acde48001122",
+            "curve": "b0961862-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
         },
         {
             "index": 4,
             "type": "Sketch",
-            "entity": "8b0de2fc-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b0eff84-d6a6-11ea-b01f-acde48001122",
-            "timeline": 0,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0004.png"
+            "entity": "b0944a5a-0f10-11eb-8d71-acde48001122",
+            "curve": "b096305e-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
         },
         {
             "index": 5,
             "type": "Sketch",
-            "entity": "8b0de2fc-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b0f14c4-d6a6-11ea-b01f-acde48001122",
-            "timeline": 0,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0005.png"
+            "entity": "b0944a5a-0f10-11eb-8d71-acde48001122",
+            "curve": "b0964abc-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
         },
         {
             "index": 6,
             "type": "Sketch",
-            "entity": "8b0de2fc-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b0f2b08-d6a6-11ea-b01f-acde48001122",
-            "timeline": 0,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0006.png"
+            "entity": "b0944a5a-0f10-11eb-8d71-acde48001122",
+            "curve": "b09667a4-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
         },
         {
             "index": 7,
             "type": "Sketch",
-            "entity": "8b0de2fc-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b0f44b2-d6a6-11ea-b01f-acde48001122",
-            "timeline": 0,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0007.png"
+            "entity": "b0944a5a-0f10-11eb-8d71-acde48001122",
+            "curve": "b0967c94-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
         },
         {
             "index": 8,
-            "type": "Sketch",
-            "entity": "8b0de2fc-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b0f6082-d6a6-11ea-b01f-acde48001122",
-            "timeline": 0,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0008.png"
+            "type": "ExtrudeFeature",
+            "entity": "b0983476-0f10-11eb-8d71-acde48001122",
+            "timeline": 1,
+            "png": "Hexagon_08596d60_0000_0001.png",
+            "smt": "Hexagon_08596d60_0000_0001.smt",
+            "step": "Hexagon_08596d60_0000_0001.step",
+            "obj": "Hexagon_08596d60_0000_0001.obj"
         },
         {
             "index": 9,
-            "type": "ExtrudeFeature",
-            "entity": "8b10b9d2-d6a6-11ea-b01f-acde48001122",
-            "timeline": 1,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0009.png",
-            "smt": "Z0HexagonCutJoin_3797e54d_0000_0009.smt",
-            "obj": "Z0HexagonCutJoin_3797e54d_0000_0009.obj"
+            "type": "Sketch",
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09c54d4-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
+        },
+        {
+            "index": 10,
+            "type": "Sketch",
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09b9daa-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 11,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b1389d2-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0011.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09bdc52-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 12,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b1302b4-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0012.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09c12c6-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 13,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b132d8e-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0013.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09b6164-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 14,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b135ad4-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0014.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b099e74e-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 15,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b12d820-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0015.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09a1886-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 16,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b11c1ec-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0016.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09a46e4-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 17,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b11e884-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0017.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09a7844-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 18,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b120e40-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0018.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09aacf6-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 19,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b123438-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0019.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09aee82-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 20,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b125c1a-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0020.png"
+            "entity": "b0985014-0f10-11eb-8d71-acde48001122",
+            "curve": "b09b2758-0f10-11eb-8d71-acde48001122",
+            "timeline": 2
         },
         {
             "index": 21,
-            "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b12849c-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0021.png"
+            "type": "ExtrudeFeature",
+            "entity": "b09f4b80-0f10-11eb-8d71-acde48001122",
+            "timeline": 3,
+            "png": "Hexagon_08596d60_0000_0003.png",
+            "smt": "Hexagon_08596d60_0000_0003.smt",
+            "step": "Hexagon_08596d60_0000_0003.step",
+            "obj": "Hexagon_08596d60_0000_0003.obj"
         },
         {
             "index": 22,
             "type": "Sketch",
-            "entity": "8b10d11a-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b12ae5e-d6a6-11ea-b01f-acde48001122",
-            "timeline": 2,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0022.png"
+            "entity": "b09f65c0-0f10-11eb-8d71-acde48001122",
+            "curve": "b0a2efec-0f10-11eb-8d71-acde48001122",
+            "timeline": 4
         },
         {
             "index": 23,
-            "type": "ExtrudeFeature",
-            "entity": "8b15ff96-d6a6-11ea-b01f-acde48001122",
-            "timeline": 3,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0023.png",
-            "smt": "Z0HexagonCutJoin_3797e54d_0000_0023.smt",
-            "obj": "Z0HexagonCutJoin_3797e54d_0000_0023.obj"
+            "type": "Sketch",
+            "entity": "b09f65c0-0f10-11eb-8d71-acde48001122",
+            "curve": "b0a20dde-0f10-11eb-8d71-acde48001122",
+            "timeline": 4
+        },
+        {
+            "index": 24,
+            "type": "Sketch",
+            "entity": "b09f65c0-0f10-11eb-8d71-acde48001122",
+            "curve": "b0a25780-0f10-11eb-8d71-acde48001122",
+            "timeline": 4
         },
         {
             "index": 25,
             "type": "Sketch",
-            "entity": "8b161558-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b18a656-d6a6-11ea-b01f-acde48001122",
-            "timeline": 4,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0025.png"
+            "entity": "b09f65c0-0f10-11eb-8d71-acde48001122",
+            "curve": "b0a2a406-0f10-11eb-8d71-acde48001122",
+            "timeline": 4
         },
         {
             "index": 26,
             "type": "Sketch",
-            "entity": "8b161558-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b17f238-d6a6-11ea-b01f-acde48001122",
-            "timeline": 4,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0026.png"
+            "entity": "b09f65c0-0f10-11eb-8d71-acde48001122",
+            "curve": "b0a1c5c2-0f10-11eb-8d71-acde48001122",
+            "timeline": 4
         },
         {
             "index": 27,
             "type": "Sketch",
-            "entity": "8b161558-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b182c26-d6a6-11ea-b01f-acde48001122",
-            "timeline": 4,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0027.png"
+            "entity": "b09f65c0-0f10-11eb-8d71-acde48001122",
+            "curve": "b0a0edb4-0f10-11eb-8d71-acde48001122",
+            "timeline": 4
         },
         {
             "index": 28,
             "type": "Sketch",
-            "entity": "8b161558-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b1868e4-d6a6-11ea-b01f-acde48001122",
-            "timeline": 4,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0028.png"
+            "entity": "b09f65c0-0f10-11eb-8d71-acde48001122",
+            "curve": "b0a13c6a-0f10-11eb-8d71-acde48001122",
+            "timeline": 4
         },
         {
             "index": 29,
             "type": "Sketch",
-            "entity": "8b161558-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b17b9da-d6a6-11ea-b01f-acde48001122",
-            "timeline": 4,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0029.png"
+            "entity": "b09f65c0-0f10-11eb-8d71-acde48001122",
+            "curve": "b0a181a2-0f10-11eb-8d71-acde48001122",
+            "timeline": 4
         },
         {
             "index": 30,
-            "type": "Sketch",
-            "entity": "8b161558-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b17092c-d6a6-11ea-b01f-acde48001122",
-            "timeline": 4,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0030.png"
-        },
-        {
-            "index": 31,
-            "type": "Sketch",
-            "entity": "8b161558-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b174450-d6a6-11ea-b01f-acde48001122",
-            "timeline": 4,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0031.png"
-        },
-        {
-            "index": 32,
-            "type": "Sketch",
-            "entity": "8b161558-d6a6-11ea-b01f-acde48001122",
-            "curve": "8b177e52-d6a6-11ea-b01f-acde48001122",
-            "timeline": 4,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0032.png"
-        },
-        {
-            "index": 33,
             "type": "ExtrudeFeature",
-            "entity": "8b1b388a-d6a6-11ea-b01f-acde48001122",
+            "entity": "b0a63cce-0f10-11eb-8d71-acde48001122",
             "timeline": 5,
-            "png": "Z0HexagonCutJoin_3797e54d_0000_0033.png",
-            "smt": "Z0HexagonCutJoin_3797e54d_0000_0033.smt",
-            "obj": "Z0HexagonCutJoin_3797e54d_0000_0033.obj"
+            "png": "Hexagon_08596d60_0000_0005.png",
+            "smt": "Hexagon_08596d60_0000_0005.smt",
+            "step": "Hexagon_08596d60_0000_0005.step",
+            "obj": "Hexagon_08596d60_0000_0005.obj"
         }
     ]
 }

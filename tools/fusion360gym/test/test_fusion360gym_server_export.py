@@ -38,8 +38,8 @@ class TestFusion360ServerExport(unittest.TestCase):
         # TEST FILES
         cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
         cls.output_dir = cls.data_dir / "output"
-        box_design = "SingleSketchExtrude_RootComponent"
-        hex_design = "Z0HexagonCutJoin_RootComponent"
+        box_design = "SingleSketchExtrude"
+        hex_design = "Hexagon"
         couch_design = "Couch"
         # Box json reconstruction file
         cls.box_design_json_file = cls.data_dir / f"{box_design}.json"
