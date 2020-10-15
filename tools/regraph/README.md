@@ -1,6 +1,8 @@
 # Regraph: Reconstruction Graph Exporter
 'Regraph' demonstrates how to batch convert the raw data structure provided with the [Reconstruction Dataset](../../docs/reconstruction.md) into graphs representing the B-Rep topology with features on faces and edges. 
 
+<img src="https://i.gyazo.com/2e3ad713965f5dea85ccaa6681fe7886.png" width="400" alt="Regraph">
+
 ## Running
 Regraph runs in Fusion 360 as a script with the following steps.
 1. Follow the [general instructions here](../) to get setup with Fusion 360.
