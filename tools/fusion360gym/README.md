@@ -12,6 +12,7 @@ The first step is to install Fusion 360 and setup up an account. As Fusion 360 s
 Tested with Python 3.7 and uses the following packages:
 - `psutil` tested with 5.7.0
 - `requests` tested with 2.23.0
+- `numpy` tested with 1.18.1
 
 ## Server
 The Fusion 360 Gym consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside. The server and client can be on separate machines, provided they can communicate via a network.
@@ -61,17 +62,15 @@ To run the server in debug mode you need to install [Visual Studio Code](https:/
 
  
 ## Client
-The Fusion 360 Gym client provides a simple interface to send commands to the server and construct CAD designs.
+The Fusion 360 Gym client provides a simple interface to send commands to the server and construct CAD designs. The Fusion 360 Gym supports two action representations for constructing designs: _sketch extrusion_ and _face extrusion_. Details of the specific interface for each is provided below.
+
+![Action Representations](https://i.gyazo.com/972c1c140d02d0cd3f6a0f02c54b5cad.png)
 
 ### Examples
 See the [examples folder](examples/) for several examples of how work with the client.
 
-### Interface
-The Fusion 360 Gym supports two action representations for constructing designs: _sketch extrusion_ and _face extrusion_. Details of the specific interface for each is provided below.
 
-![Action Representations](https://i.gyazo.com/972c1c140d02d0cd3f6a0f02c54b5cad.png)
-
-#### Response Format
+### Response Format
 All calls return a response object that can be accessed like so:
 
 ```python
@@ -90,7 +89,7 @@ The following keys can be expected inside the `response_data` returned by callin
 Note that when returning binary data (e.g. mesh, brep) the above keys will not be present.
 
 
-#### Reconstruction
+### Reconstruction
 Reconstruct entire designs or parts of them from the json files provided with the reconstruction subset.
 - `reconstruct(file)`: Reconstruct a design from the provided json file
 - `reconstruct_sketch(sketch_data, sketch_plane, scale, translate, rotate)`: Reconstruct a sketch from the provided sketch data
@@ -117,7 +116,7 @@ Reconstruct entire designs or parts of them from the json files provided with th
     - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
     - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
 
-#### Target Reconstruction
+### Target Reconstruction
 Set the target design to be used with reconstruction.
 - `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. 
     - Returns:
@@ -128,7 +127,7 @@ Set the target design to be used with reconstruction.
         - `graph`: Face adjacency graph of the target design in "PerFace" format, see [here](../regraph) for a description.
         - `bounding_box`: bounding box of the target design that can be used for normalization.
 
-#### Sketch Extrusion
+### Sketch Extrusion
 Incrementally create designs by generating the underlying sketch primitives and extruding them. 
 
 ![Drawing a couch](https://i.gyazo.com/0cca33985e81558a407c7a1da4462fed.gif)
@@ -166,7 +165,7 @@ Incrementally create designs by generating the underlying sketch primitives and 
         - `bounding_box`: bounding box of the current design that can be used for normalization.
         - `iou`: intersection over union result if a target design has been set with `set_target()`.
 
-#### Face Extrusion
+### Face Extrusion
 Use simplified face extrusion actions that reference a target design set with `set_target()`.
 
 ![Random Reconstruction](https://i.gyazo.com/702ad3f8f443c44be4ad85383f7fa719.gif)
@@ -207,7 +206,58 @@ Use simplified face extrusion actions that reference a target design set with `s
         - `bounding_box`: bounding box of the current design that can be used for normalization.
         - `iou`: intersection over union result.
 
-#### Export
+### Randomized Construction 
+Randomized construction of new designs by sampling existing designs in Fusion 360 Gallery. Can be used to support generation of semi-synthetic data. 
+- `get_distributions_from_dataset(data_dir, filter, split_file)`: gets a list of distributions from the provided dataset. 
+    - `data_dir`: the local directory where the human designs are saved.
+    - `filter` (optional): a boolean to whether exclude test file data or not. The default value is `True`.
+    - `split_file` (required if `filter` is `True`): a json file to separate training and testing dataset. The official train/test split is contained in the file `train_test.json`.
+    - Returns a list of distributions in the following format:
+        ```js
+        {
+            "num_faces": NUM_FACES_DISTRIBUTION,
+            "num_extrusions": NUM_EXTRUSIONS_DISTRIBUTION,
+            ...
+        }
+        ```   
+        Currently we support the following distributions:
+        - `sketch_plane`: the starting sketch place distribution
+        - `num_faces`: the number of faces distribution
+        - `num_extrusions`: the number of extrusions distribution
+        - `length_sequences`: the length of sequences distribution
+        - `num_curves`: the number of curves distribution
+        - `num_bodies`: the number of bodies distribution
+        - `sketch_areas`: the sketch areas distribution
+        - `profile_areas`: the profile areas distribution
+- `get_distribution_from_json(json_file)`: returns a list of distributions saved in the given json file.
+    - `json_file`: a json file that contains the distributions acquired from `get_distributions_from_dataset()`.
+- `distribution_sampling(distributions, parameters)`: samples distribution-matching parameters for one design from the distributions.
+    - `distributions`: is the list of the distributions returned by `get_distributions_from_dataset()` or `get_distribution_from_json()`.  
+    - `parameters`(optional): a list of parameters to be sampled, e.g. `['num_faces', 'num_extrusions']`. 
+        - If not specified, all the parameters in the list will be sampled.
+    - Returns a list of values w.r.t. the input parameters, e.g. `{"num_faces": 4, "num_extrusions": 2}`.
+- `sample_design(data_dir, filter, split_file)`: randomly samples a json file from the given dataset.
+    - the input parameters are the same as `get_distributions_from_dataset()`.
+    - Returns the sampled json data and the file directory. 
+- `sample_sketch(json_data, sampling_type, area_distribution)`: samples one sketch from the provided design.
+    - `json_data`: is the entire design data structure from the json file. 
+    - `sampling_type`: a string with the values defining the type of sampling: 
+        - `random`: returns a sketch randomly sampled from all the sketches in the design. 
+        - `deterministic`: returns the largest sketch in the design.
+        - `distributive`: returns a sketch that its area is in the distribution of the provided dataset.
+    - `area_distribution`: is the `sketch_areas` distribution returned by `get_distributions_from_dataset()` or `get_distribution_from_json()`. Only required if the sampling type is `distributive`.
+    - Returns the sampled sketch data to be reconstructed.  
+- `sample_profiles(sketch_data, max_number_profiles, sampling_type, area_distribution)`: samples a group of profiles from the provided sketch.
+    - `sketch_data`: is the sketch entity data structure from the json data. 
+    - `max_number_profiles`: an integer indicating the maximum number of profiles to be sampled. If the value is more than the number of profiles in the sketch, the value switches to the number of profiles in the sketch. 
+    - `sampling_type`: a string with the values defining the type of sampling: 
+        - `random`: returns profiles randomly sampled from the sketch. 
+        - `deterministic`: returns profiles that are larger than the average profiles in the sketch. 
+        - `distributive`: returns profiles that the areas are larger than the area sampled from the distribution.
+    - `area_distribution`: is the `profile_areas` distribution returned by `get_distributions_from_dataset()` or `get_distribution_from_json()`. Only required if the sampling type is `distributive`.
+    - Returns a list of profile data to be extruded.
+
+### Export
 Export the existing design in a number of formats.
 - `mesh(file)`: Retreive a mesh in .obj or .stl format and write it to the local file provided.
 - `brep(file)`: Retreive a brep in .step, .smt, or .f3d format and write it to a local file provided.
@@ -227,14 +277,14 @@ Export the existing design in a number of formats.
     - `labels` (optional): a boolean indicating whether to include labels (`timeline_index`, `operation`, `location_in_feature`) in the graph data returned, default is False.
 
 
-#### Utility
+### Utility
 Various utility calls to interact with Fusion 360.
 - `clear()`: Clear (i.e. close) all open designs in Fusion and clear the target
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
 
-#### Implementation
+### Implementation
 See [client/fusion360gym_client.py](client/fusion360gym_client.py) for the implementation of the calls documented above.
 
 

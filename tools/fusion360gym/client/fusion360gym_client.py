@@ -5,6 +5,8 @@ from pathlib import Path
 import shutil
 import tempfile
 from zipfile import ZipFile
+import random
+import numpy as np
 
 
 class Fusion360GymClient():
@@ -18,6 +20,16 @@ class Fusion360GymClient():
             "NewBodyFeatureOperation"
         ]
         self.construction_planes = ["XY", "XZ", "YZ"]
+        self.distribution_categories = [
+            "sketch_plane",
+            "num_faces",
+            "num_extrusions",
+            "length_sequences",
+            "num_curves",
+            "num_bodies",
+            "sketch_areas",
+            "profile_areas"
+        ]
 
     def send_command(self, command, data=None, stream=False):
         command_data = {
@@ -342,6 +354,308 @@ class Fusion360GymClient():
         return self.send_command("add_extrudes_by_target_face", command_data)
 
     # -------------------------------------------------------------------------
+    # RANDOMIZED RECONSTRUCTION
+    # -------------------------------------------------------------------------
+
+    def get_distributions_from_dataset(self, data_dir, filter=True, split_file=None):
+        """get a list of distributions from
+        the provided dataset"""
+        if isinstance(data_dir, str):
+            data_dir = Path(data_dir)
+        if not data_dir.exists():
+            return self.__return_error(f"Invalid data directory")
+        json_files = self.__get_json_files(data_dir, filter, split_file)
+        if json_files is not None and len(json_files) > 0:
+            json_data = []
+            print("Get distributions begins")
+            print("It will take a few seconds")
+            for json_file in json_files:
+                json_file = data_dir / json_file
+                with open(json_file, "r", encoding="utf8") as f:
+                    data = json.load(f)
+                    json_data.append(data)
+            print("Get distributions ends")
+        else:
+            return None
+        # get all the counts
+        plane_counts = {"XY": 0, "XZ": 0, "YZ": 0}
+        face_counts = []
+        extrusion_counts = []
+        sequences_counts = []
+        curve_counts = []
+        body_counts = []
+        sketch_areas = []
+        profile_areas = []
+        MIN_AREA = 1
+        MAX_AREA = 5000
+        for data in json_data:
+            timeline = data["timeline"]
+            entities = data["entities"]
+            # get sequence, face, and body counts
+            sequences_counts.append(len(timeline))
+            face_counts.append(data["properties"]["face_count"])
+            body_counts.append(data["properties"]["body_count"])
+            # get plane counts
+            for timeline_object in timeline:
+                entity_index = timeline_object["index"]
+                if entity_index == 0:
+                    entity_uuid = timeline_object["entity"]
+                    entity = entities[entity_uuid]
+                    if entity["reference_plane"]["name"] == "XY":
+                        plane_counts["XY"] += 1
+                    elif entity["reference_plane"]["name"] == "XZ":
+                        plane_counts["XZ"] += 1
+                    elif entity["reference_plane"]["name"] == "YZ":
+                        plane_counts["YZ"] += 1
+            # get extrusion counts
+            sequences = data["sequence"]
+            extrude_count = 0
+            for sequence in sequences:
+                if sequence["type"] == "ExtrudeFeature":
+                    extrude_count += 1
+            extrusion_counts.append(extrude_count)
+            # get curve counts, sketch areas, profile areas
+            curve_count = 0
+            sketch_area = 0
+            for entity in entities.values():
+                entity_type = entity["type"]
+                if entity_type == "Sketch":
+                    if "curves" in entity:
+                        curves = entity["curves"]
+                        curve_count += len(curves)
+                    if "profiles" in entity:
+                        for profile in entity["profiles"].values():
+                            profile_area = profile["properties"]["area"]
+                            if profile_area > MIN_AREA and profile_area < MAX_AREA:
+                                profile_areas.append(profile_area)
+                                sketch_area += profile_area
+            curve_counts.append(curve_count)
+            sketch_areas.append(sketch_area)
+        # calculate distributions
+        plane_distribution = [[],[]]
+        for plane in plane_counts:
+            plane_distribution[0].append(plane)
+            plane_distribution[1].append(plane_counts[plane] / sum(plane_counts.values()))
+        face_distribution = self.__get_per_distribution(face_counts, 0, 100, 25)
+        extrusion_distribution = self.__get_per_distribution(extrusion_counts, 0, 16, 16, True)
+        sequence_distribution = self.__get_per_distribution(sequences_counts, 0, 21, 21, True)
+        curve_distribution = self.__get_per_distribution(curve_counts, 0, 100, 25)
+        body_distribution = self.__get_per_distribution(body_counts, 0, 11, 11, True)
+        sketch_area_distribution = self.__get_per_distribution(sketch_areas, 0, 500, 25)
+        profile_area_distribution = self.__get_per_distribution(profile_areas, 0, 100, 25)
+        distributions = {"sketch_plane": plane_distribution,
+                        "num_faces": face_distribution,
+                        "num_extrusions": extrusion_distribution, 
+                        "length_sequences": sequence_distribution,
+                        "num_curves": curve_distribution,
+                        "num_bodies": body_distribution,
+                        "sketch_areas": sketch_area_distribution,
+                        "profile_areas": profile_area_distribution}
+        return distributions
+
+    def get_distributions_from_json(self, file):
+        """return a list of pre-calculated distributions saved in json"""
+        if isinstance(file, str):
+            file = Path(file)
+        if not file.exists():
+            return self.__return_error("JSON file does not exist")
+        with open(file, encoding="utf8") as file_handle:
+            distributions = json.load(file_handle)
+        return distributions
+
+    def distribution_sampling(self, distributions, parameters=None):
+        """sample distribution matching parameters
+        for one design from the distributions"""
+        if not isinstance(distributions, dict):
+            return self.__return_error(f"Invalid input distributions")
+        for category in self.distribution_categories:
+            if category not in distributions:
+                return self.__return_error(f"Invalid input distributions")
+        sampled_parameters = {}
+        if parameters is None:
+            for key in distributions:
+                sampled_parameters[key] = np.random.choice(distributions[key][0], 1, p=distributions[key][1])[0]
+            return sampled_parameters
+        else:
+            if not isinstance(parameters, list):
+                return self.__return_error(f"Parameters should be a list")
+            for parameter in parameters:
+                if parameter not in self.distribution_categories:
+                    return self.__return_error(f"Invalid parameters")
+                sampled_parameters[parameter] = np.random.choice(distributions[parameter][0], 1, p=distributions[parameter][1])[0]
+            return sampled_parameters
+
+    def sample_design(self, data_dir, filter=True, split_file=None):
+        """randomly sample a json file from the given dataset"""
+        if isinstance(data_dir, str):
+            data_dir = Path(data_dir)
+        if not data_dir.exists():
+            return self.__return_error(f"Invalid data directory")
+        json_files = self.__get_json_files(data_dir, filter, split_file)
+        if json_files is not None and len(json_files) > 0:
+            json_file_dir = data_dir / random.choice(json_files)
+        else:
+            return None
+        with open(json_file_dir, encoding="utf8") as file_handle:
+            json_data = json.load(file_handle)
+        return [json_data, json_file_dir]
+
+    def sample_sketch(self, json_data, sampling_type, area_distribution=None):
+        """sample one sketch from the provided design"""
+        if not isinstance(json_data, dict) or not bool(json_data):
+            return self.__return_error("JSON data is invalid")
+        if "timeline" not in json_data or "entities" not in json_data:
+            return self.__return_error("JSON data is invalid")
+        sketches = self.__traverse_sketches(json_data)
+        if sketches is None:
+            return self.__return_error("No valid sketch in JSON data")
+        if not sampling_type == "random" and not sampling_type == "deterministic" and \
+           not sampling_type == "distributive":
+            return self.__return_error("Invalid sampling type")
+        if sampling_type == "random":
+            return np.random.choice(sketches, 1)[0]
+        elif sampling_type == "deterministic":
+            max_area = 0
+            returned_sketch = None
+            for sketch in sketches:
+                sketch_area = 0
+                profiles = sketch["profiles"]
+                for profile in profiles:
+                    sketch_area += profiles[profile]["properties"]["area"]
+                if sketch_area > max_area:
+                    max_area = sketch_area
+                    returned_sketch = sketch
+            return returned_sketch
+        elif sampling_type == "distributive":
+            if area_distribution is None or not isinstance(area_distribution, list) or \
+               not len(area_distribution) == 2:
+                return self.__return_error("Invalid area distribution")
+            sampled_area = np.random.choice(area_distribution[0], 1, p=area_distribution[1])[0]
+            area_difference = 1e6
+            returned_sketch = None
+            for sketch in sketches:
+                sketch_area = 0
+                profiles = sketch["profiles"]
+                for profile in profiles:
+                    sketch_area += profiles[profile]["properties"]["area"]
+                if abs(sketch_area - sampled_area) < area_difference:
+                    area_difference = abs(sketch_area - sampled_area)
+                    returned_sketch = sketch
+            return returned_sketch
+
+    def sample_profiles(self, sketch_data, max_number_profiles, sampling_type, area_distribution=None):
+        """sample profiles from the provided sketch"""
+        if not isinstance(sketch_data, dict) or not sketch_data:
+            return self.__return_error("Sketch data is invalid")
+        if not "profiles" in sketch_data:
+            return self.__return_error("No profile data in the sketch")
+        profiles = sketch_data["profiles"]
+        if not isinstance(max_number_profiles, int) or max_number_profiles < 1:
+            return self.__return_error("Invalid max number of profiles")
+        if max_number_profiles < len(profiles):
+            num_sampled_profiles = max_number_profiles
+        else:
+            num_sampled_profiles = len(profiles)
+        if not sampling_type == "random" and not sampling_type == "deterministic" and \
+            not sampling_type == "distributive":
+            return self.__return_error("Invalid sampling type")
+        if sampling_type == "random":
+            profile_objects = list(profiles.values())
+            return np.random.choice(profile_objects, num_sampled_profiles)
+        elif sampling_type == "deterministic":
+            # calculate average area of profiles
+            average_area = 0
+            profile_areas = {}
+            for profile_id, profile_object in profiles.items():
+                average_area += profile_object["properties"]["area"]
+                profile_areas[profile_id] = profile_object["properties"]["area"]
+            average_area /= len(profiles)
+            # get profiles larger than the average area and reserved sort it
+            filtered_profile_areas = {}
+            for profile_id in profile_areas:
+                if profile_areas[profile_id] >= average_area:
+                    filtered_profile_areas[profile_id] = profile_areas[profile_id]
+            sorted_profile_areas = {k: v for k, v in sorted(filtered_profile_areas.items(), key=lambda item: item[1], reverse=True)}
+            # retrun the sampled profiles 
+            sampled_profiles = []
+            index = 0
+            for profile_id in sorted_profile_areas:
+                sampled_profiles.append(profiles[profile_id])
+                index += 1
+                if index == max_number_profiles or index == len(sorted_profile_areas):
+                    break
+            return sampled_profiles
+        elif sampling_type == "distributive":
+            if area_distribution is None or not isinstance(area_distribution, list) or \
+               not len(area_distribution) == 2:
+                return self.__return_error("Invalid area distribution")
+            sampled_area = np.random.choice(area_distribution[0], 1, p=area_distribution[1])[0]
+            filtered_profile_areas = {}
+            for profile_id, profile_object in profiles.items():
+                if profile_object["properties"]["area"] > sampled_area:
+                    filtered_profile_areas[profile_id] = profile_object["properties"]["area"]
+            # get profiles larger than the average area and reserved sort it
+            sorted_profile_areas = {k: v for k, v in sorted(filtered_profile_areas.items(), key=lambda item: item[1], reverse=True)}
+            # retrun the sampled profiles
+            sampled_profiles = []
+            index = 0
+            for profile_id in sorted_profile_areas:
+                sampled_profiles.append(profiles[profile_id])
+                index += 1
+                if index == max_number_profiles or index == len(sorted_profile_areas):
+                    break
+            return sampled_profiles
+
+    def __get_json_files(self, data_dir, filter, split_file):
+        """get json files from the data directory and the split file"""
+        if filter:
+            if split_file is None or not str(split_file).endswith(".json"):
+                return self.__return_error(f"Invalid split file")
+            json_files = []
+            try:
+                with open(split_file, encoding="utf8") as f:
+                    json_data = json.load(f)
+            except FileNotFoundError:
+                return self.__return_error(f"Invalid split file")
+            if "train" not in json_data:
+                return self.__return_error(f"Split file does not have a train set")
+            else:
+                for train_file_name in json_data["train"]:
+                    train_file = data_dir / f"{train_file_name}.json"
+                    if not train_file.exists():
+                        return self.__return_error(f"Train file doesn't exist in the data directory")
+                    else:
+                        json_files.append(train_file)
+        else:
+            try:
+                json_files = [f for f in os.listdir(data_dir) if f.endswith('.json')]
+            except FileNotFoundError:
+                return self.__return_error(f"Invalid data directory")
+        return json_files
+
+    def __get_per_distribution(self, data, range_min, range_max, num_bins, shift=False):
+        np_counts, np_bins = np.histogram(data, num_bins, range=(range_min,range_max))
+        if not shift:
+            np_bins = np.delete(np_bins, 0)
+        else:
+            np_bins = np.delete(np_bins, np_bins.size-1)
+        np_probs = np_counts / np.sum(np_counts)
+        return [np_bins.tolist(), np_probs.tolist()]
+
+    def __traverse_sketches(self, json_data):
+        sketches = []
+        timeline = json_data["timeline"]
+        entities = json_data["entities"]
+        for timeline_object in timeline:
+            entity_uuid = timeline_object["entity"]
+            entity_index = timeline_object["index"]
+            entity = entities[entity_uuid]
+            # we only want sketches with profiles
+            if entity["type"] == "Sketch" and "profiles" in entity:
+                sketches.append(entity)
+        return None if len(sketches) == 0 else sketches
+
+    # -------------------------------------------------------------------------
     # EXPORT
     # -------------------------------------------------------------------------
 
@@ -349,7 +663,7 @@ class Fusion360GymClient():
         """Retreive a mesh in .obj or .stl format
             and write it to a local file"""
         if isinstance(file, str):
-            file = Path(file)            
+            file = Path(file)
         suffix = file.suffix
         valid_formats = [".obj", ".stl"]
         if suffix not in valid_formats:
@@ -494,8 +808,8 @@ class Fusion360GymClient():
             if not isinstance(vector, dict):
                 return "Invalid type"
             if ("x" not in vector or
-                "y" not in vector or
-                "z" not in vector):
+                    "y" not in vector or
+                    "z" not in vector):
                 return "Invalid key"
             vector["type"] = "Vector3D"
         return None
