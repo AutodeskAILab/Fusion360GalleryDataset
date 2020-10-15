@@ -68,12 +68,12 @@ class TestFusion360GymRandomizedReconstruction(unittest.TestCase):
         import json
         # distributions of the whole dataset
         r = self.client.get_distributions_from_dataset(self.data_dir, filter=False)
-        with open('d7_distributions.json', 'w') as outfile:
-            json.dump(r, outfile)
+        # with open('d7_distributions.json', 'w') as outfile:
+        #     json.dump(r, outfile)
         # distributions of the training dataset
         r = self.client.get_distributions_from_dataset(self.data_dir, filter=True, split_file=self.split_file)
-        with open('d7_training_distributions.json', 'w') as outfile:
-            json.dump(r, outfile)
+        # with open('d7_training_distributions.json', 'w') as outfile:
+        #     json.dump(r, outfile)
 
     def test_get_distributions_from_json(self):
         # distributions of the whole dataset
