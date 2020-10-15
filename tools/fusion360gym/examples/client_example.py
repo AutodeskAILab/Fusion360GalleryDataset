@@ -1,3 +1,10 @@
+"""
+
+Simple example showing usage of the Fusion 360 Gym Client
+
+"""
+
+
 from pathlib import Path
 import sys
 import os

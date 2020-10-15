@@ -1,6 +1,6 @@
 """"
 
-Example client usage of construction using add_point()
+Fusion 360 Gym sketch extrusion based construction using points
 
 """
 

@@ -1,6 +1,6 @@
 """"
 
-Example client usage of construction from a json file using add_line()
+Fusion 360 Gym sketch extrusion based construction using lines
 
 """
 

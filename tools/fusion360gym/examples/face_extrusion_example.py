@@ -1,6 +1,6 @@
 """"
 
-Example client usage of face extrusion based reconstruction
+Fusion 360 Gym face extrusion based reconstruction
 
 """
 
