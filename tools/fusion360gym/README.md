@@ -1,12 +1,20 @@
 # Fusion 360 Gym
-A 'gym' environment for training ML models to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
+A 'gym' environment for training ML models to design using Fusion 360. The Fusion 360 Gym wraps the underlying [Fusion 360 Python API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-A92A4B10-3781-4925-94C6-47DA85A4F65A) and serves as the environment that interacts with an intelligent agent for the task of CAD reconstruction.
 
 ![Fusion 360 Gym](https://i.gyazo.com/4b98f02afa1328da11f7a5dd6ae1a0cd.png)
 
-## Server
+## Setup
 
 ### Install Fusion 360
-The first step is to install Fusion 360 and setup up an account. As Fusion 360 stores data in the cloud, an account is required to login and use the application. Fusion 360 is available on Windows and Mac and is free for students and educators. [Follow these instructions](https://www.autodesk.com/products/fusion-360/students-teachers-educators) to create a free educational license. Although Fusion 360 is a cloud connected desktop application, the Fusion 360 Gym does all processing locally.
+The first step is to install Fusion 360 and setup up an account. As Fusion 360 stores data in the cloud, an account is required to login and use the application. Fusion 360 is available on Windows and Mac and is free for students and educators. [Follow these instructions](https://www.autodesk.com/products/fusion-360/students-teachers-educators) to create a free educational license and download Fusion 360. Although Fusion 360 is a cloud connected desktop application, the Fusion 360 Gym does all processing locally.
+
+### Python Requirements
+Tested with Python 3.7 and uses the following packages:
+- `psutil` tested with 5.7.0
+- `requests` tested with 2.23.0
+
+## Server
+The Fusion 360 Gym consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside. The server and client can be on separate machines, provided they can communicate via a network.
 
 ### Running
 1. Open Fusion 360
@@ -53,16 +61,15 @@ To run the server in debug mode you need to install [Visual Studio Code](https:/
 
  
 ## Client
-### Running
-For a simple example of how to interact with the server check out [client/client_example.py](client/client_example.py). You will need to have the `requests` and `psutil` modules installed via pip and the server up and running.
-```
-cd /path/to/Fusion360Server/client
-python client_example.py
-```
-This script will output various files to the [data](data) directory and you will see the Fusion UI update as it processes requests.
+The Fusion 360 Gym client provides a simple interface to send commands to the server and construct CAD designs.
+
+### Examples
+See the [examples folder](examples/) for several examples of how work with the client.
 
 ### Interface
-See [client/fusion360gym_client.py](client/fusion360gym_client.py) for the implementation of the calls below.
+The Fusion 360 Gym supports two action representations for constructing designs: _sketch extrusion_ and _face extrusion_. Details of the specific interface for each is provided below.
+
+![Action Representations](https://i.gyazo.com/972c1c140d02d0cd3f6a0f02c54b5cad.png)
 
 #### Response Format
 All calls return a response object that can be accessed like so:
@@ -220,13 +227,17 @@ Export the existing design in a number of formats.
     - `labels` (optional): a boolean indicating whether to include labels (`timeline_index`, `operation`, `location_in_feature`) in the graph data returned, default is False.
 
 
-
 #### Utility
 Various utility calls to interact with Fusion 360.
 - `clear()`: Clear (i.e. close) all open designs in Fusion and clear the target
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
+
+#### Implementation
+See [client/fusion360gym_client.py](client/fusion360gym_client.py) for the implementation of the calls documented above.
+
+
 
 ## Test
 See the [test directory](test/) for test coverage and additional usage examples.
