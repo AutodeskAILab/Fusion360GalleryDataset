@@ -1,5 +1,5 @@
 # Fusion 360 Gym
-
+![Fusion 360 Gym](https://i.gyazo.com/4b98f02afa1328da11f7a5dd6ae1a0cd.png)
 
 A 'gym' environment for training ML models to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
 
@@ -125,7 +125,7 @@ Set the target design to be used with reconstruction.
 #### Sketch Extrusion
 Incrementally create designs by generating the underlying sketch primitives and extruding them. 
 
-![Drawing a couch](https://i.gyazo.com/f667c274c2542ddd7ee5aef81af0614a.gif)
+![Drawing a couch](https://i.gyazo.com/0cca33985e81558a407c7a1da4462fed.gif)
 
 - `add_sketch(sketch_plane)`: Adds a sketch to the design.
     - `sketch_plane`: can be either one of:
