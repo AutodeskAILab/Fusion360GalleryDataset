@@ -1,6 +1,6 @@
 """
 
-Test utility for Randomized Reconstruction Commands 
+Tests for Randomized Reconstruction Commands
 
 """
 import unittest
@@ -9,6 +9,7 @@ import sys
 import os
 import importlib
 from pathlib import Path
+import json
 
 # Add the client folder to sys.path
 CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
@@ -21,17 +22,30 @@ from fusion_360_client import Fusion360Client
 HOST_NAME = "127.0.0.1"
 PORT_NUMBER = 8080
 
+
 class TestFusion360RandomizedReconstruction(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
-        cls.data_dir = Path(__file__).parent.parent / "d7"
-        cls.void_data_dir = Path(__file__).parent.parent / "void"
-        cls.split_file = Path(__file__).parent.parent / "train_test.json"
-        cls.void_split_file = Path(__file__).parent.parent / "void.json"
-        cls.distributions_json = Path(__file__).parent.parent / "d7_distributions.json"
-        cls.distributions_training_only_json = Path(__file__).parent.parent / "d7_training_distributions.json"
+
+        current_dir = Path(__file__).parent
+        test_config_file = current_dir / "test_config.json"
+        if not test_config_file.exists():
+            print("Error: test_config.json file not found in the test directory")
+
+        with open(test_config_file, encoding="utf8") as f:
+            test_config = json.load(f)
+        dataset_dir = Path(test_config["dataset_dir"])
+        if not dataset_dir.exists():
+            print("Error: dataset_dir does not exist")
+
+        cls.data_dir = dataset_dir
+        cls.void_data_dir = dataset_dir.parent / "void"
+        cls.split_file = dataset_dir.parent / "train_test.json"
+        cls.void_split_file = dataset_dir.parent / "void.json"
+        cls.distributions_json = dataset_dir.parent / "d7_distributions.json"
+        cls.distributions_training_only_json = dataset_dir.parent / "d7_training_distributions.json"
 
     def test_sample_design(self):
         # Sample the whole dataset
