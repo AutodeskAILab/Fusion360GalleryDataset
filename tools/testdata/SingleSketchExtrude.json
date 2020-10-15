@@ -1,0 +1,558 @@
+{
+    "metadata": {
+        "parent_project": "SingleSketchExtrude_45a31fdb",
+        "component_name": "Untitled",
+        "component_index": 0,
+        "identifier": "6_4_1_1_6_1_1_6_4_1_1_8_12_6_6_1_1_a014d0_a011d2"
+    },
+    "timeline": [
+        {
+            "index": 0,
+            "entity": "b6904c10-0f10-11eb-8d71-acde48001122"
+        },
+        {
+            "index": 1,
+            "entity": "b6932016-0f10-11eb-8d71-acde48001122"
+        }
+    ],
+    "entities": {
+        "b6904c10-0f10-11eb-8d71-acde48001122": {
+            "name": "Sketch1",
+            "type": "Sketch",
+            "points": {
+                "b69236c4-0f10-11eb-8d71-acde48001122": {
+                    "type": "Point3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "b692479a-0f10-11eb-8d71-acde48001122": {
+                    "type": "Point3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "b6925bd6-0f10-11eb-8d71-acde48001122": {
+                    "type": "Point3D",
+                    "x": 0.0,
+                    "y": -2.5,
+                    "z": 0.0
+                },
+                "b692726a-0f10-11eb-8d71-acde48001122": {
+                    "type": "Point3D",
+                    "x": 5.0,
+                    "y": -2.5,
+                    "z": 0.0
+                },
+                "b6928ba6-0f10-11eb-8d71-acde48001122": {
+                    "type": "Point3D",
+                    "x": 5.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "b692a780-0f10-11eb-8d71-acde48001122": {
+                    "type": "Point3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "curves": {
+                "b691db16-0f10-11eb-8d71-acde48001122": {
+                    "type": "SketchLine",
+                    "construction_geom": false,
+                    "fixed": false,
+                    "fully_constrained": true,
+                    "reference": false,
+                    "visible": true,
+                    "start_point": "b692479a-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b6925bd6-0f10-11eb-8d71-acde48001122"
+                },
+                "b691f524-0f10-11eb-8d71-acde48001122": {
+                    "type": "SketchLine",
+                    "construction_geom": false,
+                    "fixed": false,
+                    "fully_constrained": false,
+                    "reference": false,
+                    "visible": true,
+                    "start_point": "b6925bd6-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b692726a-0f10-11eb-8d71-acde48001122"
+                },
+                "b6920988-0f10-11eb-8d71-acde48001122": {
+                    "type": "SketchLine",
+                    "construction_geom": false,
+                    "fixed": false,
+                    "fully_constrained": false,
+                    "reference": false,
+                    "visible": true,
+                    "start_point": "b692726a-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b6928ba6-0f10-11eb-8d71-acde48001122"
+                },
+                "b6922026-0f10-11eb-8d71-acde48001122": {
+                    "type": "SketchLine",
+                    "construction_geom": false,
+                    "fixed": false,
+                    "fully_constrained": true,
+                    "reference": false,
+                    "visible": true,
+                    "start_point": "b6928ba6-0f10-11eb-8d71-acde48001122",
+                    "end_point": "b692a780-0f10-11eb-8d71-acde48001122"
+                }
+            },
+            "constraints": {
+                "b692c4f4-0f10-11eb-8d71-acde48001122": {
+                    "entity": "b69236c4-0f10-11eb-8d71-acde48001122",
+                    "point": "b692479a-0f10-11eb-8d71-acde48001122",
+                    "type": "CoincidentConstraint"
+                },
+                "b692d386-0f10-11eb-8d71-acde48001122": {
+                    "line": "b691db16-0f10-11eb-8d71-acde48001122",
+                    "type": "VerticalConstraint"
+                },
+                "b692e0e2-0f10-11eb-8d71-acde48001122": {
+                    "line_one": "b691f524-0f10-11eb-8d71-acde48001122",
+                    "line_two": "b691db16-0f10-11eb-8d71-acde48001122",
+                    "type": "PerpendicularConstraint"
+                },
+                "b692edf8-0f10-11eb-8d71-acde48001122": {
+                    "line_one": "b6920988-0f10-11eb-8d71-acde48001122",
+                    "line_two": "b691f524-0f10-11eb-8d71-acde48001122",
+                    "type": "PerpendicularConstraint"
+                },
+                "b692fadc-0f10-11eb-8d71-acde48001122": {
+                    "entity": "b69236c4-0f10-11eb-8d71-acde48001122",
+                    "point": "b692a780-0f10-11eb-8d71-acde48001122",
+                    "type": "CoincidentConstraint"
+                },
+                "b69307de-0f10-11eb-8d71-acde48001122": {
+                    "line_one": "b6922026-0f10-11eb-8d71-acde48001122",
+                    "line_two": "b691db16-0f10-11eb-8d71-acde48001122",
+                    "type": "PerpendicularConstraint"
+                }
+            },
+            "profiles": {
+                "c31f9922-915a-3a2c-9bbc-769587d4891e": {
+                    "loops": [
+                        {
+                            "is_outer": true,
+                            "profile_curves": [
+                                {
+                                    "type": "Line3D",
+                                    "start_point": {
+                                        "type": "Point3D",
+                                        "x": 5.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "end_point": {
+                                        "type": "Point3D",
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "curve": "b6922026-0f10-11eb-8d71-acde48001122"
+                                },
+                                {
+                                    "type": "Line3D",
+                                    "start_point": {
+                                        "type": "Point3D",
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "end_point": {
+                                        "type": "Point3D",
+                                        "x": 0.0,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "curve": "b691db16-0f10-11eb-8d71-acde48001122"
+                                },
+                                {
+                                    "type": "Line3D",
+                                    "start_point": {
+                                        "type": "Point3D",
+                                        "x": 0.0,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "end_point": {
+                                        "type": "Point3D",
+                                        "x": 5.0,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "curve": "b691f524-0f10-11eb-8d71-acde48001122"
+                                },
+                                {
+                                    "type": "Line3D",
+                                    "start_point": {
+                                        "type": "Point3D",
+                                        "x": 5.0,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "end_point": {
+                                        "type": "Point3D",
+                                        "x": 5.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "curve": "b6920988-0f10-11eb-8d71-acde48001122"
+                                }
+                            ]
+                        }
+                    ],
+                    "properties": {
+                        "area": 12.5,
+                        "centroid": {
+                            "type": "Point3D",
+                            "x": 2.5,
+                            "y": -1.25,
+                            "z": 0.0
+                        },
+                        "perimeter": 15.0
+                    }
+                }
+            },
+            "transform": {
+                "origin": {
+                    "type": "Point3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "x_axis": {
+                    "type": "Vector3D",
+                    "x": 1.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "y_axis": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": -1.0,
+                    "length": 1.0
+                },
+                "z_axis": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0,
+                    "length": 1.0
+                }
+            },
+            "reference_plane": {
+                "type": "ConstructionPlane",
+                "name": "XZ",
+                "plane": {
+                    "type": "Plane",
+                    "origin": {
+                        "type": "Point3D",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "normal": {
+                        "type": "Vector3D",
+                        "x": 0.0,
+                        "y": 1.0,
+                        "z": 0.0,
+                        "length": 1.0
+                    },
+                    "u_direction": {
+                        "type": "Vector3D",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 1.0,
+                        "length": 1.0
+                    },
+                    "v_direction": {
+                        "type": "Vector3D",
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": 0.0,
+                        "length": 1.0
+                    }
+                },
+                "corrective_transform": {
+                    "origin": {
+                        "type": "Point3D",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "x_axis": {
+                        "type": "Vector3D",
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": 0.0,
+                        "length": 1.0
+                    },
+                    "y_axis": {
+                        "type": "Vector3D",
+                        "x": 0.0,
+                        "y": 1.0,
+                        "z": 0.0,
+                        "length": 1.0
+                    },
+                    "z_axis": {
+                        "type": "Vector3D",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 1.0,
+                        "length": 1.0
+                    }
+                }
+            }
+        },
+        "b6932016-0f10-11eb-8d71-acde48001122": {
+            "name": "Extrude1",
+            "type": "ExtrudeFeature",
+            "profiles": [
+                {
+                    "profile": "c31f9922-915a-3a2c-9bbc-769587d4891e",
+                    "sketch": "b6904c10-0f10-11eb-8d71-acde48001122"
+                }
+            ],
+            "operation": "NewBodyFeatureOperation",
+            "start_extent": {
+                "type": "ProfilePlaneStartDefinition"
+            },
+            "extent_type": "OneSideFeatureExtentType",
+            "extent_one": {
+                "distance": {
+                    "type": "ModelParameter",
+                    "value": 1.0,
+                    "name": "d1",
+                    "role": "AlongDistance"
+                },
+                "taper_angle": {
+                    "type": "ModelParameter",
+                    "value": 0.0,
+                    "name": "d2",
+                    "role": "TaperAngle"
+                },
+                "type": "DistanceExtentDefinition"
+            },
+            "faces": {
+                "b69ca58c-0f10-11eb-8d71-acde48001122": {
+                    "index": 0,
+                    "surface_type": "PlaneSurfaceType",
+                    "point_on_face": {
+                        "type": "Point3D",
+                        "x": 5.0,
+                        "y": 0.5,
+                        "z": 1.25
+                    }
+                },
+                "b69cd232-0f10-11eb-8d71-acde48001122": {
+                    "index": 1,
+                    "surface_type": "PlaneSurfaceType",
+                    "point_on_face": {
+                        "type": "Point3D",
+                        "x": 2.5,
+                        "y": 0.5,
+                        "z": 2.5
+                    }
+                },
+                "b69d04aa-0f10-11eb-8d71-acde48001122": {
+                    "index": 2,
+                    "surface_type": "PlaneSurfaceType",
+                    "point_on_face": {
+                        "type": "Point3D",
+                        "x": 0.0,
+                        "y": 0.5,
+                        "z": 1.25
+                    }
+                },
+                "b69d3b3c-0f10-11eb-8d71-acde48001122": {
+                    "index": 3,
+                    "surface_type": "PlaneSurfaceType",
+                    "point_on_face": {
+                        "type": "Point3D",
+                        "x": 2.5,
+                        "y": 0.5,
+                        "z": 0.0
+                    }
+                },
+                "b69d7b9c-0f10-11eb-8d71-acde48001122": {
+                    "index": 4,
+                    "surface_type": "PlaneSurfaceType",
+                    "point_on_face": {
+                        "type": "Point3D",
+                        "x": 2.5,
+                        "y": 1.0,
+                        "z": 1.25
+                    }
+                },
+                "b69dc57a-0f10-11eb-8d71-acde48001122": {
+                    "index": 5,
+                    "surface_type": "PlaneSurfaceType",
+                    "point_on_face": {
+                        "type": "Point3D",
+                        "x": 2.5,
+                        "y": 0.0,
+                        "z": 1.25
+                    }
+                }
+            },
+            "bodies": {
+                "b69c8476-0f10-11eb-8d71-acde48001122": {
+                    "index": 0,
+                    "name": "Body1",
+                    "faces": [
+                        "b69ca58c-0f10-11eb-8d71-acde48001122",
+                        "b69cd232-0f10-11eb-8d71-acde48001122",
+                        "b69d04aa-0f10-11eb-8d71-acde48001122",
+                        "b69d3b3c-0f10-11eb-8d71-acde48001122",
+                        "b69d7b9c-0f10-11eb-8d71-acde48001122",
+                        "b69dc57a-0f10-11eb-8d71-acde48001122"
+                    ]
+                }
+            },
+            "extrude_bodies": [
+                "b69c8476-0f10-11eb-8d71-acde48001122"
+            ],
+            "extrude_faces": [
+                "b69d7b9c-0f10-11eb-8d71-acde48001122",
+                "b69d04aa-0f10-11eb-8d71-acde48001122",
+                "b69dc57a-0f10-11eb-8d71-acde48001122",
+                "b69cd232-0f10-11eb-8d71-acde48001122",
+                "b69d3b3c-0f10-11eb-8d71-acde48001122",
+                "b69ca58c-0f10-11eb-8d71-acde48001122"
+            ],
+            "extrude_side_faces": [
+                "b69d04aa-0f10-11eb-8d71-acde48001122",
+                "b69cd232-0f10-11eb-8d71-acde48001122",
+                "b69d3b3c-0f10-11eb-8d71-acde48001122",
+                "b69ca58c-0f10-11eb-8d71-acde48001122"
+            ],
+            "extrude_end_faces": [
+                "b69d7b9c-0f10-11eb-8d71-acde48001122"
+            ],
+            "extrude_start_faces": [
+                "b69dc57a-0f10-11eb-8d71-acde48001122"
+            ]
+        }
+    },
+    "properties": {
+        "name": "Untitled",
+        "bounding_box": {
+            "type": "BoundingBox3D",
+            "max_point": {
+                "type": "Point3D",
+                "x": 5.0,
+                "y": 1.0,
+                "z": 2.5
+            },
+            "min_point": {
+                "type": "Point3D",
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        "vertex_count": 8,
+        "edge_count": 12,
+        "face_count": 6,
+        "loop_count": 6,
+        "shell_count": 1,
+        "body_count": 1,
+        "area": 40.0,
+        "volume": 12.5,
+        "density": 0.00785,
+        "mass": 0.09812499999999999,
+        "center_of_mass": {
+            "type": "Point3D",
+            "x": 2.5,
+            "y": 0.5,
+            "z": 1.25
+        },
+        "principal_axes": {
+            "x_axis": {
+                "type": "Vector3D",
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0,
+                "length": 1.0
+            },
+            "y_axis": {
+                "type": "Vector3D",
+                "x": 0.0,
+                "y": 1.0,
+                "z": 0.0,
+                "length": 1.0
+            },
+            "z_axis": {
+                "type": "Vector3D",
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0,
+                "length": 1.0
+            }
+        },
+        "xyz_moments_of_inertia": {
+            "xx": 0.2371354166666666,
+            "yy": 1.0221354166666665,
+            "zz": 0.8504166666666666,
+            "xy": -0.12265625,
+            "yz": -0.061328125,
+            "xz": -0.306640625
+        },
+        "surface_types": [
+            {
+                "surface_type": "PlaneSurfaceType",
+                "face_count": 6
+            }
+        ],
+        "vertex_valence": [
+            {
+                "valence": 3,
+                "count": 8
+            }
+        ]
+    },
+    "sequence": [
+        {
+            "index": 0,
+            "type": "Sketch",
+            "entity": "b6904c10-0f10-11eb-8d71-acde48001122",
+            "curve": "b6922026-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
+        },
+        {
+            "index": 1,
+            "type": "Sketch",
+            "entity": "b6904c10-0f10-11eb-8d71-acde48001122",
+            "curve": "b691db16-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
+        },
+        {
+            "index": 2,
+            "type": "Sketch",
+            "entity": "b6904c10-0f10-11eb-8d71-acde48001122",
+            "curve": "b691f524-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
+        },
+        {
+            "index": 3,
+            "type": "Sketch",
+            "entity": "b6904c10-0f10-11eb-8d71-acde48001122",
+            "curve": "b6920988-0f10-11eb-8d71-acde48001122",
+            "timeline": 0
+        },
+        {
+            "index": 4,
+            "type": "ExtrudeFeature",
+            "entity": "b6932016-0f10-11eb-8d71-acde48001122",
+            "timeline": 1,
+            "png": "SingleSketchExtrude_45a31fdb_0000_0001.png",
+            "smt": "SingleSketchExtrude_45a31fdb_0000_0001.smt",
+            "step": "SingleSketchExtrude_45a31fdb_0000_0001.step",
+            "obj": "SingleSketchExtrude_45a31fdb_0000_0001.obj"
+        }
+    ]
+}

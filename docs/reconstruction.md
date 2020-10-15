@@ -275,7 +275,12 @@ The sketch profiles used to define the shape of the extrude. Each entry contains
 ```
 
 #### Operation
-The `operation` defines the type of operation performed by the extrude. See [`ExtrudeFeature.operation`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature_operation.htm). Can be one of `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`, illustrated in the figure below.
+The `operation` defines the type of operation performed by the extrude. The operation type is defined by [`ExtrudeFeature.operation`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/ExtrudeFeature_operation.htm) and can be one of the following types, as illustrated in the figure below:
+- `NewBodyFeatureOperation`
+- `JoinFeatureOperation`
+- `CutFeatureOperation`
+- `IntersectFeatureOperation`
+
 
 ![Extrude Operations](images/reconstruction_extrude_operations.png)
 
@@ -407,3 +412,6 @@ Additionally extrudes have the following:
 - `smt`: A B-Rep file in smt format of the design at this point in the sequence.
 - `step`: A B-Rep file in step format of the design at this point in the sequence.
 - `obj`: A mesh file in obj format of the design at this point in the sequence.
+
+## Train/Test Split
+The official train/test split is contained in the file `train_test.json`. The 80:20 split consists of 6,900 and 1,725 designs respectively

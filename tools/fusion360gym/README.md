@@ -1,9 +1,21 @@
 # Fusion 360 Gym
-A 'gym' environment for training ML models locally to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
+A 'gym' environment for training ML models to design using Fusion 360. The Fusion 360 Gym wraps the underlying [Fusion 360 Python API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-A92A4B10-3781-4925-94C6-47DA85A4F65A) and serves as the environment that interacts with an intelligent agent for the task of CAD reconstruction.
 
-![Drawing a couch](https://i.gyazo.com/f667c274c2542ddd7ee5aef81af0614a.gif)
+![Fusion 360 Gym](https://i.gyazo.com/4b98f02afa1328da11f7a5dd6ae1a0cd.png)
+
+## Setup
+
+### Install Fusion 360
+The first step is to install Fusion 360 and setup up an account. As Fusion 360 stores data in the cloud, an account is required to login and use the application. Fusion 360 is available on Windows and Mac and is free for students and educators. [Follow these instructions](https://www.autodesk.com/products/fusion-360/students-teachers-educators) to create a free educational license and download Fusion 360. Although Fusion 360 is a cloud connected desktop application, the Fusion 360 Gym does all processing locally.
+
+### Python Requirements
+Tested with Python 3.7 and uses the following packages:
+- `psutil` tested with 5.7.0
+- `requests` tested with 2.23.0
 
 ## Server
+The Fusion 360 Gym consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside. The server and client can be on separate machines, provided they can communicate via a network.
+
 ### Running
 1. Open Fusion 360
 2. Go to Tools tab > Add-ins > Scripts and Add-ins
@@ -11,17 +23,17 @@ A 'gym' environment for training ML models locally to design using Fusion 360. C
 4. Click 'Run' to start the server
 
 ### Launching Multiple Servers
-Multiple instances of the server can be launched and assigned a range of ports using [`launch.py`](server/launch.py). 
+Multiple instances of the server can be launched and assigned a range of ports using [`launch.py`](server/launch.py). This process will automatically launch a given number of Fusion 360 instances.
 1. Complete steps 1-3 in **Running** section above. Then select 'Run on startup' and close Fusion.
 2. From the command line:
     ```
-    cd path/to/Fusion360Server/server
+    cd path/to/fusion360gym/server
     python launch.py --instances 2
     Launching Fusion 360 instance: 127.0.0.1:8080
     Launching Fusion 360 instance: 127.0.0.1:8081
     ```
 3. This will launch 2 instances of Fusion 360 at the default endpoints: http://127.0.0.1:8080 and http://127.0.0.1:8081
-4. Observe that several instances of Fusion 360 will launch and become unresponsive as the server is running in the UI thread
+4. Observe that several instances of Fusion 360 will launch and become unresponsive to UI input but will update when processing.
 5. Verify that the servers are connected by running from the command line:
     ```
     python launch.py --ping
@@ -49,23 +61,22 @@ To run the server in debug mode you need to install [Visual Studio Code](https:/
 
  
 ## Client
-### Running
-For a simple example of how to interact with the server check out [client/client_example.py](client/client_example.py). You will need to have the `requests` and `psutil` modules installed via pip and the server up and running.
-```
-cd /path/to/Fusion360Server/client
-python client_example.py
-```
-This script will output various files to the [data](data) directory and you will see the Fusion UI update as it processes requests.
+The Fusion 360 Gym client provides a simple interface to send commands to the server and construct CAD designs.
+
+### Examples
+See the [examples folder](examples/) for several examples of how work with the client.
 
 ### Interface
-See [client/fusion_360_client.py](client/fusion_360_client.py) for the implementation of the calls below.
+The Fusion 360 Gym supports two action representations for constructing designs: _sketch extrusion_ and _face extrusion_. Details of the specific interface for each is provided below.
+
+![Action Representations](https://i.gyazo.com/972c1c140d02d0cd3f6a0f02c54b5cad.png)
 
 #### Response Format
 All calls return a response object that can be accessed like so:
 
 ```python
 # Create the client class to interact with the server
-client = Fusion360Client(f"http://{HOST_NAME}:{PORT_NUMBER}")
+client = Fusion360GymClient(f"http://{HOST_NAME}:{PORT_NUMBER}")
 # Make a call to the server to clear the design
 r = client.clear()
 # Example of how we read the response data
@@ -80,10 +91,10 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 
 
 #### Reconstruction
-Reconstruct entire designs from json files provided with the reconstruction subset.
+Reconstruct entire designs or parts of them from the json files provided with the reconstruction subset.
 - `reconstruct(file)`: Reconstruct a design from the provided json file
-- `reconstruct_sketch(json_data, sketch_name, sketch_plane, scale, translate, rotate)`: Reconstruct a sketch from the provided json data and a sketch name
-    - `sketch_name`: is the string name of a sketch in the json data 
+- `reconstruct_sketch(sketch_data, sketch_plane, scale, translate, rotate)`: Reconstruct a sketch from the provided sketch data
+    - `sketch_data`: is the sketch entity data structure from the json data
     - `sketch_plane` (optional): sketch plane to create the sketch on. Can be either one of:
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
         - B-Rep planar face id
@@ -91,10 +102,37 @@ Reconstruct entire designs from json files provided with the reconstruction subs
     - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
     - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
     - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
-- `clear()`: Clear (i.e. close) all open designs in Fusion
+- `reconstruct_profile(sketch_data, sketch_name, profile_id, scale, translate, rotate)`: Reconstruct a single profile from the provided sketch data
+    - `sketch_data`: is the sketch entity data structure from the json data
+    - `sketch_name`: is the name of the sketch to draw the curve in, typically returned from `add_sketch()`
+    - `profile_id`: the uuid of the profile to be drawn
+    - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
+    - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
+    - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
+- `reconstruct_curve(sketch_data, sketch_name, curve_id, scale, translate, rotate)`: Reconstruct a single curve from the provided sketch data
+    - `sketch_data`: is the sketch entity data structure from the json data
+    - `sketch_name`: is the name of the sketch to draw the curve in, typically returned from `add_sketch()`
+    - `curve_id`: the uuid of the curve to be drawn
+    - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
+    - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
+    - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
 
-#### Incremental Construction
-Incremental construction of new designs. Currently only a small subset of the Fusion API is supported, but we will expand this over time.
+#### Target Reconstruction
+Set the target design to be used with reconstruction.
+- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. 
+    - Returns:
+        - `graph`: Face adjacency graph of the target design in "PerFace" format, see [here](../regraph) for a description.
+        - `bounding_box`: bounding box of the target design that can be used for normalization.
+- `revert_to_target()`: Reverts to the target design, removing all reconstruction geometry. Returns the same data as `set_target(file)`.
+    - Returns:
+        - `graph`: Face adjacency graph of the target design in "PerFace" format, see [here](../regraph) for a description.
+        - `bounding_box`: bounding box of the target design that can be used for normalization.
+
+#### Sketch Extrusion
+Incrementally create designs by generating the underlying sketch primitives and extruding them. 
+
+![Drawing a couch](https://i.gyazo.com/0cca33985e81558a407c7a1da4462fed.gif)
+
 - `add_sketch(sketch_plane)`: Adds a sketch to the design.
     - `sketch_plane`: can be either one of:
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
@@ -117,18 +155,35 @@ Incremental construction of new designs. Currently only a small subset of the Fu
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
     - `profile_id`: is the uuid of the profile returned by `add_line()`
     - `distance`: is the extrude distance perpendicular to the profile plane
-    - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
-    - Returns BRep vertices of the resulting body, BRep face information
+    - `operation`: a string with the values defining the type of extrude:
+        - `JoinFeatureOperation`
+        - `CutFeatureOperation`
+        - `IntersectFeatureOperation`
+        - `NewBodyFeatureOperation`
+    - Returns a data structure with:
+        - `extrude`: B-Rep face information, including vertices, generated from the extrusion.
+        - `graph`: Face adjacency graph of the current design in "PerFace" format (see [here](../regraph) for a description) 
+        - `bounding_box`: bounding box of the current design that can be used for normalization.
+        - `iou`: intersection over union result if a target design has been set with `set_target()`.
 
-#### Target Reconstruction
-Reconstruct from a target design using extrude operations from face to face.
-- `set_target(file)`: Set the target that we want to reconstruct with a .step or .smt file. This call will clear the current design. Returns `graph` as a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph) and a `bounding_box` of the target that can be used for normalization.
-- `revert_to_target()`: Reverts to the target design, removing all reconstruction geometry added with `add_extrude_by_target_face()`. Returns the same data as `set_target(file)`.
+#### Face Extrusion
+Use simplified face extrusion actions that reference a target design set with `set_target()`.
+
+![Random Reconstruction](https://i.gyazo.com/702ad3f8f443c44be4ad85383f7fa719.gif)
+
 - `add_extrude_by_target_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
     - `start_face`: is the uuid of the start face in the target
     - `end_face`: is the uuid of the end face in the target
-    - `operation`: a string with the values defining the type of extrude: `JoinFeatureOperation`, `CutFeatureOperation`, `IntersectFeatureOperation`, or `NewBodyFeatureOperation`.
-    - Returns a face adjacency graph representing the B-Rep geometry/topology as described [here](../regraph), and an intersection over union value calculated between the target and the reconstruction.
+    - `operation`: a string with the values defining the type of extrude: 
+        - `JoinFeatureOperation`
+        - `CutFeatureOperation`
+        - `IntersectFeatureOperation`
+        - `NewBodyFeatureOperation`
+    - Returns a data structure with:
+        - `extrude`: B-Rep face information, including vertices, generated from the extrusion.
+        - `graph`: Face adjacency graph of the current design in "PerFace" format (see [here](../regraph) for a description) 
+        - `bounding_box`: bounding box of the current design that can be used for normalization.
+        - `iou`: intersection over union result.
 - `add_extrudes_by_target_face(actions, revert)`: Executes multiple extrude operations, between two faces of the target, in sequence.
     - `actions`: A list of actions in the following format:
     ```json
@@ -145,7 +200,12 @@ Reconstruct from a target design using extrude operations from face to face.
         }
     ]
     ```
-    - `revert`: Revert to the target design before executing the extrude actions.
+    - `revert` (optional): Revert to the target design before executing the extrude actions.
+    - Returns a data structure with:
+        - `extrude`: B-Rep face information, including vertices, generated from the last extrusion.
+        - `graph`: Face adjacency graph of the current design in "PerFace" format (see [here](../regraph) for a description) 
+        - `bounding_box`: bounding box of the current design that can be used for normalization.
+        - `iou`: intersection over union result.
 
 #### Randomized Construction 
 Randomized construction of new designs by sampling existing designs in Fusion 360 Gallery, in support of generations of semi-synthetic data. 
@@ -206,43 +266,25 @@ Export the existing design in a number of formats.
     - `width` (optional): The width of the image, default is 512.
     - `height` (optional): The height of the image, default is 512.
     - `fit_camera` (optional): Fit the camera to the geometry in the design, default is True.
-- `graph(file, dir, format)`: Retreive a face adjacency graph in a given format.
-    - `file`: the base json file name to be used for all graph files
-    - `dir`: the local directory where the output will be saved
-    - `format` (optional): a string with the values `PerFace` or `PerExtrude` see [here](../regraph) for a description of each format. Default is `PerFace`.
+- `graph(file, dir, format, sequence)`: Retreive a face adjacency graph for a B-Rep design, or construction sequence.
+    - `file` (optional): the base json file name to be used for all graph files when `sequence` is `True`
+    - `dir` (optional): the local directory where the output will be saved  when `sequence` is `True`
+    - `format` (optional): a string with the values `PerFace` or `PerExtrude` indicating the type of features and format returned, see [here](../regraph) for a description of each format. Default is `PerFace`.
+    - `sequence` (optional): a boolean indicating whether to generate graphs for each step in the construction sequence or just the current B-Rep design. Default is `False`.
+    - `labels` (optional): a boolean indicating whether to include labels (`timeline_index`, `operation`, `location_in_feature`) in the graph data returned, default is False.
 
 
 #### Utility
 Various utility calls to interact with Fusion 360.
+- `clear()`: Clear (i.e. close) all open designs in Fusion and clear the target
 - `refresh()`: Refresh the active viewport
 - `ping()`: Ping for debugging
 - `detach()`: Detach the server from Fusion, taking it offline, allowing the Fusion UI to become responsive again 
-- `commands(command_list, dir)`: Send a list of commands to run in sequence on the server. Currently the export and reconstruction commands are supported.
-    - `command_list`: a list of commands in the following format:
-    ```json
-    [
-        {
-            "command": "reconstruct",
-            "data": {}
-        },
-        {
-            "command": "sketches",
-            "data": {
-                "format": ".png"
-            }
-        },
-        {
-            "command": "mesh",
-            "data": {
-                "file": "test.stl"
-            }
-        },
-        {
-            "command": "clear"
-        }
-    ]
-    ```
-    `dir`: is the (optional) local directory where files will be saved
+
+#### Implementation
+See [client/fusion360gym_client.py](client/fusion360gym_client.py) for the implementation of the calls documented above.
+
+
 
 ## Test
 See the [test directory](test/) for test coverage and additional usage examples.
