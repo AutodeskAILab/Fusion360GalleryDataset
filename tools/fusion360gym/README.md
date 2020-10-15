@@ -12,6 +12,7 @@ The first step is to install Fusion 360 and setup up an account. As Fusion 360 s
 Tested with Python 3.7 and uses the following packages:
 - `psutil` tested with 5.7.0
 - `requests` tested with 2.23.0
+- `numpy` tested with 1.18.1
 
 ## Server
 The Fusion 360 Gym consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside. The server and client can be on separate machines, provided they can communicate via a network.
