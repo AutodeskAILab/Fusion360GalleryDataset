@@ -147,6 +147,53 @@ Reconstruct from a target design using extrude operations from face to face.
     ```
     - `revert`: Revert to the target design before executing the extrude actions.
 
+#### Randomized Construction 
+Randomized construction of new designs by sampling existing designs in Fusion 360 Gallery, in support of generations of semi-synthetic data. 
+- `get_distributions_from_dataset(data_dir, filter, split_file)`: gets a list of distributions from the provided dataset. 
+    - `data_dir`: the local directory where the human designs are saved.
+    - `filter` (optional): a boolean to whether exclude test file data or not. The default value is `True`.
+    - `split_file` (required if `filter` is `True`): a json file to separate training and testing dataset. The official train/test split is contained in the file `train_test.json`.
+    - Returns a list of distributions in the following format:
+    ```
+    {"num_faces": NUM_FACES_DISTRIBUTION, "num_extrusions": NUM_EXTRUSIONS_DISTRIBUTION, ...}
+    ```   
+    - Currently we support the following distributions:
+        - `sketch_plane`: the starting sketch place distribution
+        - `num_faces`: the number of faces distribution
+        - `num_extrusions`: the number of extrusions distribution
+        - `length_sequences`: the length of sequences distribution
+        - `num_curves`: the number of curves distribution
+        - `num_bodies`: the number of bodies distribution
+        - `sketch_areas`: the sketch areas distribution
+        - `profile_areas`: the profile areas distribution
+- `get_distribution_from_json(json_file)`: returns a list of distributions saved in the given json file.
+    - `json_file`: a json file that contains the distributions acquired from `get_distributions_from_dataset()`.
+- `distribution_sampling(distributions, parameters)`: samples distribution-matching parameters for one design from the distributions.
+    - `distributions`: is the list of the distributions returned by `get_distributions_from_dataset()` or `get_distribution_from_json()`.  
+    - `parameters`(optional): a list of parameters to be sampled, e.g. `['num_faces', 'num_extrusions']`. 
+        - If not specified, all the parameters in the list will be sampled.
+    - Returns a list of values w.r.t. the input parameters, e.g. `{"num_faces": 4, "num_extrusions": 2}`.
+- `sample_design(data_dir, filter, split_file)`: randomly samples a json file from the given dataset.
+    - the input parameters are the same as `get_distributions_from_dataset()`.
+    - Returns the sampled json data and the file directory. 
+- `sample_sketch(json_data, sampling_type, area_distribution)`: samples one sketch from the provided design.
+    - `json_data`: is the entire design data structure from the json file. 
+    - `sampling_type`: a string with the values defining the type of sampling: 
+        - `random`: returns a sketch randomly sampled from all the sketches in the design. 
+        - `deterministic`: returns the largest sketch in the design.
+        - `distributive`: returns a sketch that its area is in the distribution of the provided dataset.
+    - `area_distribution`: is the `sketch_areas` distribution returned by `get_distributions_from_dataset()` or `get_distribution_from_json()`. Only required if the sampling type is `distributive`.
+    - Returns the sampled sketch data to be reconstructed.  
+- `sample_profiles(sketch_data, max_number_profiles, sampling_type, area_distribution)`: samples a group of profiles from the provided sketch.
+    - `sketch_data`: is the sketch entity data structure from the json data. 
+    - `max_number_profiles`: an integer indicating the maximum number of profiles to be sampled. If the value is more than the number of profiles in the sketch, the value switches to the number of profiles in the sketch. 
+    - `sampling_type`: a string with the values defining the type of sampling: 
+        - `random`: returns profiles randomly sampled from the sketch. 
+        - `deterministic`: returns profiles that are larger than the average profiles in the sketch. 
+        - `distributive`: returns profiles that the areas are larger than the area sampled from the distribution.
+    - `area_distribution`: is the `profile_areas` distribution returned by `get_distributions_from_dataset()` or `get_distribution_from_json()`. Only required if the sampling type is `distributive`.
+    - Returns a list of profile data to be extruded.
+
 #### Export
 Export the existing design in a number of formats.
 - `mesh(file)`: Retreive a mesh in .obj or .stl format and write it to the local file provided.

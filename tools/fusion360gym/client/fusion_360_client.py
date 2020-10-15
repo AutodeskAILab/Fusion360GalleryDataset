@@ -20,7 +20,7 @@ class Fusion360Client():
         ]
         self.construction_planes = ["XY", "XZ", "YZ"]
         self.distribution_categories = [
-            "starting_plane", 
+            "sketch_plane", 
             "num_faces", 
             "num_extrusions", 
             "length_sequences",
@@ -391,7 +391,7 @@ class Fusion360Client():
         body_distribution = self.__get_per_distribution(body_counts, 0, 11, 11, True)
         sketch_area_distribution = self.__get_per_distribution(sketch_areas, 0, 500, 25)
         profile_area_distribution = self.__get_per_distribution(profile_areas, 0, 100, 25)
-        distributions = {"starting_plane": plane_distribution,
+        distributions = {"sketch_plane": plane_distribution,
                         "num_faces": face_distribution,
                         "num_extrusions": extrusion_distribution, 
                         "length_sequences": sequence_distribution,
