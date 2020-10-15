@@ -1,9 +1,14 @@
 # Fusion 360 Gym
-A 'gym' environment for training ML models locally to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
 
-![Drawing a couch](https://i.gyazo.com/f667c274c2542ddd7ee5aef81af0614a.gif)
+
+A 'gym' environment for training ML models to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
+
 
 ## Server
+
+### Install Fusion 360
+The first step is to install Fusion 360 and setup up an account. As Fusion 360 stores data in the cloud, an account is required to login and use the application. Fusion 360 is available on Windows and Mac and is free for students and educators. [Follow these instructions](https://www.autodesk.com/products/fusion-360/students-teachers-educators) to create a free educational license. Although Fusion 360 is a cloud connected desktop application, the Fusion 360 Gym does all processing locally.
+
 ### Running
 1. Open Fusion 360
 2. Go to Tools tab > Add-ins > Scripts and Add-ins
@@ -11,7 +16,7 @@ A 'gym' environment for training ML models locally to design using Fusion 360. C
 4. Click 'Run' to start the server
 
 ### Launching Multiple Servers
-Multiple instances of the server can be launched and assigned a range of ports using [`launch.py`](server/launch.py). 
+Multiple instances of the server can be launched and assigned a range of ports using [`launch.py`](server/launch.py). This process will automatically launch a given number of Fusion 360 instances.
 1. Complete steps 1-3 in **Running** section above. Then select 'Run on startup' and close Fusion.
 2. From the command line:
     ```
@@ -21,7 +26,7 @@ Multiple instances of the server can be launched and assigned a range of ports u
     Launching Fusion 360 instance: 127.0.0.1:8081
     ```
 3. This will launch 2 instances of Fusion 360 at the default endpoints: http://127.0.0.1:8080 and http://127.0.0.1:8081
-4. Observe that several instances of Fusion 360 will launch and become unresponsive as the server is running in the UI thread
+4. Observe that several instances of Fusion 360 will launch and become unresponsive to UI input but will update when processing.
 5. Verify that the servers are connected by running from the command line:
     ```
     python launch.py --ping
@@ -119,6 +124,9 @@ Set the target design to be used with reconstruction.
 
 #### Sketch Extrusion
 Incrementally create designs by generating the underlying sketch primitives and extruding them. 
+
+![Drawing a couch](https://i.gyazo.com/f667c274c2542ddd7ee5aef81af0614a.gif)
+
 - `add_sketch(sketch_plane)`: Adds a sketch to the design.
     - `sketch_plane`: can be either one of:
         - string value representing a construction plane: `XY`, `XZ`, or `YZ`
@@ -154,6 +162,9 @@ Incrementally create designs by generating the underlying sketch primitives and 
 
 #### Face Extrusion
 Use simplified face extrusion actions that reference a target design set with `set_target()`.
+
+![Random Reconstruction](https://i.gyazo.com/702ad3f8f443c44be4ad85383f7fa719.gif)
+
 - `add_extrude_by_target_face(start_face, end_face, operation)`: Add an extrude between two faces of the target.
     - `start_face`: is the uuid of the start face in the target
     - `end_face`: is the uuid of the end face in the target
