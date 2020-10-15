@@ -1,7 +1,7 @@
-# Reconstruction Subset
-The Reconstruction Subset contains sequential design data from a subset of simple 'sketch and extrude' components that enables final geometry to be reconstructed.
+# Reconstruction Dataset
+The Reconstruction Dataset contains sequential design data from a subset of simple 'sketch and extrude' components that enables final geometry to be reconstructed.
 
-![Reconstruction Subset](images/reconstruction_mosaic.jpg)
+![Reconstruction Dataset](images/reconstruction_mosaic.jpg)
 
 ## Overview
 Reconstruction data is extracted in sequence from CAD modeling operations found in the parametric feature timeline of each Fusion 360 CAD model. Although there are many CAD modeling operations, we intentionally limit the data to the *sketch* and *extrude* operations to reduce the complexity of the reconstruction task. By replaying the sequence of modeling operations programmatically in Fusion 360 it is possible to reconstruct the original model. 
@@ -17,7 +17,7 @@ An extrude operation takes one or more sketch profiles and constructs a 3D shape
 ![Sketch and Extrude Sequence](images/reconstruction_overview_sequence.png)
 
 ## Data Formats
-The reconstruction subset contains 3D models in three different representations: B-Rep, mesh, and construction sequence saved in JSON text format. Other representations, such as point clouds or voxels, can be generated using existing data conversion routines and are not included in the dataset. For convenience we include a thumbnail .png image file together with each geometry. Files are provided in a single directory, with a naming convention as follows: `XXXXX_YYYYYYYY_ZZZZ[_1234].ext`. Here `XXXXX` represents the project, `YYYYYYYY` the file, `ZZZZ` the component, and `_1234` the extrude index. If `_1234` is absent the file represents the final design.
+The reconstruction dataset contains 3D models in three different representations: B-Rep, mesh, and construction sequence saved in JSON text format. Other representations, such as point clouds or voxels, can be generated using existing data conversion routines and are not included in the dataset. For convenience we include a thumbnail .png image file together with each geometry. Files are provided in a single directory, with a naming convention as follows: `XXXXX_YYYYYYYY_ZZZZ[_1234].ext`. Here `XXXXX` represents the project, `YYYYYYYY` the file, `ZZZZ` the component, and `_1234` the extrude index. If `_1234` is absent the file represents the final design.
 
 ### B-Rep
 B-Rep data is provided as .smt files representing the ground truth geometry and .step as an alternate neutral B-Rep file format. The .smt file format is the native format used by Autodesk Shape Manager, the CAD kernel within Fusion 360, and has the advantage of minimizing conversion errors. Additionally the B-Rep entities, such as bodies and faces, can referenced from the construction sequence back to entities in the .smt file.
@@ -412,6 +412,9 @@ Additionally extrudes have the following:
 - `smt`: A B-Rep file in smt format of the design at this point in the sequence.
 - `step`: A B-Rep file in step format of the design at this point in the sequence.
 - `obj`: A mesh file in obj format of the design at this point in the sequence.
+
+## Statistics
+Please see the [reconstruction dataset statistics page](reconstruction_stats.md) for overview statistics describing the dataset distribution.
 
 ## Train/Test Split
 The official train/test split is contained in the file `train_test.json`. The 80:20 split consists of 6,900 and 1,725 designs respectively
