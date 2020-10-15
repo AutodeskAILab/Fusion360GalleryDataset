@@ -23,6 +23,7 @@ def orient_camera(offset,
 
     # Get the existing camera and modify it
     camera = app.activeViewport.camera
+    camera.isSmoothTransition = False
 
     # We will fit to the contents of the screen
     # So we just need to point the camera in the right direction

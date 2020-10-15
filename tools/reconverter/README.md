@@ -1,5 +1,12 @@
 # Reconstruction Converter
-The Reconstruction Converter (aka Reconverter) demonstrates how to batch convert the raw data structure provided with the [Reconstruction Subset](../../docs/reconstruction.md) into other representations.
+![Reconverter Output](https://i.gyazo.com/8639956e2a5bb551a823f8fcad4c7049.gif)
+
+The Reconstruction Converter (aka Reconverter) demonstrates how to batch convert the raw data structure provided with the [Reconstruction Subset](../../docs/reconstruction.md) into other representations:
+- Images for each curve drawn
+- Mesh files after each extrude operation
+- B-Rep files of the final design
+
+Reconverter uses common modules from the Fusion 360 Gym directly to allow lower level control.
 
 ## Running
 Reconverter runs in Fusion 360 as a script with the following steps.

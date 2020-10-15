@@ -6,6 +6,7 @@ import os
 import sys
 import time
 from pathlib import Path
+import importlib
 
 
 # Add the common folder to sys.path
@@ -15,6 +16,7 @@ if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
 
 import exporter
+importlib.reload(exporter)
 import view_control
 from logger import Logger
 from sketch_extrude_importer import SketchExtrudeImporter
@@ -42,8 +44,12 @@ class Reconverter():
 
     def reconstruct(self):
         """Reconstruct the design from the json file"""
+        self.home_camera = self.app.activeViewport.camera
+        self.home_camera.isSmoothTransition = False
+        self.home_camera.isFitView = True
         importer = SketchExtrudeImporter(self.json_file)
         importer.reconstruct(self.inc_export)
+        
 
     def inc_export(self, data):
         """Callback function called whenever a the design changes
@@ -62,6 +68,8 @@ class Reconverter():
         """Save out incremental sketch data as reconstruction takes place"""
         png_file = f"{self.json_file.stem}_{self.inc_action_index:04}.png"
         png_file_path = self.output_dir / png_file
+        # Show all geometry
+        view_control.set_geometry_visible(True, True, True)
         exporter.export_png_from_sketch(
             png_file_path,
             data["sketch"],  # Reference to the sketch object that was updated
@@ -74,18 +82,18 @@ class Reconverter():
         """Save out incremental extrude data as reconstruction takes place"""
         png_file = f"{self.json_file.stem}_{self.inc_action_index:04}.png"
         png_file_path = self.output_dir / png_file
-        # Hide sketches
-        view_control.set_geometry_visible(True, False, False)
+        # Show bodies, sketches, and hide profiles
+        view_control.set_geometry_visible(True, True, False)
+        # Restore the home camera
+        self.app.activeViewport.camera = self.home_camera
         # save view of bodies enabled, sketches turned off
         exporter.export_png_from_component(
             png_file_path,
             self.design.rootComponent,
-            reset_camera=True,  # Zoom to fit the design
+            reset_camera=False,
             width=self.width,
             height=self.height
         )
-        # Show all geometry again
-        view_control.set_geometry_visible(True, True, True)
         # Save out just obj file geometry at each extrude
         obj_file = f"{self.json_file.stem}_{self.inc_action_index:04}.obj"
         obj_file_path = self.output_dir / obj_file
@@ -106,10 +114,12 @@ class Reconverter():
         exporter.export_smt_from_component(smt_file, self.design.rootComponent)
         # Image
         png_file = self.output_dir / f"{self.json_file.stem}.png"
+        # Hide sketches
+        view_control.set_geometry_visible(True, False, False)
         exporter.export_png_from_component(
             png_file,
             self.design.rootComponent,
-            reset_camera=True,  # Zoom to fit the design
+            reset_camera=False,
             width=1024,
             height=1024
         )
@@ -125,7 +135,10 @@ def run(context):
         data_dir = current_dir.parent / "testdata"
 
         # Get all the files in the data folder
-        json_files = [f for f in data_dir.glob("**/*.json")]
+        json_files = [
+            data_dir / "Couch.json",
+            # data_dir / "Z0HexagonCutJoin_RootComponent.json"
+        ]
 
         json_count = len(json_files)
         for i, json_file in enumerate(json_files, start=1):
