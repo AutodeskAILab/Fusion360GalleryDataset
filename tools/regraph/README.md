@@ -1,15 +1,17 @@
-# Reconstruction Graph
-'Regraph' demonstrates how to batch convert the raw data structure provided with the [Reconstruction Subset](../../docs/reconstruction.md) into graphs representing the B-Rep topology with features on faces and edges. 
+# Regraph: Reconstruction Graph Exporter
+'Regraph' demonstrates how to batch convert the raw data structure provided with the [Reconstruction Dataset](../../docs/reconstruction.md) into graphs representing the B-Rep topology with features on faces and edges. 
 
 ## Running
 Regraph runs in Fusion 360 as a script with the following steps.
 1. Follow the [general instructions here](../) to get setup with Fusion 360.
 2. Optionally change the `data_dir` in [`regraph_exporter.py`](regraph_exporter.py) to point towards a folder of json data from the reconstruction subset. By default it reconstructs the json files found in [this folder](../testdata).
-3. Run the [`regraph_exporter.py`](regraph_exporter.py) addin from within Fusion 360
-4. Check the contents of the [`output`](output) folder for the exported files
+3. Run the [`regraph_exporter.py`](regraph_exporter.py) addin from within Fusion 360.
+4. Check the contents of the `output` folder for the exported files.
+
+To regenerate the data, delete the output folder and rerun.
 
 ## Output Format
-Data is exported in json that can be read using networkx. See [regraph_viewer.ipynb](regraph_viewer.ipynb) for an example of how to load the data into networkx. From there it can be [loaded into pytorch geometric for example](https://pytorch-geometric.readthedocs.io/en/latest/modules/utils.html#torch_geometric.utils.from_networkx).
+Data is exported in json that can be read using networkx. See [regraph_viewer.ipynb](regraph_viewer.ipynb) for an example of how to load the data into networkx. From there it can be [loaded into pytorch geometric for example](https://pytorch-geometric.readthedocs.io/en/latest/modules/utils.html#torch_geometric.utils.from_networkx). 
 
 ## PerExtrude Mode
 When `mode` is set to `PerExtrude`, a graph is created for each extrude operation in the timeline.

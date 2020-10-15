@@ -32,10 +32,14 @@ from logger import Logger
 class Regraph():
     """Reconstruction Graph generation"""
 
-    def __init__(self, reconstruction=None, logger=None, mode="PerExtrude", use_temp_id=False, include_labels=True):
+    def __init__(self, reconstruction, logger=None, mode="PerExtrude", use_temp_id=False, include_labels=True):
+        # References to the Fusion design
+        self.app = adsk.core.Application.get()
+        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
+        self.product = self.app.activeProduct
+        self.timeline = self.app.activeProduct.timeline
+
         self.reconstruction = reconstruction
-        if self.reconstruction is None:
-            self.reconstruction = self.design.rootComponent
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
@@ -47,11 +51,6 @@ class Regraph():
         # Include labels when we output the graph
         self.include_labels = include_labels
 
-        # References to the Fusion design
-        self.app = adsk.core.Application.get()
-        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        self.product = self.app.activeProduct
-        self.timeline = self.app.activeProduct.timeline
         # Data structure to return
         self.data = {
             "graphs": [],
@@ -410,7 +409,8 @@ class Regraph():
         else:
             return True, None
 
-    def is_design_supported(self, json_data):
+    @staticmethod
+    def is_design_supported(json_data, mode):
         """Check the raw json data to see if this is a supported design for export"""
         if not isinstance(json_data, dict):
             with open(json_data, encoding="utf8") as f:
@@ -427,11 +427,11 @@ class Regraph():
                         entity["extent_one"]["taper_angle"]["value"] != 0):
                     reason = "Extrude has taper"
                     break
-                if self.mode == "PerExtrude":
+                if mode == "PerExtrude":
                     if entity["operation"] == "IntersectFeatureOperation":
                         reason = "Extrude has intersect operation"
                         break
-                elif self.mode == "PerFace":
+                elif mode == "PerFace":
                     # if entity["operation"] == "CutFeatureOperation":
                     #     reason = "Extrude has cut operation"
                     #     break
@@ -439,7 +439,6 @@ class Regraph():
                         reason = "Extrude doesn't have start or end faces"
                         break
         if reason is not None:
-            self.logger.log(f"Skipping {json_data['metadata']['parent_project']} early: {reason}")
             return False, reason
         else:
             return True, None
@@ -838,16 +837,15 @@ class RegraphWriter():
         self.mode = mode
         self.include_labels = include_labels
 
-    def write(self, file, output_dir, reconstruction, regraph=None):
+    def write(self, file, output_dir, reconstruction):
         """Write out the design as graph json files"""
         self.output_dir = output_dir
         self.file = file
-        if regraph is None:
-            regraph = Regraph(
-                reconstruction=reconstruction,
-                mode=self.mode,
-                include_labels=self.include_labels
-            )
+        regraph = Regraph(
+            reconstruction=reconstruction,
+            mode=self.mode,
+            include_labels=self.include_labels
+        )
         # Create the graph from the reconstruction component
         graph_data = regraph.generate()
         # If we don't get any graphs back return None

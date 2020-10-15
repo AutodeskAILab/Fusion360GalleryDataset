@@ -71,7 +71,6 @@ class FaceReconstructor():
 
     def add_extrude_from_uuid(self, start_face_uuid, end_face_uuid, operation):
         """Create an extrude from a start face uuid to an end face uuid"""
-        print(f"Start: {start_face_uuid} End: {end_face_uuid} Operation: {operation}")
         # Start and end face have to reference the occurrence
         # in order to perform extrude operations between components
         start_face = self.get_face_from_uuid(start_face_uuid)

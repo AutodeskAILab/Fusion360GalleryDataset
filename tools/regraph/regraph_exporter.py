@@ -31,8 +31,8 @@ from regraph import RegraphWriter
 
 
 # Set the graph mode to either PerExtrude or PerFace
-# GRAPH_MODE = "PerExtrude"
-GRAPH_MODE = "PerFace"
+GRAPH_MODE = "PerExtrude"
+# GRAPH_MODE = "PerFace"
 
 # Event handlers
 handlers = []
@@ -60,6 +60,13 @@ class RegraphExporter():
         # The mode we want
         self.mode = mode
 
+        self.app = adsk.core.Application.get()
+        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
+        # Create a component for reconstruction
+        self.reconstruction = self.design.rootComponent.occurrences.addNewComponent(
+            adsk.core.Matrix3D.create()
+        )
+
     def export(self, output_dir, results_file, results):
         """Reconstruct the design from the json file"""
         self.output_dir = output_dir
@@ -74,25 +81,31 @@ class RegraphExporter():
                 json_data = json.load(f, object_pairs_hook=OrderedDict)
 
             # Graph generation
-            regraph = Regraph(mode=self.mode)
             # First ask if this is supported, to avoid reconstruction and save time
-            supported, reason = regraph.is_design_supported(json_data)
-            # We abort if in PerFace mode
-            # as there may be some partial designs we can use in PerExtrude mode
+            supported, reason = Regraph.is_design_supported(json_data, self.mode)
             if not supported and self.mode == "PerFace":
+                self.logger.log(f"Skipping {json_data['metadata']['parent_project']} early: {reason}")
                 self.results[self.json_file.name].append({
                     "status": "Skip",
                     "reason": reason
                 })
                 return_result = False
             else:
-                # Reconstruct from json
+                # Reconstruct from json to the reconstruction component
                 importer = SketchExtrudeImporter(json_data)
-                importer.reconstruct()
+                importer.reconstruct(reconstruction=self.reconstruction.component)
                 # Generate and write out the graph
-                regraph_writer = RegraphWriter(self.logger, self.mode)
-                # By default regraph_writer assumes the geometry is in the rootComponent
-                writer_data = regraph_writer.write(self.json_file, output_dir, regraph=regraph)
+                regraph_writer = RegraphWriter(
+                    logger=self.logger,
+                    mode=self.mode,
+                    include_labels=True
+                )
+                # Write out the graph from the reconstruction component
+                writer_data = regraph_writer.write(
+                    self.json_file,
+                    output_dir,
+                    reconstruction=self.reconstruction
+                )
                 # writer_data returns a dict of the form
                 # [filename] = [{
                 #   "graph": graph data
@@ -165,8 +178,8 @@ def start():
     logger = Logger()
     # Fusion requires an absolute path
     current_dir = Path(__file__).resolve().parent
-    data_dir = current_dir.parent / "testdata/regraph"
-    output_dir = current_dir / "output"
+    data_dir = current_dir.parent / "testdata"
+    output_dir = data_dir / "output"
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
@@ -174,12 +187,10 @@ def start():
     results = load_results(results_file)
 
     # Get all the files in the data folder
-    json_files = [f for f in data_dir.glob("**/*.json")]
-    # json_files = [f for f in data_dir.glob("**/*_[0-9][0-9][0-9][0-9].json")]
-    # json_files = [
-    #     data_dir / "Couch.json"
-    #     # data_dir / "SingleSketchExtrude_RootComponent.json"
-    # ]
+    json_files = [
+        data_dir / "Couch.json",
+        data_dir / "SingleSketchExtrude_RootComponent.json"
+    ]
 
     json_count = len(json_files)
     success_count = 0
