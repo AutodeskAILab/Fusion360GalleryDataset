@@ -1,8 +1,7 @@
 # Fusion 360 Gym
-![Fusion 360 Gym](https://i.gyazo.com/4b98f02afa1328da11f7a5dd6ae1a0cd.png)
-
 A 'gym' environment for training ML models to design using Fusion 360. Consists of a 'server' that runs inside of Fusion 360 and receives design commands from a 'client' running outside.
 
+![Fusion 360 Gym](https://i.gyazo.com/4b98f02afa1328da11f7a5dd6ae1a0cd.png)
 
 ## Server
 
