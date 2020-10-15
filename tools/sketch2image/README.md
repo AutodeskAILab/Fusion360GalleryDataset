@@ -1,7 +1,7 @@
 # Sketch2image
 This python utility code creates images from the json sketch data provided with the [Reconstruction Dataset](../../docs/reconstruction.md).  
 
-![Sketch2image](https://i.gyazo.com/082c98ad41df279f20c9e2caab947e1d.png)
+<img src="https://i.gyazo.com/082c98ad41df279f20c9e2caab947e1d.png" width="600" alt="Sketch2image">
 
 ## [sketch_plotter.py](sketch_plotter.py)
 The SketchPlotter class is a reusable utility for plotting sketch data using matplotlib.  
