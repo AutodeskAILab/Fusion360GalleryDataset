@@ -15,16 +15,26 @@ REGRAPHNET_SRC_DIR = os.path.join(os.path.dirname(__file__), "..", "regraphnet",
 if REGRAPHNET_SRC_DIR not in sys.path:
     sys.path.append(REGRAPHNET_SRC_DIR)
 
-from train_v5 import *
+from train import *
 
 
 class AgentSupervised(Agent):
 
-    def __init__(self,):
+    def __init__(self, use_gcn=True, use_aug=False):
         super().__init__()
-        self.model = NodePointer(nfeat=708, nhid=256)
+        self.model = NodePointer(nfeat=708, nhid=256, Use_GCN=use_gcn)
         regraphnet_dir = Path(REGRAPHNET_DIR)
-        checkpoint_file = regraphnet_dir / "ckpt/model_v5.ckpt"
+        if use_gcn:
+            if use_aug:
+                checkpoint_file = regraphnet_dir / "ckpt/model_mpn_aug.ckpt"
+            else:
+                checkpoint_file = regraphnet_dir / "ckpt/model_mpn.ckpt"
+        else:
+            if use_aug:
+                checkpoint_file = regraphnet_dir / "ckpt/model_mlp_aug.ckpt"
+            else:
+                checkpoint_file = regraphnet_dir / "ckpt/model_mlp.ckpt"
+        print(f"Using {checkpoint_file.name}")
         assert checkpoint_file.exists()
         # Using CUDA is slower, so we use cpu
         # Specify cpu to map to
@@ -53,17 +63,24 @@ class AgentSupervised(Agent):
 
     def inference(self, graph_pair_formatted, node_names):
         self.model.eval()
+        num_nodes = graph_pair_formatted[1].size()[0]
+        output_end_conditioned = np.zeros((num_nodes, num_nodes))
         with torch.no_grad():
-            output_node, output_op = self.model(
+            graph_pair_formatted.append(0)
+            output_start, _, output_op = self.model(
                 graph_pair_formatted, use_gpu=False)
-            output_start = F.softmax(output_node[:, 0].view(1, -1), dim=1)
-            output_end = F.softmax(output_node[:, 1].view(1, -1), dim=1)
+            output_start = F.softmax(output_start.view(1, -1), dim=1)
             output_op = F.softmax(output_op, dim=1)
-            ps = [
-                output_start.data.numpy()[0, :],
-                output_end.data.numpy()[0, :],
-                output_op.data.numpy()[0, :]
-            ]
+            for i in range(num_nodes):
+                graph_pair_formatted[4] = i
+                _, output_end, _ = self.model(graph_pair_formatted, use_gpu=False)
+                output_end = F.softmax(output_end.view(1, -1), dim=1)
+                output_end_conditioned[i, :] = output_end.data.numpy()
+        ps = [
+            output_start.data.numpy()[0, :],
+            output_end_conditioned,
+            output_op.data.numpy()[0, :]
+        ]
         # enumerate all actions
         actions, probs = [], []
         for i in range(len(node_names)):
@@ -74,5 +91,5 @@ class AgentSupervised(Agent):
                         "end_face": node_names[j],
                         "operation": self.operations[k]
                     })
-                    probs.append(ps[0][i]*ps[1][j]*ps[2][k])
+                    probs.append(ps[0][i]*ps[1][i, j]*ps[2][k])
         return actions, probs

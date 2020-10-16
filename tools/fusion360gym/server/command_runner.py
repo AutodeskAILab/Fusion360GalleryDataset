@@ -14,9 +14,10 @@ from zipfile import ZipFile
 from pathlib import Path
 
 from .command_export import CommandExport
-from .command_increment import CommandIncrement
-from .command_target import CommandTarget
+from .command_sketch_extrusion import CommandSketchExtrusion
+from .command_face_extrusion import CommandFaceExtrusion
 from .command_reconstruct import CommandReconstruct
+from .design_state import DesignState
 
 
 class CommandRunner():
@@ -25,17 +26,25 @@ class CommandRunner():
         self.logger = None
         self.app = adsk.core.Application.get()
         self.last_command = ""
-        self.export = CommandExport(self)
-        self.export = CommandExport(self)
-        self.increment = CommandIncrement(self)
-        self.target = CommandTarget(self)
-        self.reconstruct = CommandReconstruct(self)
+        self.design_state = DesignState(self)
+        self.export = CommandExport(self, self.design_state)
+        self.sketch_extrusion = CommandSketchExtrusion(self, self.design_state)
+        self.face_extrusion = CommandFaceExtrusion(self, self.design_state)
+        self.reconstruct = CommandReconstruct(self, self.design_state)
+        self.command_objects = [
+            self.export,
+            self.sketch_extrusion,
+            self.face_extrusion,
+            self.reconstruct
+        ]
+        self.design_state.set_command_objects(self.command_objects)
 
     def set_logger(self, logger):
+        """Set the logger in all command objects"""
         self.logger = logger
-        self.export.set_logger(logger)
-        self.increment.set_logger(logger)
-        self.target.set_logger(logger)
+        self.design_state.set_logger(logger)
+        for obj in self.command_objects:
+            obj.set_logger(logger)
 
     def run_command(self, command, data=None):
         """Run a command and route it to the right method"""
@@ -45,13 +54,17 @@ class CommandRunner():
             if command == "ping":
                 result = self.ping()
             elif command == "refresh":
-                result = self.refresh()
+                result = self.design_state.refresh()
             elif command == "reconstruct":
                 result = self.reconstruct.reconstruct(data)
             elif command == "reconstruct_sketch":
                 result = self.reconstruct.reconstruct_sketch(data)
+            elif command == "reconstruct_profile":
+                result = self.reconstruct.reconstruct_profile(data)
+            elif command == "reconstruct_curve":
+                result = self.reconstruct.reconstruct_curve(data)
             elif command == "clear":
-                result = self.clear()
+                result = self.design_state.clear()
             elif command == "mesh":
                 result = self.export.mesh(data)
             elif command == "brep":
@@ -62,26 +75,24 @@ class CommandRunner():
                 result = self.export.screenshot(data)
             elif command == "graph":
                 result = self.export.graph(data)
-            elif command == "commands":
-                result = self.export.commands(data)
             elif command == "add_sketch":
-                result = self.increment.add_sketch(data)
+                result = self.sketch_extrusion.add_sketch(data)
             elif command == "add_point":
-                result = self.increment.add_point(data)
+                result = self.sketch_extrusion.add_point(data)
             elif command == "add_line":
-                result = self.increment.add_line(data)
+                result = self.sketch_extrusion.add_line(data)
             elif command == "close_profile":
-                result = self.increment.close_profile(data)
+                result = self.sketch_extrusion.close_profile(data)
             elif command == "add_extrude":
-                result = self.increment.add_extrude(data)
+                result = self.sketch_extrusion.add_extrude(data)
             elif command == "set_target":
-                result = self.target.set_target(data)
+                result = self.face_extrusion.set_target(data)
             elif command == "revert_to_target":
-                result = self.target.revert_to_target()
+                result = self.face_extrusion.revert_to_target()
             elif command == "add_extrude_by_target_face":
-                result = self.target.add_extrude_by_target_face(data)
+                result = self.face_extrusion.add_extrude_by_target_face(data)
             elif command == "add_extrudes_by_target_face":
-                result = self.target.add_extrudes_by_target_face(data)
+                result = self.face_extrusion.add_extrudes_by_target_face(data)
             else:
                 return self.return_failure("Unknown command")
             return result
@@ -93,20 +104,6 @@ class CommandRunner():
 
     def ping(self):
         """Ping for debugging"""
-        return self.return_success()
-
-    def refresh(self):
-        """Refresh the active viewport"""
-        self.app.activeViewport.refresh()
-        return self.return_success()
-
-    def clear(self):
-        """Clear (i.e. close) all open designs in Fusion"""
-        for doc in self.app.documents:
-            # Save without closing
-            doc.close(False)
-        self.increment.clear()
-        self.target.clear()
         return self.return_success()
 
     def return_success(self, data=None):

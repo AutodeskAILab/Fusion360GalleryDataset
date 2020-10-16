@@ -16,9 +16,7 @@ import importlib
 CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
     sys.path.append(CLIENT_DIR)
-import fusion_360_client
-importlib.reload(fusion_360_client)
-from fusion_360_client import Fusion360Client
+from fusion360gym_client import Fusion360GymClient
 
 COMMON_DIR = os.path.abspath(os.path.join(
     os.path.dirname(__file__), "..", "..", "common"))
@@ -66,7 +64,7 @@ def launch_instances(host, start_port, instances):
 def detach_endpoint(endpoint):
     """Detach an endpoint"""
     try:
-        client = Fusion360Client(endpoint)
+        client = Fusion360GymClient(endpoint)
         print(f"Detaching {endpoint}...")
         client.detach()
     except Exception as ex:
@@ -89,7 +87,7 @@ def detach():
 def ping_endpoint(endpoint):
     """Ping an endpoint"""
     try:
-        client = Fusion360Client(endpoint)
+        client = Fusion360GymClient(endpoint)
         r = client.ping()
         print(f"Ping response from {endpoint}: {r.status_code}")
     except Exception as ex:

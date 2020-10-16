@@ -14,7 +14,7 @@ import sys
 import time
 import copy
 from pathlib import Path
-from importlib import reload
+import importlib
 import unittest
 import math
 
@@ -22,27 +22,35 @@ import name
 import geometry
 import exporter
 import serialize
-import deserialize
 import exceptions
+import face_reconstructor
+importlib.reload(face_reconstructor)
+from face_reconstructor import FaceReconstructor
 from logger import Logger
-reload(name)
-reload(geometry)
-
-# Global flag defining which id's to get for regraph
-use_temp_id = False
 
 
 class Regraph():
     """Reconstruction Graph generation"""
 
-    def __init__(self, logger=None, mode="PerExtrude"):
-        self.logger = logger
-        if self.logger is None:
-            self.logger = Logger()
+    def __init__(self, reconstruction, logger=None, mode="PerExtrude", use_temp_id=False, include_labels=True):
         # References to the Fusion design
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
         self.product = self.app.activeProduct
+        self.timeline = self.app.activeProduct.timeline
+
+        self.reconstruction = reconstruction
+        self.logger = logger
+        if self.logger is None:
+            self.logger = Logger()
+
+        # The mode we want
+        self.mode = mode
+        # Global flag defining which id's to get for regraph
+        self.use_temp_id = use_temp_id
+        # Include labels when we output the graph
+        self.include_labels = include_labels
+
         # Data structure to return
         self.data = {
             "graphs": [],
@@ -64,28 +72,21 @@ class Regraph():
         self.current_extrude_index = 0
         # Current overall action index
         self.current_action_index = 0
-        # The mode we want
-        self.mode = mode
 
     # -------------------------------------------------------------------------
     # GENERATE
     # -------------------------------------------------------------------------
 
-    def generate(self, target_component=None):
+    def generate(self):
         """Generate graphs from the design in the timeline"""
-        self.timeline = self.app.activeProduct.timeline
-        self.target_component = target_component
-        if self.target_component is None:
-            self.target_component = self.design.rootComponent
-        assert self.target_component.bRepBodies.count > 0
-        # Iterate over the timeline and populate the face cache
-        for timeline_object in self.timeline:
-            if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
-                self.add_extrude_to_cache(timeline_object.entity)
+        assert self.reconstruction.bRepBodies.count > 0
+        # We (likely) need to first populate the face cache first
+        self.add_faces_to_cache()
         # Check that all faces have uuids
-        for body in self.target_component.bRepBodies:
+        # Iterate over the occurrence bodies, not the component
+        for body in self.reconstruction.bRepBodies:
             for face in body.faces:
-                face_uuid = get_regraph_uuid(face)
+                face_uuid = self.get_regraph_uuid(face)
                 assert face_uuid is not None
         prev_extrude_index = 0
         skip_reason = None
@@ -100,7 +101,7 @@ class Regraph():
                     skip_reason = unsupported_reason
                     break
                 # Populate the cache again
-                self.add_extrude_to_cache(extrude)
+                self.add_extrude_to_cache(extrude, timeline_object.index)
                 self.add_edges_to_cache()
                 self.generate_from_extrude(extrude)
                 prev_extrude_index = self.timeline.markerPosition
@@ -146,14 +147,14 @@ class Regraph():
         if self.mode == "PerFace":
             # Only export if we had some valid extrudes
             if self.current_extrude_index > 0:
-                bbox = geometry.get_bounding_box(self.target_component)
+                bbox = geometry.get_bounding_box(self.reconstruction)
                 bbox_data = serialize.bounding_box3d(bbox)
                 seq_data = {
                     "sequence": self.sequence,
                     "properties": {
                         "bounding_box": bbox_data,
                         "extrude_count": self.current_extrude_index,
-                        "body_count": self.target_component.bRepBodies.count
+                        "body_count": self.reconstruction.bRepBodies.count
                     }
                 }
                 if self.timeline is not None:
@@ -162,7 +163,11 @@ class Regraph():
 
     def generate_from_bodies(self, bodies):
         """Generate a single graph from a collection of bodies"""
-        self.set_face_uuids(bodies)
+        if not self.use_temp_id:
+            self.set_face_uuids(bodies)
+        if self.include_labels:
+            # We need to pull gt labels from the timeline
+            self.add_faces_to_cache()
         self.add_edges_to_cache(bodies)
         graph = self.get_graph_from_bodies(bodies)
         return graph
@@ -171,43 +176,41 @@ class Regraph():
     # DATA CACHING
     # -------------------------------------------------------------------------
 
-    def get_extrude_operation(self, extrude_operation):
-        """Get the extrude operation as short string and regular string"""
-        operation = serialize.feature_operation(extrude_operation)
-        operation_short = operation.replace("FeatureOperation", "")
-        assert operation_short != "NewComponent"
-        if operation_short == "NewBody" or operation_short == "Join":
-            operation_short = "Extrude"
-        return operation, operation_short
+    def add_faces_to_cache(self):
+        """Iterate over the timeline and populate the face cache"""
+        for timeline_object in self.timeline:
+            if isinstance(timeline_object.entity, adsk.fusion.ExtrudeFeature):
+                self.add_extrude_to_cache(timeline_object.entity, timeline_object.index)
 
-    def add_extrude_to_cache(self, extrude):
+    def add_extrude_to_cache(self, extrude, timeline_index):
         """Add the data from the latest extrude to the cache"""
-        # First toggle the previous extrude last_operation label
-        for face_data in self.face_cache.values():
-            face_data["last_operation_label"] = False
-        operation, operation_short = self.get_extrude_operation(extrude.operation)
-        self.add_extrude_faces_to_cache(extrude.startFaces, operation_short, "Start")
-        self.add_extrude_faces_to_cache(extrude.endFaces, operation_short, "End")
-        self.add_extrude_faces_to_cache(extrude.sideFaces, operation_short, "Side")
+        operation = serialize.feature_operation(extrude.operation)
+        self.add_extrude_faces_to_cache(extrude.startFaces, operation, "StartFace", timeline_index)
+        self.add_extrude_faces_to_cache(extrude.endFaces, operation, "EndFace", timeline_index)
+        self.add_extrude_faces_to_cache(extrude.sideFaces, operation, "SideFace", timeline_index)
 
-    def add_extrude_faces_to_cache(self, extrude_faces, operation_short, extrude_face_location):
+    def add_extrude_faces_to_cache(self, extrude_faces, operation, location_in_feature, timeline_index):
         """Update the extrude face cache with the recently added faces"""
         for face in extrude_faces:
-            face_uuid = set_regraph_uuid(face)
+            # We want to set a uuid on the face in the assembly context
+            # of the reconstruction, rather than on the component face
+            proxy_face = face.createForAssemblyContext(self.reconstruction)
+            face_uuid = self.set_regraph_uuid(proxy_face)
             assert face_uuid is not None
             # We will have split faces with the same uuid
             # So we need to update them
             # assert face_uuid not in self.face_cache
             self.face_cache[face_uuid] = {
-                # "timeline_label": self.current_extrude_index / self.extrude_count,
-                "operation_label": f"{operation_short}{extrude_face_location}",
-                "last_operation_label": True
+                "operation_label": operation,
+                "timeline_index_label": timeline_index,
+                "location_in_feature_label": location_in_feature
             }
 
     def add_edges_to_cache(self, bodies=None):
         """Update the edge cache with the latest extrude"""
         if bodies is None:
-            bodies = self.target_component.bRepBodies
+            # We want the occurrence bodies, not the component
+            bodies = self.reconstruction.bRepBodies
         concave_edge_cache = set()
         for body in bodies:
             temp_ids = name.get_temp_ids_from_collection(body.concaveEdges)
@@ -217,14 +220,14 @@ class Regraph():
                 for edge in face.edges:
                     edge_faces = edge.faces
                     assert edge_faces.count == 2
-                    edge_uuid = set_regraph_uuid(edge)
+                    edge_uuid = self.set_regraph_uuid(edge)
                     edge_temp_id = edge.tempId
                     edge_concave = edge_temp_id in concave_edge_cache
                     assert edge_uuid is not None
                     self.edge_cache[edge_uuid] = {
                         "temp_id": edge_temp_id,
-                        "source": get_regraph_uuid(edge_faces[0]),
-                        "target": get_regraph_uuid(edge_faces[1])
+                        "source": self.get_regraph_uuid(edge_faces[0]),
+                        "target": self.get_regraph_uuid(edge_faces[1])
                     }
                     if self.mode == "PerExtrude":
                         self.edge_cache[edge_uuid]["convexity"] = self.get_edge_convexity(edge, edge_concave)
@@ -238,8 +241,8 @@ class Regraph():
                     #         self.edge_cache[edge_uuid] = {
                     #             "temp_id": edge.tempId,
                     #             "convexity": self.get_edge_convexity(edge, edge_concave),
-                    #             "source": get_regraph_uuid(edge.faces[edge_face_index]),
-                    #             "target": get_regraph_uuid(edge.faces[index])
+                    #             "source": self.get_regraph_uuid(edge.faces[edge_face_index]),
+                    #             "target": self.get_regraph_uuid(edge.faces[index])
                     #         }
 
     def add_extrude_to_sequence(self, extrude):
@@ -268,13 +271,17 @@ class Regraph():
         if start_face is None or start_end_flipped is None:
             start_face, start_end_flipped = self.get_extrude_start_face(extrude)
         assert start_face is not None
-        start_face_uuid = get_regraph_uuid(start_face)
+        # Get the face uuid in the context of the occurrence, not the component
+        proxy_start_face = start_face.createForAssemblyContext(self.reconstruction)
+        start_face_uuid = self.get_regraph_uuid(proxy_start_face)
         assert start_face_uuid is not None
 
         # End face
         end_face = self.get_extrude_end_face(extrude, start_end_flipped, start_face.body)
         assert end_face is not None
-        end_face_uuid = get_regraph_uuid(end_face)
+        # Get the face uuid in the context of the occurrence, not the component
+        proxy_end_face = end_face.createForAssemblyContext(self.reconstruction)
+        end_face_uuid = self.get_regraph_uuid(proxy_end_face)
         assert end_face_uuid is not None
 
         operation = serialize.feature_operation(extrude.operation)
@@ -373,11 +380,134 @@ class Regraph():
         """Set the face uuids for a collection of bodies"""
         for body in bodies:
             for face in body.faces:
-                face_uuid = set_regraph_uuid(face)
+                face_uuid = self.set_regraph_uuid(face)
+
+    # -------------------------------------------------------------------------
+    # FILTER
+    # -------------------------------------------------------------------------
+
+    def is_extrude_supported(self, extrude):
+        """Check if this is a supported extrude for export"""
+        reason = None
+        if self.is_extrude_tapered(extrude):
+            reason = "Extrude has taper"
+        if reason is None:
+            if self.mode == "PerExtrude":
+                if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
+                    reason = "Extrude has intersect operation"
+            elif self.mode == "PerFace":
+                # If we have a cut/intersect operation we want to use what we have
+                # and export it
+                # if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
+                #     reason = "Extrude has cut operation"
+                # If we don't have a single extrude start/end face
+                if extrude.endFaces.count == 0 and extrude.startFaces.count == 0:
+                    reason = "Extrude doesn't have start or end faces"
+        if reason is not None:
+            self.logger.log(f"Skipping {extrude.name}: {reason}")
+            return False, reason
+        else:
+            return True, None
+
+    @staticmethod
+    def is_design_supported(json_data, mode):
+        """Check the raw json data to see if this is a supported design for export"""
+        if not isinstance(json_data, dict):
+            with open(json_data, encoding="utf8") as f:
+                json_data = json.load(f, object_pairs_hook=OrderedDict)
+        reason = None
+        timeline = json_data["timeline"]
+        entities = json_data["entities"]
+        for timeline_object in timeline:
+            entity_uuid = timeline_object["entity"]
+            entity_index = timeline_object["index"]
+            entity = entities[entity_uuid]
+            if entity["type"] == "ExtrudeFeature":
+                if ("taper_angle" in entity["extent_one"] and
+                        entity["extent_one"]["taper_angle"]["value"] != 0):
+                    reason = "Extrude has taper"
+                    break
+                if mode == "PerExtrude":
+                    if entity["operation"] == "IntersectFeatureOperation":
+                        reason = "Extrude has intersect operation"
+                        break
+                elif mode == "PerFace":
+                    # if entity["operation"] == "CutFeatureOperation":
+                    #     reason = "Extrude has cut operation"
+                    #     break
+                    if len(entity["extrude_start_faces"]) == 0 and len(entity["extrude_end_faces"]) == 0:
+                        reason = "Extrude doesn't have start or end faces"
+                        break
+        if reason is not None:
+            return False, reason
+        else:
+            return True, None
+
+    def is_extrude_tapered(self, extrude):
+        if extrude.extentOne is not None:
+            if isinstance(extrude.extentOne, adsk.fusion.DistanceExtentDefinition):
+                if extrude.taperAngleOne is not None:
+                    if extrude.taperAngleOne.value is not None and extrude.taperAngleOne.value != "":
+                        if extrude.taperAngleOne.value != 0:
+                            return True
+        # Check the second extent if needed
+        if (extrude.extentType ==
+                adsk.fusion.FeatureExtentTypes.TwoSidesFeatureExtentType):
+            if extrude.extentTwo is not None:
+                if isinstance(extrude.extentTwo, adsk.fusion.DistanceExtentDefinition):
+                    if extrude.taperAngleTwo is not None:
+                        if extrude.taperAngleTwo.value is not None and extrude.taperAngleTwo.value != "":
+                            if extrude.taperAngleTwo.value != 0:
+                                return True
+        return False
 
     # -------------------------------------------------------------------------
     # FEATURES
     # -------------------------------------------------------------------------
+
+    def get_face_custom_features(self, face):
+        """Custom face features derived from the B-Rep"""
+        face_data = {}
+        face_data["reversed"] = face.isParamReversed
+        # face_data["surface_type_id"] = face.geometry.surfaceType
+        face_data["area"] = face.area
+        normal = geometry.get_face_normal(face)
+        face_data["normal_x"] = normal.x
+        face_data["normal_y"] = normal.y
+        face_data["normal_z"] = normal.z
+        # face_data["normal_length"] = normal.length
+        parameter_result, parameter_at_point = face.evaluator.getParameterAtPoint(face.pointOnFace)
+        assert parameter_result
+        curvature_result, max_tangent, max_curvature, min_curvature = face.evaluator.getCurvature(parameter_at_point)
+        assert curvature_result
+        face_data["max_tangent_x"] = max_tangent.x
+        face_data["max_tangent_y"] = max_tangent.y
+        face_data["max_tangent_z"] = max_tangent.z
+        # face_data["max_tangent_length"] = max_tangent.length
+        face_data["max_curvature"] = max_curvature
+        face_data["min_curvature"] = min_curvature
+        return face_data
+
+    def get_edge_custom_features(self, edge, edge_metadata):
+        """Custom edge features derived from the B-Rep"""
+        edge_data = {}
+        edge_data["curve_type"] = serialize.curve_type(edge.geometry)
+        # edge_data["curve_type_id"] = edge.geometry.curveType
+        edge_data["length"] = edge.length
+        # Create a feature for the edge convexity
+        edge_data["convexity"] = edge_metadata["convexity"]
+        edge_data["perpendicular"] = geometry.are_faces_perpendicular(edge.faces[0], edge.faces[1])
+        point_on_edge = edge.pointOnEdge
+        evaluator = edge.evaluator
+        parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
+        assert parameter_result
+        curvature_result, direction, curvature = evaluator.getCurvature(parameter_at_point)
+        edge_data["direction_x"] = direction.x
+        edge_data["direction_y"] = direction.y
+        edge_data["direction_z"] = direction.z
+        # edge_data["direction_length"] = direction.length
+        edge_data["curvature"] = curvature
+        return edge_data
 
     def get_edge_convexity(self, edge, is_concave):
         # is_concave = self.is_concave_edge(edge.tempId)
@@ -409,6 +539,7 @@ class Regraph():
             yield start + h * i
 
     def get_edge_parameter_features(self, edge):
+        """UV-Net style parameter edge features"""
         param_features = {}
         samples = 10
         evaluator = edge.evaluator
@@ -425,6 +556,7 @@ class Regraph():
         return param_features
 
     def get_face_parameter_features(self, face):
+        """UV-Net style parameter face features"""
         param_features = {}
         samples = 10
         evaluator = face.evaluator
@@ -459,85 +591,6 @@ class Regraph():
         return param_features
 
     # -------------------------------------------------------------------------
-    # FILTER
-    # -------------------------------------------------------------------------
-
-    def is_extrude_supported(self, extrude):
-        """Check if this is a supported extrude for export"""
-        reason = None
-        if self.is_extrude_tapered(extrude):
-            reason = "Extrude has taper"
-        if reason is None:
-            if self.mode == "PerExtrude":
-                if extrude.operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation:
-                    reason = "Extrude has intersect operation"
-            elif self.mode == "PerFace":
-                # If we have a cut/intersect operation we want to use what we have
-                # and export it
-                # if extrude.operation == adsk.fusion.FeatureOperations.CutFeatureOperation:
-                #     reason = "Extrude has cut operation"
-                # If we don't have a single extrude start/end face
-                if extrude.endFaces.count == 0 and extrude.startFaces.count == 0:
-                    reason = "Extrude doesn't have start or end faces"
-        if reason is not None:
-            self.logger.log(f"Skipping {extrude.name}: {reason}")
-            return False, reason
-        else:
-            return True, None
-
-    def is_design_supported(self, json_data):
-        """Check the raw json data to see if this is a supported design for export"""
-        if not isinstance(json_data, dict):
-            with open(json_data, encoding="utf8") as f:
-                json_data = json.load(f, object_pairs_hook=OrderedDict)
-        reason = None
-        timeline = json_data["timeline"]
-        entities = json_data["entities"]
-        for timeline_object in timeline:
-            entity_uuid = timeline_object["entity"]
-            entity_index = timeline_object["index"]
-            entity = entities[entity_uuid]
-            if entity["type"] == "ExtrudeFeature":
-                if ("taper_angle" in entity["extent_one"] and
-                        entity["extent_one"]["taper_angle"]["value"] != 0):
-                    reason = "Extrude has taper"
-                    break
-                if self.mode == "PerExtrude":
-                    if entity["operation"] == "IntersectFeatureOperation":
-                        reason = "Extrude has intersect operation"
-                        break
-                elif self.mode == "PerFace":
-                    # if entity["operation"] == "CutFeatureOperation":
-                    #     reason = "Extrude has cut operation"
-                    #     break
-                    if len(entity["extrude_start_faces"]) == 0 and len(entity["extrude_end_faces"]) == 0:
-                        reason = "Extrude doesn't have start or end faces"
-                        break
-        if reason is not None:
-            self.logger.log(f"Skipping {json_data['metadata']['parent_project']} early: {reason}")
-            return False, reason
-        else:
-            return True, None
-
-    def is_extrude_tapered(self, extrude):
-        if extrude.extentOne is not None:
-            if isinstance(extrude.extentOne, adsk.fusion.DistanceExtentDefinition):
-                if extrude.taperAngleOne is not None:
-                    if extrude.taperAngleOne.value is not None and extrude.taperAngleOne.value != "":
-                        if extrude.taperAngleOne.value != 0:
-                            return True
-        # Check the second extent if needed
-        if (extrude.extentType ==
-                adsk.fusion.FeatureExtentTypes.TwoSidesFeatureExtentType):
-            if extrude.extentTwo is not None:
-                if isinstance(extrude.extentTwo, adsk.fusion.DistanceExtentDefinition):
-                    if extrude.taperAngleTwo is not None:
-                        if extrude.taperAngleTwo.value is not None and extrude.taperAngleTwo.value != "":
-                            if extrude.taperAngleTwo.value != 0:
-                                return True
-        return False
-
-    # -------------------------------------------------------------------------
     # GRAPH CONSTRUCTION
     # -------------------------------------------------------------------------
 
@@ -554,7 +607,7 @@ class Regraph():
     def get_graph(self):
         """Get a graph data structure for bodies"""
         graph = self.get_empty_graph()
-        for body in self.target_component.bRepBodies:
+        for body in self.reconstruction.bRepBodies:
             for face in body.faces:
                 if face is not None:
                     face_data = self.get_face_data(face)
@@ -599,58 +652,54 @@ class Regraph():
 
     def get_face_data(self, face):
         """Get the features for a face"""
-        face_uuid = get_regraph_uuid(face)
+        face_uuid = self.get_regraph_uuid(face)
         assert face_uuid is not None
-        if self.mode == "PerExtrude":
+        face_metadata = None
+        if self.include_labels:
             face_metadata = self.face_cache[face_uuid]
+        if self.mode == "PerExtrude":
             return self.get_face_data_per_extrude(face, face_uuid, face_metadata)
         elif self.mode == "PerFace":
-            return self.get_face_data_per_face(face, face_uuid)
+            return self.get_face_data_per_face(face, face_uuid, face_metadata)
 
     def get_common_face_data(self, face, face_uuid):
         """Get common edge data"""
         face_data = {}
         face_data["id"] = face_uuid
+        face_data["surface_type"] = serialize.surface_type(face.geometry)
         return face_data
 
-    def get_face_data_per_extrude(self, face, face_uuid, face_metadata):
+    def get_face_labels(self, face_metadata):
+        """Get the face labels"""
+        face_data = {}
+        face_data["location_in_feature_label"] = face_metadata["location_in_feature_label"]
+        face_data["timeline_index_label"] = face_metadata["timeline_index_label"]
+        face_data["operation_label"] = face_metadata["operation_label"]
+        return face_data
+
+    def get_face_data_per_extrude(self, face, face_uuid, face_metadata=None):
         """Get the features for a face for a per extrude graph"""
         face_data = self.get_common_face_data(face, face_uuid)
-        face_data["surface_type"] = serialize.surface_type(face.geometry)
-        face_data["reversed"] = face.isParamReversed
-        # face_data["surface_type_id"] = face.geometry.surfaceType
-        face_data["area"] = face.area
-        normal = geometry.get_face_normal(face)
-        face_data["normal_x"] = normal.x
-        face_data["normal_y"] = normal.y
-        face_data["normal_z"] = normal.z
-        # face_data["normal_length"] = normal.length
-        parameter_result, parameter_at_point = face.evaluator.getParameterAtPoint(face.pointOnFace)
-        assert parameter_result
-        curvature_result, max_tangent, max_curvature, min_curvature = face.evaluator.getCurvature(parameter_at_point)
-        assert curvature_result
-        face_data["max_tangent_x"] = max_tangent.x
-        face_data["max_tangent_y"] = max_tangent.y
-        face_data["max_tangent_z"] = max_tangent.z
-        # face_data["max_tangent_length"] = max_tangent.length
-        face_data["max_curvature"] = max_curvature
-        face_data["min_curvature"] = min_curvature
-        # face_data["timeline_label"] = face_metadata["timeline_label"]
-        face_data["operation_label"] = face_metadata["operation_label"]
-        face_data["last_operation_label"] = face_metadata["last_operation_label"]
+        face_features = self.get_face_custom_features(face)
+        face_data.update(face_features)
+        if self.include_labels and face_metadata is not None:
+            face_labels = self.get_face_labels(face_metadata)
+            face_data.update(face_labels)
         return face_data
 
-    def get_face_data_per_face(self, face, face_uuid):
+    def get_face_data_per_face(self, face, face_uuid, face_metadata=None):
         """Get the features for a face for a per curve graph"""
         face_data = self.get_common_face_data(face, face_uuid)
-        face_data["surface_type"] = serialize.surface_type(face.geometry)
         face_param_feat = self.get_face_parameter_features(face)
         face_data.update(face_param_feat)
+        if self.include_labels and face_metadata is not None:
+            face_labels = self.get_face_labels(face_metadata)
+            face_data.update(face_labels)
         return face_data
 
     def get_edge_data(self, edge):
         """Get the features for an edge"""
-        edge_uuid = get_regraph_uuid(edge)
+        edge_uuid = self.get_regraph_uuid(edge)
         assert edge_uuid is not None
         edge_metadata = self.edge_cache[edge_uuid]
         if self.mode == "PerExtrude":
@@ -669,29 +718,13 @@ class Regraph():
     def get_edge_data_per_extrude(self, edge, edge_uuid, edge_metadata):
         """Get the features for an edge for a per extrude graph"""
         edge_data = self.get_common_edge_data(edge_uuid, edge_metadata)
-        edge_data["curve_type"] = serialize.curve_type(edge.geometry)
-        # edge_data["curve_type_id"] = edge.geometry.curveType
-        edge_data["length"] = edge.length
-        # Create a feature for the edge convexity
-        edge_data["convexity"] = edge_metadata["convexity"]
-        edge_data["perpendicular"] = geometry.are_faces_perpendicular(edge.faces[0], edge.faces[1])
-        point_on_edge = edge.pointOnEdge
-        evaluator = edge.evaluator
-        parameter_result, parameter_at_point = evaluator.getParameterAtPoint(point_on_edge)
-        assert parameter_result
-        curvature_result, direction, curvature = evaluator.getCurvature(parameter_at_point)
-        edge_data["direction_x"] = direction.x
-        edge_data["direction_y"] = direction.y
-        edge_data["direction_z"] = direction.z
-        # edge_data["direction_length"] = direction.length
-        edge_data["curvature"] = curvature
+        edge_features = self.get_edge_custom_features(edge, edge_metadata)
+        edge_data.update(edge_features)
         return edge_data
 
     def get_edge_data_per_face(self, edge, edge_uuid, edge_metadata):
         """Get the features for an edge for a per curve graph"""
         edge_data = self.get_common_edge_data(edge_uuid, edge_metadata)
-        # edge_param_feat = self.get_edge_parameter_features(edge)
-        # edge_data.update(edge_param_feat)
         return edge_data
 
     def get_extrude_start_plane(self, extrude):
@@ -759,13 +792,31 @@ class Regraph():
 
     def get_coplanar_face(self, plane, body):
         """Find a face on the same body that is coplanar to the given plane"""
-        # for body in self.target_component.bRepBodies:
+        # for body in self.reconstruction.bRepBodies:
         for face in body.faces:
             if isinstance(face.geometry, adsk.core.Plane):
                 is_coplanar = plane.isCoPlanarTo(face.geometry)
                 if is_coplanar:
                     return face
         return None
+
+    def get_regraph_uuid(self, entity):
+        """Get a uuid or a tempid depending on a flag"""
+        is_face = isinstance(entity, adsk.fusion.BRepFace)
+        is_edge = isinstance(entity, adsk.fusion.BRepEdge)
+        if self.use_temp_id and (is_face or is_edge):
+            return str(entity.tempId)
+        else:
+            return name.get_uuid(entity)
+
+    def set_regraph_uuid(self, entity):
+        """Set a uuid or a tempid depending on a flag"""
+        is_face = isinstance(entity, adsk.fusion.BRepFace)
+        is_edge = isinstance(entity, adsk.fusion.BRepEdge)
+        if self.use_temp_id and (is_face or is_edge):
+            return str(entity.tempId)
+        else:
+            return name.set_uuid(entity)
 
 
 # -------------------------------------------------------------------------
@@ -778,21 +829,25 @@ class RegraphWriter():
         Takes a design and writes out a graph
         representing B-Rep topology"""
 
-    def __init__(self, logger=None, mode="PerExtrude"):
+    def __init__(self, logger=None, mode="PerExtrude", include_labels=True):
         self.logger = logger
         if self.logger is None:
             self.logger = Logger()
         # The mode we want
         self.mode = mode
+        self.include_labels = include_labels
 
-    def write(self, file, output_dir, target_component=None, regraph=None):
-        """Reconstruct the design from the json file"""
+    def write(self, file, output_dir, reconstruction):
+        """Write out the design as graph json files"""
         self.output_dir = output_dir
         self.file = file
-        if regraph is None:
-            regraph = Regraph(mode=self.mode)
-        # Use the target component or rootComponent if none
-        graph_data = regraph.generate(target_component)
+        regraph = Regraph(
+            reconstruction=reconstruction,
+            mode=self.mode,
+            include_labels=self.include_labels
+        )
+        # Create the graph from the reconstruction component
+        graph_data = regraph.generate()
         # If we don't get any graphs back return None
         if len(graph_data["graphs"]) <= 0:
             return None
@@ -803,7 +858,12 @@ class RegraphWriter():
         regraph_tester.test(graph_data)
         if self.mode == "PerFace":
             # Perform reconstruction to ensure the data is good
-            regraph_tester.reconstruct(graph_data)
+            # The target we want to match is
+            # in the reconstruction component
+            regraph_tester.reconstruct(
+                graph_data,
+                target=reconstruction
+            )
         return self.write_graph_data(graph_data)
 
     def update_sequence_data(self, graph_data):
@@ -883,15 +943,28 @@ class RegraphTester(unittest.TestCase):
                     node_set, link_set = self.test_per_face_graph(graph)
                 self.test_per_face_sequence(sequence, node_set, link_set)
 
-    def reconstruct(self, graph_data, target_component=None):
+    def reconstruct(self, graph_data, target):
         """Reconstruct and test it matches the target"""
-        regraph_reconstructor = RegraphReconstructor(target_component)
-        regraph_reconstructor.reconstruct(graph_data)
+        # We create another temporary test component
+        # to perform reconstruction in
+        app = adsk.core.Application.get()
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        test_comp = design.rootComponent.occurrences.addNewComponent(
+            adsk.core.Matrix3D.create()
+        )
+        name = f"Test_{test_comp.component.name}"
+        test_comp.component.name = name
+        face_reconstructor = FaceReconstructor(
+            target=target,
+            reconstruction=test_comp,
+            use_temp_id=False
+        )
+        face_reconstructor.reconstruct(graph_data)
         # Compare the ground truth with the reconstruction
-        gt = regraph_reconstructor.target_component
-        rc = regraph_reconstructor.reconstruction.component
-        self.test_reconstruction(gt, rc)
-        regraph_reconstructor.remove()
+        self.test_reconstruction(target, test_comp)
+        # Clean up
+        test_comp.deleteMe()
+        adsk.doEvents()
 
     def test_per_extrude_graph(self, graph):
         """Test a per extrude graph"""
@@ -973,6 +1046,8 @@ class RegraphTester(unittest.TestCase):
 
     def test_reconstruction(self, gt, rc, places=1):
         """Test the reconstruction"""
+        # Update the UI so bounding boxes are accurate
+        adsk.doEvents()        
         self.assertEqual(
             len(gt.bRepBodies),
             len(rc.bRepBodies),
@@ -1049,132 +1124,3 @@ class RegraphTester(unittest.TestCase):
             math.isinf(rc_bbox.minPoint.z),
             msg="bounding_box_min_z != inf"
         )
-
-
-# -------------------------------------------------------------------------
-# REGRAPH RECONSTRUCTOR
-# -------------------------------------------------------------------------
-
-
-class RegraphReconstructor():
-    """Reconstruct the graph to test it matches the target"""
-
-    def __init__(self, target_component=None):
-        self.app = adsk.core.Application.get()
-        self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        self.target_component = target_component
-        if self.target_component is None:
-            self.target_component = self.design.rootComponent
-        self.target_uuid_to_face_map = {}
-
-    def setup(self):
-        """Setup for reconstruction"""
-        # Create a reconstruction component that we create geometry in
-        self.create_component()
-        # Populate the cache with a map from uuids to face indices
-        self.target_uuid_to_face_map = self.get_target_uuid_to_face_map()
-
-    def reset(self):
-        """Reset the reconstructor"""
-        self.remove()
-        self.create_component()
-
-    def remove(self):
-        """Remove the reconstructed component"""
-        self.reconstruction.deleteMe()
-
-    def create_component(self):
-        """Create the reconstruction component"""
-        self.reconstruction = self.design.rootComponent.occurrences.addNewComponent(
-            adsk.core.Matrix3D.create()
-        )
-        self.reconstruction.activate()
-        # Avoid naming for now to avoid name clashes
-        # self.reconstruction.component.name = "Reconstruction"
-
-    def reconstruct(self, graph_data):
-        """Reconstruct from the sequence of faces"""
-        self.sequence = graph_data["sequences"][0]
-        self.setup()
-        for seq in self.sequence["sequence"]:
-            self.add_extrude_from_uuid(
-                seq["start_face"],
-                seq["end_face"],
-                seq["operation"]
-            )
-
-    def get_face_from_uuid(self, face_uuid):
-        """Get a face from an index in the sequence"""
-        if face_uuid not in self.target_uuid_to_face_map:
-            return None
-        uuid_data = self.target_uuid_to_face_map[face_uuid]
-        # body_index = indices["body_index"]
-        # face_index = indices["face_index"]
-        # body = self.target_component.bRepBodies[body_index]
-        # face = body.faces[face_index]
-        return uuid_data["face"]
-
-    def get_target_uuid_to_face_map(self):
-        """As we have to find faces multiple times we first
-            make a map between uuids and face indices"""
-        target_uuid_to_face_map = {}
-        for body_index, body in enumerate(self.target_component.bRepBodies):
-            for face_index, face in enumerate(body.faces):
-                face_uuid = get_regraph_uuid(face)
-                assert face_uuid is not None
-                target_uuid_to_face_map[face_uuid] = {
-                    "body_index": body_index,
-                    "face_index": face_index,
-                    "body": body,
-                    "face": face
-                }
-        return target_uuid_to_face_map
-
-    def add_extrude_from_uuid(self, start_face_uuid, end_face_uuid, operation):
-        """Create an extrude from a start face uuid to an end face uuid"""
-        start_face = self.get_face_from_uuid(start_face_uuid)
-        end_face = self.get_face_from_uuid(end_face_uuid)
-        operation = deserialize.feature_operations(operation)
-        return self.add_extrude(start_face, end_face, operation)
-
-    def add_extrude(self, start_face, end_face, operation):
-        """Create an extrude from a start face to an end face"""
-        # If there are no bodies to cut or intersect, do nothing
-        if ((operation == adsk.fusion.FeatureOperations.CutFeatureOperation or
-           operation == adsk.fusion.FeatureOperations.IntersectFeatureOperation) and
-           self.reconstruction.bRepBodies.count == 0):
-            return None
-        # We generate the extrude bodies in the reconstruction component
-        extrudes = self.reconstruction.component.features.extrudeFeatures
-        extrude_input = extrudes.createInput(start_face, operation)
-        extent = adsk.fusion.ToEntityExtentDefinition.create(end_face, False)
-        extrude_input.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
-        extrude_input.creationOccurrence = self.reconstruction
-        tools = []
-        for body in self.reconstruction.bRepBodies:
-            tools.append(body)
-        extrude_input.participantBodies = tools
-        extrude = extrudes.add(extrude_input)
-        return extrude
-
-
-def get_regraph_uuid(entity):
-    """Get a uuid or a tempid depending on a flag"""
-    global use_temp_id
-    is_face = isinstance(entity, adsk.fusion.BRepFace)
-    is_edge = isinstance(entity, adsk.fusion.BRepEdge)
-    if use_temp_id and (is_face or is_edge):
-        return str(entity.tempId)
-    else:
-        return name.get_uuid(entity)
-
-
-def set_regraph_uuid(entity):
-    """Set a uuid or a tempid depending on a flag"""
-    global use_temp_id
-    is_face = isinstance(entity, adsk.fusion.BRepFace)
-    is_edge = isinstance(entity, adsk.fusion.BRepEdge)
-    if use_temp_id and (is_face or is_edge):
-        return str(entity.tempId)
-    else:
-        return name.set_uuid(entity)

@@ -1,6 +1,6 @@
 """
 
-Absract Fusion 360 Gym Environment
+Abstract Fusion 360 Gym Environment
 for launching and interacting with the gym
 
 """
@@ -12,7 +12,7 @@ from pathlib import Path
 from requests.exceptions import ConnectionError
 import psutil
 
-from fusion_360_client import Fusion360Client
+from fusion360gym_client import Fusion360GymClient
 
 # Add the common folder to sys.path
 COMMON_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "common")
@@ -27,7 +27,7 @@ class GymEnv():
     def __init__(self, host="127.0.0.1", port=8080, launch_gym=False):
         self.host = host
         self.port = port
-        self.client = Fusion360Client(f"http://{self.host}:{self.port}")
+        self.client = Fusion360GymClient(f"http://{self.host}:{self.port}")
         # Fusion subprocess
         self.p = None
         if launch_gym:
