@@ -17,17 +17,12 @@ A segmentation of 3D models based on the modeling operation used to create each 
 
 ![Fusion 360 Gallery Segmentation Dataset](docs/images/segmentation_example.jpg)
 
-## Download
-
-| Dataset | Designs | Documentation | Download | Paper |
-| - | - | - | - | - |
-| Reconstruction | 8,625 | [Documentation](docs/reconstruction.md) | [r1.0.0 - 2.0 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0.zip) | [Paper](https://arxiv.org/abs/2010.02392) |
-| Segmentation |  35,858 | [Documentation](docs/segmentation.md) | [s1.0.0 - 2.9 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s1.0.0/s1.0.0.zip) | Forthcoming |
 
 ## Publications
 Please cite the relevant paper below if you use the Fusion 360 Gallery dataset in your research.
 
 #### Reconstruction Dataset
+[Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Reconstruction](https://arxiv.org/abs/2010.02392)
 ```
 @article{willis2020fusion,
     title={Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Reconstruction},
@@ -40,7 +35,12 @@ Please cite the relevant paper below if you use the Fusion 360 Gallery dataset i
 #### Segmentation Dataset
 Coming soon...
 
+## Download
 
+| Dataset | Designs | Documentation | Download | Paper |
+| - | - | - | - | - |
+| Reconstruction | 8,625 | [Documentation](docs/reconstruction.md) | [r1.0.0 - 2.0 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0.zip) | [Paper](https://arxiv.org/abs/2010.02392) |
+| Segmentation |  35,858 | [Documentation](docs/segmentation.md) | [s1.0.0 - 2.9 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s1.0.0/s1.0.0.zip) | Forthcoming |
 
 ## Tools
 As part of the dataset we provide various tools for working with the data. These tools leverage the [Fusion 360 API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B5A90C8-E94C-48DA-B16B-430729B734DC) to perform operations such as geometry reconstruction, traversing B-Rep data structures, and conversion to other formats. More information can be found in the [tools directory](tools).
