@@ -561,7 +561,7 @@ class Fusion360GymClient():
             return self.__return_error("Invalid sampling type")
         if sampling_type == "random":
             profile_objects = list(profiles.values())
-            return np.random.choice(profile_objects, num_sampled_profiles)
+            return np.random.choice(profile_objects, num_sampled_profiles).tolist()
         elif sampling_type == "deterministic":
             # calculate average area of profiles
             average_area = 0
@@ -590,12 +590,17 @@ class Fusion360GymClient():
                not len(area_distribution) == 2:
                 return self.__return_error("Invalid area distribution")
             sampled_area = np.random.choice(area_distribution[0], 1, p=area_distribution[1])[0]
+            profile_areas = {}
             filtered_profile_areas = {}
             for profile_id, profile_object in profiles.items():
+                profile_areas[profile_id] = profile_object["properties"]["area"]
                 if profile_object["properties"]["area"] > sampled_area:
                     filtered_profile_areas[profile_id] = profile_object["properties"]["area"]
-            # get profiles larger than the average area and reserved sort it
-            sorted_profile_areas = {k: v for k, v in sorted(filtered_profile_areas.items(), key=lambda item: item[1], reverse=True)}
+            # if no qualified profiles, sample the profiles in descending order 
+            if len(filtered_profile_areas) > 0:
+                sorted_profile_areas = {k: v for k, v in sorted(filtered_profile_areas.items(), key=lambda item: item[1], reverse=True)}
+            else:
+                sorted_profile_areas = {k: v for k, v in sorted(profile_areas.items(), key=lambda item: item[1], reverse=True)}
             # retrun the sampled profiles
             sampled_profiles = []
             index = 0
