@@ -23,6 +23,8 @@ The Fusion 360 Gym consists of a 'server' that runs inside of Fusion 360 and rec
 3. In the popup, select the Add-in panel, click the green '+' icon and select the [`server`](server) directory in this repo
 4. Click 'Run' to start the server
 
+Important note: When running the Fusion 360 Gym the UI will become unresponsive. Use the `python launch.py --detach` command to detach the server and regain control of the UI.
+
 ### Launching Multiple Servers
 Multiple instances of the server can be launched and assigned a range of ports using [`launch.py`](server/launch.py). This process will automatically launch a given number of Fusion 360 instances.
 1. Complete steps 1-3 in **Running** section above. Then select 'Run on startup' and close Fusion.
