@@ -19,6 +19,8 @@ import exporter
 importlib.reload(exporter)
 import view_control
 from logger import Logger
+import sketch_extrude_importer
+importlib.reload(sketch_extrude_importer)
 from sketch_extrude_importer import SketchExtrudeImporter
 
 
@@ -47,82 +49,45 @@ class Reconverter():
         self.home_camera = self.app.activeViewport.camera
         self.home_camera.isSmoothTransition = False
         self.home_camera.isFitView = True
-        importer = SketchExtrudeImporter(self.json_file)
-        importer.reconstruct(self.inc_export)
-        
+        self.importer = SketchExtrudeImporter(self.json_file)
+        self.importer.reconstruct(self.inc_export)
 
     def inc_export(self, data):
         """Callback function called whenever a the design changes
             i.e. when a curve is added or an extrude
             This enables us to save out incremental data"""
-        if "curve" in data:
-            self.inc_export_curve(data)
-        elif "sketch" in data:
-            # No new geometry is added
-            pass
-        elif "extrude" in data:
+        if "extrude" in data:
             self.inc_export_extrude(data)
         self.inc_action_index += 1
 
-    def inc_export_curve(self, data):
-        """Save out incremental sketch data as reconstruction takes place"""
-        png_file = f"{self.json_file.stem}_{self.inc_action_index:04}.png"
-        png_file_path = self.output_dir / png_file
-        # Show all geometry
-        view_control.set_geometry_visible(True, True, True)
-        exporter.export_png_from_sketch(
-            png_file_path,
-            data["sketch"],  # Reference to the sketch object that was updated
-            reset_camera=True,  # Zoom to fit the sketch
-            width=self.width,
-            height=self.height
-        )
-
     def inc_export_extrude(self, data):
         """Save out incremental extrude data as reconstruction takes place"""
-        png_file = f"{self.json_file.stem}_{self.inc_action_index:04}.png"
-        png_file_path = self.output_dir / png_file
-        # Show bodies, sketches, and hide profiles
-        view_control.set_geometry_visible(True, True, False)
-        # Restore the home camera
-        self.app.activeViewport.camera = self.home_camera
-        # save view of bodies enabled, sketches turned off
-        exporter.export_png_from_component(
-            png_file_path,
-            self.design.rootComponent,
-            reset_camera=False,
-            width=self.width,
-            height=self.height
-        )
-        # Save out just obj file geometry at each extrude
-        obj_file = f"{self.json_file.stem}_{self.inc_action_index:04}.obj"
-        obj_file_path = self.output_dir / obj_file
-        exporter.export_obj_from_component(obj_file_path, self.design.rootComponent)
+        extrude = data["extrude"]
+        extrude_index = data["extrude_index"]
+        extrude_data = data["extrude_data"]
+        extrude_uuid = data["extrude_id"]
+        sketch_profiles = data["sketch_profiles"]
 
-    def export(self):
-        """Export the final design in a different format"""
-        # Meshes
-        stl_file = self.output_dir / f"{self.json_file.stem}.stl"
-        exporter.export_stl_from_component(stl_file, self.design.rootComponent)
-        obj_file = self.output_dir / f"{self.json_file.stem}.obj"
-        exporter.export_obj_from_component(obj_file, self.design.rootComponent)
-        # B-Reps
-        step_file = self.output_dir / f"{self.json_file.stem}.step"
-        exporter.export_step_from_component(
-            step_file, self.design.rootComponent)
-        smt_file = self.output_dir / f"{self.json_file.stem}.smt"
-        exporter.export_smt_from_component(smt_file, self.design.rootComponent)
-        # Image
-        png_file = self.output_dir / f"{self.json_file.stem}.png"
-        # Hide sketches
-        view_control.set_geometry_visible(True, False, False)
-        exporter.export_png_from_component(
-            png_file,
-            self.design.rootComponent,
-            reset_camera=False,
-            width=1024,
-            height=1024
+        # Second extrude
+        # Create a new body this time
+        extrude_data["operation"] = "NewBodyFeatureOperation"
+        extrude = self.importer.reconstruct_extrude_feature(
+            extrude_data,
+            extrude_uuid,
+            extrude_index,
+            sketch_profiles,
+            second_extrude=True
         )
+
+        # TODO: Support export of multiple bodies
+        step_file = f"{self.json_file.stem}_{extrude_index:04}.step"
+        step_file_path = self.output_dir / step_file
+        exporter.export_step_from_body(step_file_path, extrude.bodies[0])
+
+        # Rollback the timeline to before the last extrude
+        extrude.timelineObject.rollTo(True)
+        # Delete everything after that
+        self.design.timeline.deleteAllAfterMarker()
 
 
 def run(context):
@@ -146,11 +111,9 @@ def run(context):
                 logger.log(f"[{i}/{json_count}] Reconstructing {json_file}")
                 reconverter = Reconverter(json_file)
                 reconverter.reconstruct()
-                # At this point the final design
-                # should be available in Fusion
-                reconverter.export()
+
             except Exception as ex:
-                logger.log(f"Error reconstructing: {ex}")
+                logger.log(f"Error reconstructing: {ex}, {ex.args}")
             finally:
                 # Close the document
                 # Fusion automatically opens a new window
