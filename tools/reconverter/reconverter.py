@@ -38,17 +38,9 @@ class Reconverter():
         # References to the Fusion design
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        # Counter for the number of design actions that have taken place
-        self.inc_action_index = 0
-        # Size of the images to export
-        self.width = 1024
-        self.height = 1024
 
     def reconstruct(self):
         """Reconstruct the design from the json file"""
-        self.home_camera = self.app.activeViewport.camera
-        self.home_camera.isSmoothTransition = False
-        self.home_camera.isFitView = True
         self.importer = SketchExtrudeImporter(self.json_file)
         self.importer.reconstruct(self.inc_export)
 
@@ -58,7 +50,6 @@ class Reconverter():
             This enables us to save out incremental data"""
         if "extrude" in data:
             self.inc_export_extrude(data)
-        self.inc_action_index += 1
 
     def inc_export_extrude(self, data):
         """Save out incremental extrude data as reconstruction takes place"""
@@ -101,8 +92,8 @@ def run(context):
 
         # Get all the files in the data folder
         json_files = [
-            data_dir / "Couch.json",
-            # data_dir / "Hexagon.json"
+            # data_dir / "Couch.json",
+            data_dir / "Hexagon.json"
         ]
 
         json_count = len(json_files)
