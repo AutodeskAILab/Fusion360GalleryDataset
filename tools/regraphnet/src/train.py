@@ -123,7 +123,14 @@ def load_dataset(args):
         aug_dir_list=os.listdir(aug_dataset_path)
         aug_seqs=[x[:-14] for x in aug_dir_list if (x.endswith('_sequence.json'))]
         seqs.extend(aug_seqs)
-        dir_list.extend(aug_dir_list)
+        dir_list.extend(aug_dir_list)  
+    # Check if this is a full path to a valid file
+    if os.path.isfile(args.split):
+        split_file=args.split
+    else:
+        split_file='../data/%s.json'%(args.split)
+    with open(split_file) as json_data:
+        train_test_split=json.load(json_data)
     # find number of steps
     seqs_num_step={}
     for seq in seqs:
