@@ -27,6 +27,7 @@ parser.add_argument("--agent", type=str, default="rand", help="Agent to use, can
 parser.add_argument("--search", type=str, default="rand", help="Search to use, can be rand, beam or best [default: rand]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
 parser.add_argument("--augment", dest="augment", default=False, action="store_true", help="Use an agent trained on augmented data [default: False]")
+parser.add_argument("--synthetic", dest="synthetic", default=False, action="store_true", help="Use an agent trained on synthetic data only [default: False]")
 args = parser.parse_args()
 
 
@@ -100,9 +101,9 @@ def get_agent():
     if args.agent == "rand":
         return AgentRandom()
     elif args.agent == "mpn":
-        return AgentSupervised(use_gcn=True, use_aug=args.augment)
+        return AgentSupervised(use_gcn=True, use_aug=args.augment, use_syn=args.synthetic)
     elif args.agent == "mlp":
-        return AgentSupervised(use_gcn=False, use_aug=args.augment)
+        return AgentSupervised(use_gcn=False, use_aug=args.augment, use_syn=args.synthetic)
 
 
 def load_results(output_dir):

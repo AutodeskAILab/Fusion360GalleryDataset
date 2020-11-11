@@ -20,20 +20,24 @@ from train import *
 
 class AgentSupervised(Agent):
 
-    def __init__(self, use_gcn=True, use_aug=False):
+    def __init__(self, use_gcn=True, use_aug=False, use_syn=False):
         super().__init__()
         self.model = NodePointer(nfeat=708, nhid=256, Use_GCN=use_gcn)
         regraphnet_dir = Path(REGRAPHNET_DIR)
-        if use_gcn:
-            if use_aug:
-                checkpoint_file = regraphnet_dir / "ckpt/model_mpn_aug.ckpt"
-            else:
-                checkpoint_file = regraphnet_dir / "ckpt/model_mpn.ckpt"
+        if use_syn:
+            # Currently only support synthetic data with GCN
+            checkpoint_file = regraphnet_dir / "ckpt/model_mpn_syn.ckpt"
         else:
-            if use_aug:
-                checkpoint_file = regraphnet_dir / "ckpt/model_mlp_aug.ckpt"
+            if use_gcn:
+                if use_aug:
+                    checkpoint_file = regraphnet_dir / "ckpt/model_mpn_aug.ckpt"
+                else:
+                    checkpoint_file = regraphnet_dir / "ckpt/model_mpn.ckpt"
             else:
-                checkpoint_file = regraphnet_dir / "ckpt/model_mlp.ckpt"
+                if use_aug:
+                    checkpoint_file = regraphnet_dir / "ckpt/model_mlp_aug.ckpt"
+                else:
+                    checkpoint_file = regraphnet_dir / "ckpt/model_mlp.ckpt"
         print(f"Using {checkpoint_file.name}")
         assert checkpoint_file.exists()
         # Using CUDA is slower, so we use cpu
