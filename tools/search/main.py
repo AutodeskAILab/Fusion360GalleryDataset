@@ -23,10 +23,11 @@ parser.add_argument("--output", type=str, help="Folder to save the output logs t
 parser.add_argument("--screenshot", dest="screenshot", default=False, action="store_true", help="Save screenshots during reconstruction [default: False]")
 parser.add_argument("--launch_gym", dest="launch_gym", default=False, action="store_true",
                     help="Launch the Fusion 360 Gym automatically, requires the gym to be set to run on startup [default: False]")
-parser.add_argument("--agent", type=str, default="rand", help="Agent to use, can be rand, mpn, or mlp [default: rand]")
+parser.add_argument("--agent", type=str, default="rand", help="Agent to use, can be rand, gcn, gat, gin, or mlp [default: rand]")
 parser.add_argument("--search", type=str, default="rand", help="Search to use, can be rand, beam or best [default: rand]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
 parser.add_argument("--synthetic_data", type=str, help="Type of synthetic data to use, can be aug, semisyn, or syn")
+parser.add_argument("--debug", dest="debug", default=False, action="store_true", help="Debug mode [default: False]")
 args = parser.parse_args()
 
 
@@ -99,10 +100,8 @@ def get_agent():
     """Get the agent based on user input"""
     if args.agent == "rand":
         return AgentRandom()
-    elif args.agent == "mpn":
-        return AgentSupervised(use_gcn=True, syn_data=args.synthetic_data)
-    elif args.agent == "mlp":
-        return AgentSupervised(use_gcn=False, syn_data=args.synthetic_data)
+    else:
+        return AgentSupervised(agent=args.agent, syn_data=args.synthetic_data)
 
 
 def load_results(output_dir):
@@ -179,7 +178,7 @@ def main():
             "status": "Success"
         }
         # If we already have processed this file, then skip it
-        if file.stem in results:
+        if not args.debug and file.stem in results:
             print(f"[{files_processed}/{len(files)}] Skipping {file.stem}")
             result["status"] = "Skip"
             files_processed += 1

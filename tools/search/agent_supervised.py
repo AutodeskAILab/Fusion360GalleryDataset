@@ -15,34 +15,37 @@ REGRAPHNET_SRC_DIR = os.path.join(os.path.dirname(__file__), "..", "regraphnet",
 if REGRAPHNET_SRC_DIR not in sys.path:
     sys.path.append(REGRAPHNET_SRC_DIR)
 
-from train import *
+import train
+import train_rebuttal
 
 
 class AgentSupervised(Agent):
 
-    def __init__(self, use_gcn=True, syn_data=None):
+    def __init__(self, agent, syn_data):
         super().__init__()
-        self.model = NodePointer(nfeat=708, nhid=256, Use_GCN=use_gcn)
-        regraphnet_dir = Path(REGRAPHNET_DIR)
-        if syn_data == "syn":
-            # Currently only support synthetic data with GCN
-            checkpoint_file = regraphnet_dir / "ckpt/model_mpn_syn.ckpt"
-        elif syn_data == "semisyn":
-            # Currently only support semi synthetic data with GCN
-            checkpoint_file = regraphnet_dir / "ckpt/model_mpn_semisyn.ckpt"
+        # TODO: Join these files together
+        if agent == "gat" or agent == "gin":
+            self.train_ref = train_rebuttal
+            self.model = self.train_ref.NodePointer(nfeat=708, nhid=256, MPN_type=agent)
         else:
-            if use_gcn:
-                if syn_data == "aug":
-                    checkpoint_file = regraphnet_dir / "ckpt/model_mpn_aug.ckpt"
-                else:
-                    checkpoint_file = regraphnet_dir / "ckpt/model_mpn.ckpt"
-            else:
-                if syn_data == "aug":
-                    checkpoint_file = regraphnet_dir / "ckpt/model_mlp_aug.ckpt"
-                else:
-                    checkpoint_file = regraphnet_dir / "ckpt/model_mlp.ckpt"
+            self.train_ref = train
+            use_gcn = agent == "gcn"
+            self.model = self.train_ref.NodePointer(nfeat=708, nhid=256, Use_GCN=use_gcn)
+
+        regraphnet_dir = Path(REGRAPHNET_DIR)
+
+        if syn_data is not None:
+            checkpoint_file_name = f"ckpt/model_{agent}_{syn_data}.ckpt"
+        else:
+            checkpoint_file_name = f"ckpt/model_{agent}.ckpt"
+        checkpoint_file = regraphnet_dir / checkpoint_file_name
+        if not checkpoint_file.exists():
+            print(f"Error: Checkpoint {checkpoint_file.name} does not exist")
+            exit()
+
+        print("-------------------------")
         print(f"Using {checkpoint_file.name}")
-        assert checkpoint_file.exists()
+
         # Using CUDA is slower, so we use cpu
         # Specify cpu to map to
         self.model.load_state_dict(
@@ -56,12 +59,12 @@ class AgentSupervised(Agent):
         return np.array(actions_sorted), np.array(probs_sorted)
 
     def load_graph_pair(self, data_tar, data_cur):
-        adj_tar, features_tar = format_graph_data(data_tar, self.bounding_box)
+        adj_tar, features_tar = self.train_ref.format_graph_data(data_tar, self.bounding_box)
         # If the current graph is empty
         if len(data_cur["nodes"]) == 0:
             adj_cur, features_cur = torch.zeros((0)), torch.zeros((0))
         else:
-            adj_cur, features_cur = format_graph_data(
+            adj_cur, features_cur = self.train_ref.format_graph_data(
                 data_cur, self.bounding_box
             )
         graph_pair_formatted = [adj_tar, features_tar, adj_cur, features_cur]

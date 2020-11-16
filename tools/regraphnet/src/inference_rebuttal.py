@@ -69,7 +69,7 @@ if __name__=="__main__":
     parser=argparse.ArgumentParser()
     parser.add_argument('--no-cuda',action='store_true',default=True,help='Disables CUDA training.')
     parser.add_argument('--dataset',type=str,default='data',help='Dataset name.')
-    parser.add_argument('--mpn',type=str,default='GAT',help='GAT or GIN')
+    parser.add_argument('--mpn',type=str,default='gat',help='gat or gin')
     args=parser.parse_args()
     args.cuda=not args.no_cuda and torch.cuda.is_available()
     # load model

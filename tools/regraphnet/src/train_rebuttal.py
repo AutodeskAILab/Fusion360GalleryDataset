@@ -52,16 +52,16 @@ class GIN(torch.nn.Module):
         return x
 
 class NodePointer(nn.Module):
-    def __init__(self,nfeat,nhid,dropout=0.0,MPN_type='GAT'):
+    def __init__(self,nfeat,nhid,dropout=0.0,MPN_type='gat'):
         super(NodePointer,self).__init__()
         self.MPN_type=MPN_type
-        assert(MPN_type in ['GAT','GIN'])
+        assert(MPN_type in ['gat','gin'])
         self.nhid=nhid
-        if MPN_type=='GAT':
+        if MPN_type=='gat':
             self.mpn0=GAT(nhid,dropout)
             self.mpn1=GAT(nhid,dropout)
             self.mpn2=GAT(nhid,dropout)
-        elif MPN_type=='GIN':
+        elif MPN_type=='gin':
             self.mpn0=GIN(nhid,dropout)
             self.mpn1=GIN(nhid,dropout)
             self.mpn2=GIN(nhid,dropout)
@@ -96,7 +96,8 @@ class NodePointer(nn.Module):
                 try:
                     m.bias.data.fill_(0.00)
                 except:
-                    print('default init')
+                    pass
+                    # print('default init')
 
     def forward(self,gpf,use_gpu=True):
         x2=torch.cat((gpf[1],gpf[1][gpf[4],:].repeat(gpf[1].size()[0],1)),dim=1)
@@ -384,7 +385,7 @@ if __name__=="__main__":
     parser.add_argument('--weight_decay',type=float,default=5e-4,help='Weight decay (L2 loss on parameters).')
     parser.add_argument('--hidden',type=int,default=256,help='Number of hidden units.')
     parser.add_argument('--dropout',type=float,default=0.1,help='Dropout rate.')
-    parser.add_argument('--mpn',type=str,default='GAT',help='GAT or GIN')
+    parser.add_argument('--mpn',type=str,default='gat',help='gat or gin')
     parser.add_argument('--augment',type=str,help='Directory for augmentation data.')
     parser.add_argument('--only_augment',dest='only_augment',default=False,action='store_true',help='Train with only augmented data')
     parser.add_argument('--exp_name',type=str,help='Name of the experiment. Used for the checkpoint and log files.')
