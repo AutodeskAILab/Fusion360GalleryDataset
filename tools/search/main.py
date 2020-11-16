@@ -162,7 +162,11 @@ def main():
     env = ReplEnv(host="127.0.0.1", port=8080, launch_gym=args.launch_gym)
     # Initialize these once and reuse them
     search = get_search(env, output_dir)
+    if search is None:
+        print("Error: Search is None!")
     agent = get_agent()
+    if agent is None:
+        print("Error: Agent is None!")
 
     files_to_process = copy.deepcopy(files)
     files_processed = 0
