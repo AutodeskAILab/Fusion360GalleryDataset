@@ -50,7 +50,7 @@ The full list of arguments is as follows:
 - `--agent`(optional): Agent to use, can be rand, mpn, or mlp [default: rand]
 - `--search`(optional): Search to use, can be rand, beam or best [default: rand]
 - `--budget`(optional): The number of steps to search [default: 100]
-- `--augment`: Use an agent trained on augmented data [default: False]
+- `--synthetic_data`: Type of synthetic data to use, can be aug, semisyn, or syn.
 
 
 ## Results Log

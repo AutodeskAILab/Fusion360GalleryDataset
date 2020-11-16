@@ -20,21 +20,24 @@ from train import *
 
 class AgentSupervised(Agent):
 
-    def __init__(self, use_gcn=True, use_aug=False, use_syn=False):
+    def __init__(self, use_gcn=True, syn_data=None):
         super().__init__()
         self.model = NodePointer(nfeat=708, nhid=256, Use_GCN=use_gcn)
         regraphnet_dir = Path(REGRAPHNET_DIR)
-        if use_syn:
+        if syn_data == "syn":
             # Currently only support synthetic data with GCN
             checkpoint_file = regraphnet_dir / "ckpt/model_mpn_syn.ckpt"
+        elif syn_data == "semisyn":
+            # Currently only support semi synthetic data with GCN
+            checkpoint_file = regraphnet_dir / "ckpt/model_mpn_semisyn.ckpt"
         else:
             if use_gcn:
-                if use_aug:
+                if syn_data == "aug":
                     checkpoint_file = regraphnet_dir / "ckpt/model_mpn_aug.ckpt"
                 else:
                     checkpoint_file = regraphnet_dir / "ckpt/model_mpn.ckpt"
             else:
-                if use_aug:
+                if syn_data == "aug":
                     checkpoint_file = regraphnet_dir / "ckpt/model_mlp_aug.ckpt"
                 else:
                     checkpoint_file = regraphnet_dir / "ckpt/model_mlp.ckpt"
