@@ -16,7 +16,8 @@ For further details on the method, please refer to [our paper](https://arxiv.org
 
 ## Setup
 1. Install requirements:
-    - `pytorch` tested with 1.4.0, gpu not required
+    - `pytorch` tested with 1.7.0, gpu not required
+    - `torch_geometric` tested with 1.6.1
     - `numpy` tested with 1.18.1
     - `scipy` tested with 1.4.1
 
