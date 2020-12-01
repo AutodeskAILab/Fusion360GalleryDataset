@@ -29,12 +29,9 @@ class Reconverter():
         Takes a reconstruction json file and converts it
         to different formats"""
 
-    def __init__(self, json_file):
+    def __init__(self, json_file, output_dir):
         self.json_file = json_file
-        # Export data to this directory
-        self.output_dir = json_file.parent / "output"
-        if not self.output_dir.exists():
-            self.output_dir.mkdir(parents=True)
+        self.output_dir = output_dir
         # References to the Fusion design
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
@@ -70,15 +67,36 @@ class Reconverter():
             second_extrude=True
         )
 
-        # TODO: Support export of multiple bodies
-        step_file = f"{self.json_file.stem}_{extrude_index:04}.step"
-        step_file_path = self.output_dir / step_file
-        exporter.export_step_from_body(step_file_path, extrude.bodies[0])
+        smt_file = f"{self.json_file.stem}_{extrude_index:04}e.smt"
+        obj_file = f"{self.json_file.stem}_{extrude_index:04}e.obj"
+        smt_file_path = self.output_dir / smt_file
+        obj_file_path = self.output_dir / obj_file
+        bodies = []
+        for body in extrude.bodies:
+            bodies.append(body)
+        exporter.export_smt_from_bodies(smt_file_path, bodies)
+        assert smt_file_path.exists()
+        exporter.export_obj_from_bodies(obj_file_path, bodies)
+        assert obj_file_path.exists()
 
         # Rollback the timeline to before the last extrude
         extrude.timelineObject.rollTo(True)
         # Delete everything after that
         self.design.timeline.deleteAllAfterMarker()
+
+
+def save_results(results_file, results):
+    """Save out the results of conversion"""
+    with open(results_file, "w", encoding="utf8") as f:
+        json.dump(results, f, indent=4)
+
+
+def load_results(results_file):
+    """Load the results of conversion"""
+    if results_file.exists():
+        with open(results_file, "r", encoding="utf8") as f:
+            return json.load(f)
+    return {}
 
 
 def run(context):
@@ -89,27 +107,56 @@ def run(context):
         # Fusion requires an absolute path
         current_dir = Path(__file__).resolve().parent
         data_dir = current_dir.parent / "testdata"
+        output_dir = data_dir / "output"
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True)
+
+        results_file = output_dir / "reconverter_results.json"
+        results = load_results(results_file)
 
         # Get all the files in the data folder
-        json_files = [
-            # data_dir / "Couch.json",
-            data_dir / "Hexagon.json"
-        ]
+        json_files = [f for f in data_dir.glob("*_[0-9][0-9][0-9][0-9].json")]
+        # json_files = [
+        #     # data_dir / "Couch.json",
+        #     data_dir / "Hexagon.json"
+        # ]
 
         json_count = len(json_files)
+        success_count = 0
         for i, json_file in enumerate(json_files, start=1):
-            try:
-                logger.log(f"[{i}/{json_count}] Reconstructing {json_file}")
-                reconverter = Reconverter(json_file)
-                reconverter.reconstruct()
+            if json_file.name in results:
+                logger.log(f"[{i}/{json_count}] Skipping {json_file}")
+            else:
+                try:
+                    logger.log(f"[{i}/{json_count}] Processing {json_file}")
+                    # Immediately log this in case we crash
+                    results[json_file.name] = {}
+                    save_results(results_file, results)
 
-            except Exception as ex:
-                logger.log(f"Error reconstructing: {ex}, {ex.args}")
-            finally:
-                # Close the document
-                # Fusion automatically opens a new window
-                # after the last one is closed
-                app.activeDocument.close(False)
+                    reconverter = Reconverter(json_file, output_dir)
+                    reconverter.reconstruct()
+                    success_count += 1
+                    results[json_file.name] = {
+                        "status": "Success"
+                    }
+                except Exception as ex:
+                    logger.log(f"Error exporting: {ex}")
+                    trace = traceback.format_exc()
+                    results[json_file.name] = {
+                        "status": "Exception",
+                        "exception": ex.__class__.__name__,
+                        "exception_args": " ".join(ex.args),
+                        "trace": trace
+                    }
+                finally:
+                    # Close the document
+                    # Fusion automatically opens a new window
+                    # after the last one is closed
+                    app.activeDocument.close(False)
+                    save_results(results_file, results)
+        logger.log("----------------------------")
+        logger.log(f"[{success_count}/{json_count}] designs processed successfully")
+
 
     except:
         print(traceback.format_exc())
