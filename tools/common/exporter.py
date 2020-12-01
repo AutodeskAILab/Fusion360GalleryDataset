@@ -25,9 +25,22 @@ def export_stl_from_component(file, component):
 
 def export_obj_from_component(file, component):
     """Export a component as an OBJ"""
+    breps = component.bRepBodies
+    if len(breps) > 0:
+        return export_obj_from_bodies(file, breps)
+    return False
+
+
+def export_obj_from_body(file, body):
+    """Export a body as an OBJ"""
+    return export_obj_from_bodies(file, [body])
+
+
+def export_obj_from_bodies(file, bodies):
+    """Export bodies collection/list as an OBJ"""
     try:
         meshes = []
-        for body in component.bRepBodies:
+        for body in bodies:
             mesher = body.meshManager.createMeshCalculator()
             mesher.setQuality(
                 adsk.fusion.TriangleMeshQualityOptions.NormalQualityTriangleMesh
@@ -73,13 +86,15 @@ def export_obj_from_component(file, component):
         return False
 
 
-def get_component_from_body(body):
-    """receives a body and returns a component with body inside of it"""
-    moved_body = body.createComponent()
-    if moved_body is not None:
-        # Get the component the body is now sitting in
-        return moved_body.parentComponent
-    return None
+def get_occurrence_from_body(body):
+    """Receives a body and returns an occurrence with the copied body inside of it"""
+    transform = adsk.core.Matrix3D.create()
+    # Create a new component and occurrence of it at the root of the design
+    design = get_design_product()
+    temp_occ = design.rootComponent.occurrences.addNewComponent(transform)
+    # Copy our body to the component
+    body.copyToComponent(temp_occ)
+    return temp_occ
 
 
 def export_smt_from_component(file, component):
@@ -98,11 +113,14 @@ def export_smt_from_component(file, component):
 
 def export_smt_from_body(file, body):
     """Export a body as a SMT file"""
-    # Move the body into a new component so we can export it separately
-    component = get_component_from_body(body)
-    if component:
-        return export_smt_from_component(file, component)
-    return False
+    temp_brep_manager = adsk.fusion.TemporaryBRepManager.get()
+    return temp_brep_manager.exportToFile([body], str(file.resolve()))
+
+
+def export_smt_from_bodies(file, bodies):
+    """Export a list/collection of bodies as an SMT file"""
+    temp_brep_manager = adsk.fusion.TemporaryBRepManager.get()
+    return temp_brep_manager.exportToFile(bodies, str(file.resolve()))
 
 
 def export_step_from_component(file, component):
@@ -118,10 +136,13 @@ def export_step_from_component(file, component):
 
 def export_step_from_body(file, body):
     """Export a body as a STEP file"""
-    component = get_component_from_body(body)
-    if component:
-        return export_step_from_component(file, component)
-    return False
+    result = False
+    # Workaround to make a new occurrence, export, then delete it
+    occurrence = get_occurrence_from_body(body)
+    if occurrence:
+        result = export_step_from_component(file, occurrence.component)
+        occurrence.deleteMe()
+    return result
 
 
 def export_f3d(file):
