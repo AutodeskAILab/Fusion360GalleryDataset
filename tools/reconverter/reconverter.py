@@ -24,6 +24,18 @@ importlib.reload(sketch_extrude_importer)
 from sketch_extrude_importer import SketchExtrudeImporter
 
 
+# Event handlers
+handlers = []
+
+class OnlineStatusChangedHandler(adsk.core.ApplicationEventHandler):
+    def __init__(self):
+        super().__init__()
+
+    def notify(self, args):
+        # Start when onlineStatusChanged handler returns
+        start()
+
+
 class Reconverter():
     """Reconstruction Converter
         Takes a reconstruction json file and converts it
@@ -99,64 +111,79 @@ def load_results(results_file):
     return {}
 
 
+def start():
+    app = adsk.core.Application.get()
+    # Logger to print to the text commands window in Fusion
+    logger = Logger()
+    # Fusion requires an absolute path
+    # current_dir = Path(__file__).resolve().parent
+    data_dir = Path("E:/Autodesk/FusionGallery/Data/Reconstruction/d7/d7")
+    output_dir = Path("E:/Autodesk/FusionGallery/Data/Reconstruction/d7/ExtrudeTools")
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True)
+
+    results_file = output_dir / "reconverter_results.json"
+    results = load_results(results_file)
+
+    # Get all the files in the data folder
+    json_files = [f for f in data_dir.glob("*_[0-9][0-9][0-9][0-9].json")]
+    # json_files = [
+    #     # data_dir / "Couch.json",
+    #     data_dir / "Hexagon.json"
+    # ]
+
+    json_count = len(json_files)
+    success_count = 0
+    for i, json_file in enumerate(json_files, start=1):
+        if json_file.name in results:
+            logger.log(f"[{i}/{json_count}] Skipping {json_file}")
+        else:
+            try:
+                logger.log(f"[{i}/{json_count}] Processing {json_file}")
+                # Immediately log this in case we crash
+                results[json_file.name] = {}
+                save_results(results_file, results)
+
+                reconverter = Reconverter(json_file, output_dir)
+                reconverter.reconstruct()
+                success_count += 1
+                results[json_file.name] = {
+                    "status": "Success"
+                }
+            except Exception as ex:
+                logger.log(f"Error exporting: {ex}")
+                trace = traceback.format_exc()
+                results[json_file.name] = {
+                    "status": "Exception",
+                    "exception": ex.__class__.__name__,
+                    "exception_args": " ".join(ex.args),
+                    "trace": trace
+                }
+            finally:
+                # Close the document
+                # Fusion automatically opens a new window
+                # after the last one is closed
+                app.activeDocument.close(False)
+                save_results(results_file, results)
+    logger.log("----------------------------")
+    logger.log(f"[{success_count}/{json_count}] designs processed successfully")
+
+
 def run(context):
     try:
         app = adsk.core.Application.get()
-        # Logger to print to the text commands window in Fusion
-        logger = Logger()
-        # Fusion requires an absolute path
-        current_dir = Path(__file__).resolve().parent
-        data_dir = current_dir.parent / "testdata"
-        output_dir = data_dir / "output"
-        if not output_dir.exists():
-            output_dir.mkdir(parents=True)
-
-        results_file = output_dir / "reconverter_results.json"
-        results = load_results(results_file)
-
-        # Get all the files in the data folder
-        json_files = [f for f in data_dir.glob("*_[0-9][0-9][0-9][0-9].json")]
-        # json_files = [
-        #     # data_dir / "Couch.json",
-        #     data_dir / "Hexagon.json"
-        # ]
-
-        json_count = len(json_files)
-        success_count = 0
-        for i, json_file in enumerate(json_files, start=1):
-            if json_file.name in results:
-                logger.log(f"[{i}/{json_count}] Skipping {json_file}")
-            else:
-                try:
-                    logger.log(f"[{i}/{json_count}] Processing {json_file}")
-                    # Immediately log this in case we crash
-                    results[json_file.name] = {}
-                    save_results(results_file, results)
-
-                    reconverter = Reconverter(json_file, output_dir)
-                    reconverter.reconstruct()
-                    success_count += 1
-                    results[json_file.name] = {
-                        "status": "Success"
-                    }
-                except Exception as ex:
-                    logger.log(f"Error exporting: {ex}")
-                    trace = traceback.format_exc()
-                    results[json_file.name] = {
-                        "status": "Exception",
-                        "exception": ex.__class__.__name__,
-                        "exception_args": " ".join(ex.args),
-                        "trace": trace
-                    }
-                finally:
-                    # Close the document
-                    # Fusion automatically opens a new window
-                    # after the last one is closed
-                    app.activeDocument.close(False)
-                    save_results(results_file, results)
-        logger.log("----------------------------")
-        logger.log(f"[{success_count}/{json_count}] designs processed successfully")
-
+        # If we have started manually
+        # we go ahead and startup
+        if app.isStartupComplete:
+            start()
+        else:
+            # If we are being started on startup
+            # then we subscribe to ‘onlineStatusChanged’ event
+            # This event is triggered on Fusion startup
+            print("Setting up online status changed handler...")
+            on_online_status_changed = OnlineStatusChangedHandler()
+            app.onlineStatusChanged.add(on_online_status_changed)
+            handlers.append(on_online_status_changed)
 
     except:
         print(traceback.format_exc())
