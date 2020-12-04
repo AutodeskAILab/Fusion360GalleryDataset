@@ -1,7 +1,7 @@
-# Segmentation Subset
-The Segmentation Subset contains a segmentation of design bodies based on the modeling operation used to create each face, e.g. Extrude, Revolve Fillet and Chamfer.
+# Segmentation Dataset
+The Segmentation Dataset contains a segmentation of design bodies based on the modeling operation used to create each face, e.g. Extrude, Revolve Fillet and Chamfer.
 
-![Segmentation Subset](images/segmentation_mosaic.jpg)
+![Segmentation Dataset](images/segmentation_mosaic.jpg)
 
 
 ## Overview
@@ -29,7 +29,7 @@ The set of eight possible labels for each face are:
 
 ## Data Formats
 
-The segmentation subset contains a total of 35,858 3D models in three different representations: B-Rep, mesh, and point cloud. 
+The segmentation dataset contains a total of 35,858 3D models in three different representations: B-Rep, mesh, and point cloud. 
 
 ### B-Rep
 The `breps` folder contains solid models (B-Rep) in the Autodesk Shape Manager solid text format (.smt). These files can be read into Fusion 360 and other Autodesk products. The [Fusion 360 API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B5A90C8-E94C-48DA-B16B-430729B734DC) gives extensive access to the underlying B-Rep data structure and various formats for conversion (e.g. STEP, IGES).  Each smt file is accompanied by a segmentation file (.seg).  This is an ascii text file containing the segment indices for each face in the B-Rep data.  The file `segment_names.json` in the root folder contains segment names corresponding to each segment index.   
