@@ -111,7 +111,6 @@ class SketchExtrudeImporter():
         if self.reconstruction is None:
             self.reconstruction = self.design.rootComponent
 
-        adsk.doEvents()
         curve_data = sketch_data["curves"][curve_uuid]
         points_data = sketch_data["points"]
         sketches = self.reconstruction.sketches
@@ -127,6 +126,39 @@ class SketchExtrudeImporter():
             sketch_uuid=sketch_uuid,
             sketch_index=sketch_index
         )
+        adsk.doEvents()
+        return sketch
+
+    def reconstruct_curves(self, sketch_data, sketch_name,
+                          sketch_uuid=None, sketch_index=None,
+                          transform=None, reconstruct_cb=None,
+                          reconstruction=None):
+        """Reconstruct all curves in a given sketch"""
+        self.reconstruct_cb = reconstruct_cb
+        self.reconstruction = reconstruction
+        if self.reconstruction is None:
+            self.reconstruction = self.design.rootComponent
+
+        points_data = sketch_data["points"]
+        sketches = self.reconstruction.sketches
+        sketch = sketches.itemByName(sketch_name)
+        if transform is None:
+            transform = adsk.core.Matrix3D.create()
+
+        # Turn off sketch compute until we add all the curves
+        sketch.isComputeDeferred = True
+        for curve_uuid, curve_data in sketch_data["curves"].items():
+            self.reconstruct_sketch_curve(
+                sketch,
+                curve_data,
+                curve_uuid,
+                points_data,
+                transform=transform,
+                sketch_uuid=sketch_uuid,
+                sketch_index=sketch_index
+            )
+        sketch.isComputeDeferred = False
+        adsk.doEvents()
         return sketch
 
     # --------------------------------------------------------
@@ -307,7 +339,7 @@ class SketchExtrudeImporter():
             self.reconstruct_cb(cb_data)
 
         # Draw exactly what the user drew and then search for the profiles
-        new_sketch_profiles = self.reconstruct_curves(sketch, sketch_data, sketch_uuid, sketch_index, transform_for_sketch_geom)
+        new_sketch_profiles = self.reconstruct_curves_to_profiles(sketch, sketch_data, sketch_uuid, sketch_index, transform_for_sketch_geom)
         adsk.doEvents()
         return sketch, new_sketch_profiles
 
@@ -351,7 +383,7 @@ class SketchExtrudeImporter():
 
         return self.reconstruction.xYConstructionPlane
 
-    def reconstruct_curves(self, sketch, sketch_data, sketch_uuid, sketch_index, transform):
+    def reconstruct_curves_to_profiles(self, sketch, sketch_data, sketch_uuid, sketch_index, transform):
         # Turn off sketch compute until we add all the curves
         sketch.isComputeDeferred = True
         self.reconstruct_sketch_curves(sketch, sketch_data, sketch_uuid, sketch_index, transform)

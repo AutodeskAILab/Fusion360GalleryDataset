@@ -14,6 +14,8 @@ import importlib
 import json
 import shutil
 
+import common_test
+
 # Add the client folder to sys.path
 CLIENT_DIR = os.path.join(os.path.dirname(__file__), "..", "client")
 if CLIENT_DIR not in sys.path:
@@ -35,14 +37,20 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
         # ------------------------------------------
         # TEST FILES
         cls.data_dir = Path(__file__).parent.parent.parent / "testdata"
+        cls.output_dir = cls.data_dir / "output"
         box_design = "SingleSketchExtrude"
-        hex_design = "Hexagon"
-        # Box json reconstruction file
+        # Valid full json reconstruction files
         cls.box_design_json_file = cls.data_dir / f"{box_design}.json"
-        cls.hex_design_json_file = cls.data_dir / f"{hex_design}.json"
+        cls.hex_design_json_file = cls.data_dir / "Hexagon.json"
         # Invalid json reconstruction file
         cls.test_json_invalid_file = cls.data_dir / f"{box_design}_Invalid.json"
         # ------------------------------------------
+        if cls.output_dir.exists():
+            shutil.rmtree(cls.output_dir)
+        if not cls.output_dir.exists():
+            cls.output_dir.mkdir()
+        # Clean up after we are done
+        cls.clean_output = True
 
     def test_clear(self):
         r = self.client.clear()
@@ -343,6 +351,77 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
         response_json = r.json()
         self.__test_sketch_response(response_json["data"], False)
 
+    def test_reconstruct_curves(self):
+        self.client.clear()
+        with open(self.hex_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        sketch_id = json_data["timeline"][0]["entity"]
+        sketch_data = json_data["entities"][sketch_id]
+        del sketch_data["profiles"]
+        del sketch_data["transform"]
+        del sketch_data["reference_plane"]
+
+        # Add sketch
+        r = self.client.add_sketch("XY")
+        self.assertEqual(r.status_code, 200, msg="add_sketch status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.assertIn("sketch_name", response_data, msg="add_sketch response has sketch_name")
+        sketch_name = response_data["sketch_name"]
+
+        # Reconstruct all curves at once
+        r = self.client.reconstruct_curves(sketch_data, sketch_name)
+        self.assertIsNotNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct status code")
+        response_json = r.json()
+        self.__test_sketch_response(response_json["data"])
+
+    def test_reconstruct_curves_extrude_image(self):
+        self.client.clear()
+        with open(self.hex_design_json_file) as file_handle:
+            json_data = json.load(file_handle)
+        sketch_id = json_data["timeline"][0]["entity"]
+        sketch_data = json_data["entities"][sketch_id]
+        del sketch_data["profiles"]
+        del sketch_data["transform"]
+        del sketch_data["reference_plane"]
+
+        # Add sketch
+        r = self.client.add_sketch("XY")
+        self.assertEqual(r.status_code, 200, msg="add_sketch status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.assertIn("sketch_name", response_data, msg="add_sketch response has sketch_name")
+        sketch_name = response_data["sketch_name"]
+
+        # Reconstruct all curves at once
+        r = self.client.reconstruct_curves(sketch_data, sketch_name)
+        self.assertIsNotNone(r, msg="reconstruct response is not None")
+        self.assertEqual(r.status_code, 200, msg="reconstruct status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        self.__test_sketch_response(response_data)
+
+        # Pull out the first profile id
+        profile_id = next(iter(response_data["profiles"]))
+        self.assertIsInstance(profile_id, str, msg="profile_id is string")
+        self.assertEqual(len(profile_id), 36, msg="profile_id length equals 36")
+
+        # Extrude the first profile
+        r = self.client.add_extrude(sketch_name, profile_id, 5.0, "NewBodyFeatureOperation")
+        self.assertEqual(r.status_code, 200, msg="add_extrude status code")
+        response_json = r.json()
+        response_data = response_json["data"]
+        common_test.check_extrude_data(self, response_data)
+
+        # Export a screenshot
+        test_screenshot_png_file = self.output_dir / "sketch_extrude.png"
+        r = self.client.screenshot(test_screenshot_png_file, 512, 512)
+        self.assertIsNotNone(r, msg="screenshot response is not None")
+        self.assertEqual(r.status_code, 200, msg="screenshot status code")
+        self.assertTrue(test_screenshot_png_file.exists(), msg="screenshot exists")
+        self.assertGreater(test_screenshot_png_file.stat().st_size, 0, msg="screenshot file size greater than 0")
+
     def __test_sketch_response(self, response_data, has_profiles=True):
         """Check that the sketch response is valid"""
         # self.assertIn("sketch_id", response_data, msg="reconstruct_sketch response has sketch_id")
@@ -354,9 +433,12 @@ class TestFusion360ServerReconstruct(unittest.TestCase):
         if has_profiles:
             self.assertGreater(len(response_data["profiles"]), 0, msg="profiles len > 0")
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     cls.client.detach()
+    @classmethod
+    def tearDownClass(cls):
+        if cls.clean_output:
+            if cls.output_dir.exists():
+                shutil.rmtree(cls.output_dir)
+
 
 if __name__ == "__main__":
     unittest.main()
