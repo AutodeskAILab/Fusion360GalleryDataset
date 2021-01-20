@@ -180,6 +180,40 @@ class Fusion360GymClient():
             command_data["rotate"] = rotate
         return self.send_command("reconstruct_curve", data=command_data)
 
+
+    def reconstruct_curves(self, sketch_data, sketch_name,
+                          scale=None, translate=None, rotate=None):
+        """Reconstruct all curves from the provided
+            sketch data and sketch name"""
+        if not isinstance(sketch_data, dict) or not sketch_data:
+            return self.__return_error("Sketch data is invalid")
+        if not isinstance(sketch_name, str):
+            return self.__return_error("Sketch name is not string")
+
+        # Check the transform vectors
+        error = self.__check_vector3d(scale)
+        if error is not None:
+            return self.__return_error(f"{error}: scale")
+        error = self.__check_vector3d(translate)
+        if error is not None:
+            return self.__return_error(f"{error}: translate")
+        error = self.__check_vector3d(rotate)
+        if error is not None:
+            return self.__return_error(f"{error}: rotate")
+
+        command_data = {
+            "sketch_data": sketch_data,
+            "sketch_name": sketch_name
+        }
+        # Add optional args if they are defined
+        if scale is not None:
+            command_data["scale"] = scale
+        if translate is not None:
+            command_data["translate"] = translate
+        if rotate is not None:
+            command_data["rotate"] = rotate
+        return self.send_command("reconstruct_curves", data=command_data)
+
     def clear(self):
         """Clear (i.e. close) all open designs in Fusion"""
         return self.send_command("clear")

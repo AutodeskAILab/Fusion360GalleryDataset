@@ -63,6 +63,8 @@ class CommandRunner():
                 result = self.reconstruct.reconstruct_profile(data)
             elif command == "reconstruct_curve":
                 result = self.reconstruct.reconstruct_curve(data)
+            elif command == "reconstruct_curves":
+                result = self.reconstruct.reconstruct_curves(data)                
             elif command == "clear":
                 result = self.design_state.clear()
             elif command == "mesh":

@@ -117,6 +117,14 @@ Reconstruct entire designs or parts of them from the json files provided with th
     - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
     - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
     - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
+- `reconstruct_curves(sketch_data, sketch_name, scale, translate, rotate)`: Reconstruct all curves from the provided sketch data
+    - `sketch_data`: is the sketch entity data structure from the json data
+    - `sketch_name`: is the name of the sketch to draw the curve in, typically returned from `add_sketch()`
+    - `scale` (optional): scale to apply to the sketch e.g. `{"x": 0.5, "y": 0.5, "z": 0.5}`
+    - `translate` (optional): translation to apply to the sketch e.g. `{"x": 1, "y": 1, "z":0}`
+    - `rotate` (optional): rotation to apply to the sketch in degrees e.g. `{"x": 0, "y": 0, "z": 90}`
+
+
 
 ### Target Reconstruction
 Set the target design to be used with reconstruction.
