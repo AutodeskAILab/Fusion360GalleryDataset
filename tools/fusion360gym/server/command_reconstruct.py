@@ -117,6 +117,30 @@ class CommandReconstruct(CommandBase):
             "profiles": profile_data
         })
 
+    def reconstruct_curves(self, data):
+        """Reconstruct all curves in a sketch"""
+        if (data is None or "sketch_data" not in data or
+           "sketch_name" not in data):
+            return self.runner.return_failure("reconstruct_curve data not specified")
+        sketch_data = data["sketch_data"]
+        sketch_name = data["sketch_name"]
+
+        # Optional transform
+        transform = self.__get_transform(data)
+
+        # Create the curve
+        importer = SketchExtrudeImporter()
+        sketch = importer.reconstruct_curves(
+            sketch_data, sketch_name, transform=transform,
+            reconstruction=self.design_state.reconstruction.component
+        )
+        # Serialize the data and return
+        profile_data = serialize.sketch_profiles(sketch.profiles)
+        return self.runner.return_success({
+            "sketch_name": sketch.name,
+            "profiles": profile_data
+        })
+
     def __get_transform(self, data):
         """Get a transform from incoming data"""
         scale = None

@@ -102,7 +102,7 @@ def ping():
             for endpoint, server in launch_data.items():
                 ping_endpoint(endpoint)
     else:
-        ping_endpoint(DEFAULT_HOST, DEFAULT_PORT)
+        ping_endpoint(f"http://{DEFAULT_HOST}:{DEFAULT_PORT}")
 
 
 if __name__ == "__main__":
