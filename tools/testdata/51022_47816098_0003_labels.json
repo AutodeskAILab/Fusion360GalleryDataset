@@ -1,0 +1,46 @@
+[
+    {
+        "name": "Extrude1",
+        "index": 1,
+        "extrude_bodies": [
+            "acf9889e-6512-11eb-9d92-acde48001122"
+        ],
+        "extrude_faces": [
+            "ad01f0ec-6512-11eb-9d92-acde48001122",
+            "acfe428a-6512-11eb-9d92-acde48001122",
+            "acfa34ec-6512-11eb-9d92-acde48001122",
+            "acfc8f8a-6512-11eb-9d92-acde48001122",
+            "acf9e028-6512-11eb-9d92-acde48001122",
+            "acfffb16-6512-11eb-9d92-acde48001122",
+            "acfbb5d8-6512-11eb-9d92-acde48001122"
+        ],
+        "extrude_start_faces": [
+            "acfbb5d8-6512-11eb-9d92-acde48001122"
+        ],
+        "extrude_side_faces": [
+            "acfe428a-6512-11eb-9d92-acde48001122",
+            "acfa34ec-6512-11eb-9d92-acde48001122",
+            "acfc8f8a-6512-11eb-9d92-acde48001122",
+            "acf9e028-6512-11eb-9d92-acde48001122",
+            "acfffb16-6512-11eb-9d92-acde48001122"
+        ],
+        "extrude_end_faces": [
+            "ad01f0ec-6512-11eb-9d92-acde48001122"
+        ]
+    },
+    {
+        "name": "Extrude2",
+        "index": 3,
+        "extrude_bodies": [
+            "acf9889e-6512-11eb-9d92-acde48001122"
+        ],
+        "extrude_faces": [
+            "acf9aefa-6512-11eb-9d92-acde48001122"
+        ],
+        "extrude_start_faces": [],
+        "extrude_side_faces": [
+            "acf9aefa-6512-11eb-9d92-acde48001122"
+        ],
+        "extrude_end_faces": []
+    }
+]
