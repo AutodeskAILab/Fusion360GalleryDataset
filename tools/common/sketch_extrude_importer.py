@@ -785,7 +785,7 @@ class SketchExtrudeImporter():
     # EXTRUDE FEATURE
     # --------------------------------------------------------
 
-    def reconstruct_extrude_feature(self, extrude_data, extrude_uuid, extrude_index, sketch_profiles):
+    def reconstruct_extrude_feature(self, extrude_data, extrude_uuid, extrude_index, sketch_profiles, second_extrude=False):
         extrudes = self.reconstruction.features.extrudeFeatures
 
         # There can be more than one profile, so we create an object collection
@@ -816,13 +816,16 @@ class SketchExtrudeImporter():
         self.set_start_extent(extrude_input, extrude_data["start_extent"])
         extrude = extrudes.add(extrude_input)
 
-        if self.reconstruct_cb is not None:
-            self.reconstruct_cb({
-                "extrude": extrude,
-                "extrude_name": extrude_data["name"],
-                "extrude_id": extrude_uuid,
-                "extrude_index": extrude_index
-            })
+        if not second_extrude:
+            if self.reconstruct_cb is not None:
+                self.reconstruct_cb({
+                    "extrude": extrude,
+                    "extrude_name": extrude_data["name"],
+                    "extrude_id": extrude_uuid,
+                    "extrude_index": extrude_index,
+                    "extrude_data": extrude_data,
+                    "sketch_profiles": sketch_profiles
+                })
         return extrude
 
     def set_start_extent(self, extrude_input, start_extent):
