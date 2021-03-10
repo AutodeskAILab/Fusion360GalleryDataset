@@ -27,6 +27,7 @@ from sketch_extrude_importer import SketchExtrudeImporter
 # Event handlers
 handlers = []
 
+
 class OnlineStatusChangedHandler(adsk.core.ApplicationEventHandler):
     def __init__(self):
         super().__init__()
@@ -48,8 +49,10 @@ class Reconverter():
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
 
-    def reconstruct(self):
+    def reconstruct(self, extrude_indices):
         """Reconstruct the design from the json file"""
+        self.extrude_indices = set(extrude_indices)
+        self.extrude_index = 0
         self.importer = SketchExtrudeImporter(self.json_file)
         self.importer.reconstruct(self.inc_export)
 
@@ -63,38 +66,28 @@ class Reconverter():
     def inc_export_extrude(self, data):
         """Save out incremental extrude data as reconstruction takes place"""
         extrude = data["extrude"]
-        extrude_index = data["extrude_index"]
-        extrude_data = data["extrude_data"]
-        extrude_uuid = data["extrude_id"]
-        sketch_profiles = data["sketch_profiles"]
+        # extrude_index = data["extrude_index"]
+        # extrude_uuid = data["extrude_id"]
 
-        # Second extrude
-        # Create a new body this time
-        extrude_data["operation"] = "NewBodyFeatureOperation"
-        extrude = self.importer.reconstruct_extrude_feature(
-            extrude_data,
-            extrude_uuid,
-            extrude_index,
-            sketch_profiles,
-            second_extrude=True
-        )
-
-        smt_file = f"{self.json_file.stem}_{extrude_index:04}e.smt"
-        obj_file = f"{self.json_file.stem}_{extrude_index:04}e.obj"
-        smt_file_path = self.output_dir / smt_file
-        obj_file_path = self.output_dir / obj_file
-        bodies = []
-        for body in extrude.bodies:
-            bodies.append(body)
-        exporter.export_smt_from_bodies(smt_file_path, bodies)
-        assert smt_file_path.exists()
-        exporter.export_obj_from_bodies(obj_file_path, bodies)
-        assert obj_file_path.exists()
+        # Only output the data if it is one of the indices we care about
+        if self.extrude_index in self.extrude_indices:
+            smt_file = f"{self.json_file.stem}_{self.extrude_index:04}e.smt"
+            obj_file = f"{self.json_file.stem}_{self.extrude_index:04}e.obj"
+            smt_file_path = self.output_dir / smt_file
+            obj_file_path = self.output_dir / obj_file
+            bodies = []
+            for body in extrude.bodies:
+                bodies.append(body)
+            exporter.export_smt_from_bodies(smt_file_path, bodies)
+            assert smt_file_path.exists()
+            exporter.export_obj_from_bodies(obj_file_path, bodies)
+            assert obj_file_path.exists()
 
         # Rollback the timeline to before the last extrude
         extrude.timelineObject.rollTo(True)
         # Delete everything after that
         self.design.timeline.deleteAllAfterMarker()
+        self.extrude_index += 1
 
 
 def save_results(results_file, results):
@@ -111,27 +104,56 @@ def load_results(results_file):
     return {}
 
 
+def get_unique_data(data_dir, split_file):
+    """Get the unique data to process"""
+    # f"{self.json_file.stem}_{extrude_index:04}.obj"
+    # JSON files from the dataset
+    json_files = [f for f in data_dir.glob("*_[0-9][0-9][0-9][0-9].json")]
+    with open(split_file, "r", encoding="utf8") as f:
+        split_data = json.load(f)
+    sketch_files = split_data["train"] + split_data["val"] + split_data["test"]
+    sketch_file_map = {}
+    for sketch_file in sketch_files:
+        sketch_file_path = Path(sketch_file)
+        sketch_file_parts = sketch_file_path.stem.split("_")
+        sketch_origin = "_".join(sketch_file_parts[:3])
+        extrude_index = int(sketch_file_parts[3])
+        if sketch_origin not in sketch_file_map:
+            sketch_file_map[sketch_origin] = []
+        sketch_file_map[sketch_origin].append(extrude_index)
+    unique_json_files = []
+    for json_file in json_files:
+        base_name = "_".join(json_file.stem.split("_")[:3])
+        if base_name in sketch_file_map:
+            unique_json_files.append(json_file)
+    return unique_json_files, sketch_file_map
+
+
 def start():
     app = adsk.core.Application.get()
     # Logger to print to the text commands window in Fusion
     logger = Logger()
     # Fusion requires an absolute path
     # current_dir = Path(__file__).resolve().parent
-    data_dir = Path("E:/Autodesk/FusionGallery/Data/Reconstruction/d7/d7")
-    output_dir = Path("E:/Autodesk/FusionGallery/Data/Reconstruction/d7/ExtrudeTools")
+    # data_dir = current_dir.parent / "testdata"
+    # output_dir = data_dir / "output"
+    split_file = Path("train_test.json")
+    data_dir = Path("r1.0.0/reconstruction")
+    output_dir = Path("testdata")
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
     results_file = output_dir / "reconverter_results.json"
     results = load_results(results_file)
 
+    json_files, sketch_file_map = get_unique_data(data_dir, split_file)
+    json_files = json_files[:10]
     # Get all the files in the data folder
-    json_files = [f for f in data_dir.glob("*_[0-9][0-9][0-9][0-9].json")]
+    # json_files = [f for f in data_dir.glob("*_[0-9][0-9][0-9][0-9].json")]
     # json_files = [
-    #     # data_dir / "Couch.json",
+    #     data_dir / "Couch.json",
     #     data_dir / "Hexagon.json"
     # ]
-
     json_count = len(json_files)
     success_count = 0
     for i, json_file in enumerate(json_files, start=1):
@@ -144,8 +166,12 @@ def start():
                 results[json_file.name] = {}
                 save_results(results_file, results)
 
+                # Get the extrude indices to save out
+                base_name = "_".join(json_file.stem.split("_")[:3])
+                extrude_indices = sketch_file_map[base_name]
+
                 reconverter = Reconverter(json_file, output_dir)
-                reconverter.reconstruct()
+                reconverter.reconstruct(extrude_indices)
                 success_count += 1
                 results[json_file.name] = {
                     "status": "Success"

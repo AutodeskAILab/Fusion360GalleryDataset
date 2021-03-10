@@ -61,7 +61,9 @@ class SketchExtrudeImporter():
                 if entity_uuid in profiles_used["sketches"]:
                     sketch, sketch_profile_set = self.reconstruct_sketch_feature(
                         entity, sketch_profiles,
-                        sketch_uuid=entity_uuid, sketch_index=entity_index
+                        sketch_uuid=entity_uuid, sketch_index=entity_index,
+                        sketch_plane=self.design.rootComponent.xYConstructionPlane,
+                        transform=adsk.core.Matrix3D.create()
                     )
                     if sketch_profile_set:
                         sketch_profiles.update(**sketch_profile_set)
@@ -785,7 +787,7 @@ class SketchExtrudeImporter():
     # EXTRUDE FEATURE
     # --------------------------------------------------------
 
-    def reconstruct_extrude_feature(self, extrude_data, extrude_uuid, extrude_index, sketch_profiles, second_extrude=False):
+    def reconstruct_extrude_feature(self, extrude_data, extrude_uuid, extrude_index, sketch_profiles):
         extrudes = self.reconstruction.features.extrudeFeatures
 
         # There can be more than one profile, so we create an object collection
@@ -797,7 +799,8 @@ class SketchExtrudeImporter():
 
         # The operation defines if the extrusion becomes a new body
         # a new component or cuts/joins another body (i.e. boolean operation)
-        operation = deserialize.feature_operations(extrude_data["operation"])
+        # operation = deserialize.feature_operations(extrude_data["operation"])
+        operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
         extrude_input = extrudes.createInput(extrude_profiles, operation)
 
         # Simple extrusion in one direction
@@ -816,16 +819,13 @@ class SketchExtrudeImporter():
         self.set_start_extent(extrude_input, extrude_data["start_extent"])
         extrude = extrudes.add(extrude_input)
 
-        if not second_extrude:
-            if self.reconstruct_cb is not None:
-                self.reconstruct_cb({
-                    "extrude": extrude,
-                    "extrude_name": extrude_data["name"],
-                    "extrude_id": extrude_uuid,
-                    "extrude_index": extrude_index,
-                    "extrude_data": extrude_data,
-                    "sketch_profiles": sketch_profiles
-                })
+        if self.reconstruct_cb is not None:
+            self.reconstruct_cb({
+                "extrude": extrude,
+                "extrude_name": extrude_data["name"],
+                "extrude_id": extrude_uuid,
+                "extrude_index": extrude_index
+            })
         return extrude
 
     def set_start_extent(self, extrude_input, start_extent):
@@ -841,8 +841,8 @@ class SketchExtrudeImporter():
         distance = adsk.core.ValueInput.createByReal(extent_one["distance"]["value"])
         extent_distance = adsk.fusion.DistanceExtentDefinition.create(distance)
         taper_angle = adsk.core.ValueInput.createByReal(0)
-        if "taper_angle" in extent_one:
-            taper_angle = adsk.core.ValueInput.createByReal(extent_one["taper_angle"]["value"])
+        # if "taper_angle" in extent_one:
+        #     taper_angle = adsk.core.ValueInput.createByReal(extent_one["taper_angle"]["value"])
         extrude_input.setOneSideExtent(extent_distance, adsk.fusion.ExtentDirections.PositiveExtentDirection, taper_angle)
 
     def set_two_side_extrude_input(self, extrude_input, extent_one, extent_two):
@@ -852,10 +852,10 @@ class SketchExtrudeImporter():
         extent_distance_two = adsk.fusion.DistanceExtentDefinition.create(distance_two)
         taper_angle_one = adsk.core.ValueInput.createByReal(0)
         taper_angle_two = adsk.core.ValueInput.createByReal(0)
-        if "taper_angle" in extent_one:
-            taper_angle_one = adsk.core.ValueInput.createByReal(extent_one["taper_angle"]["value"])
-        if "taper_angle" in extent_two:
-            taper_angle_two = adsk.core.ValueInput.createByReal(extent_two["taper_angle"]["value"])
+        # if "taper_angle" in extent_one:
+        #     taper_angle_one = adsk.core.ValueInput.createByReal(extent_one["taper_angle"]["value"])
+        # if "taper_angle" in extent_two:
+        #     taper_angle_two = adsk.core.ValueInput.createByReal(extent_two["taper_angle"]["value"])
         extrude_input.setTwoSidesExtent(extent_distance_one, extent_distance_two, taper_angle_one, taper_angle_two)
 
     def set_symmetric_extrude_input(self, extrude_input, extent_one):
@@ -880,7 +880,7 @@ class SketchExtrudeImporter():
         extent_distance_two = adsk.fusion.DistanceExtentDefinition.create(distance_two)
         taper_angle_one = adsk.core.ValueInput.createByReal(0)
         taper_angle_two = adsk.core.ValueInput.createByReal(0)
-        if "taper_angle" in extent_one:
-            taper_angle_one = adsk.core.ValueInput.createByReal(extent_one["taper_angle"]["value"])
-            taper_angle_two = adsk.core.ValueInput.createByReal(extent_one["taper_angle"]["value"])
+        # if "taper_angle" in extent_one:
+        #     taper_angle_one = adsk.core.ValueInput.createByReal(extent_one["taper_angle"]["value"])
+        #     taper_angle_two = adsk.core.ValueInput.createByReal(extent_one["taper_angle"]["value"])
         extrude_input.setTwoSidesExtent(extent_distance_one, extent_distance_two, taper_angle_one, taper_angle_two)
