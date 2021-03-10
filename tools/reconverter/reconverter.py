@@ -137,9 +137,9 @@ def start():
     # current_dir = Path(__file__).resolve().parent
     # data_dir = current_dir.parent / "testdata"
     # output_dir = data_dir / "output"
-    split_file = Path("train_test.json")
-    data_dir = Path("r1.0.0/reconstruction")
-    output_dir = Path("testdata")
+    data_dir = Path("E:/Autodesk/FusionGallery/Data/Reconstruction/d7/d7")
+    output_dir = Path("E:/Autodesk/FusionGallery/Data/Reconstruction/d7/SketchDLExtrudes")
+    split_file = output_dir / "train_test.json"
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
@@ -147,7 +147,6 @@ def start():
     results = load_results(results_file)
 
     json_files, sketch_file_map = get_unique_data(data_dir, split_file)
-    json_files = json_files[:10]
     # Get all the files in the data folder
     # json_files = [f for f in data_dir.glob("*_[0-9][0-9][0-9][0-9].json")]
     # json_files = [

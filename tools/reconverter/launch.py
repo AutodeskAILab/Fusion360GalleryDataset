@@ -62,7 +62,7 @@ def time_out_reached(results_file):
 if __name__ == "__main__":
     # current_dir = Path(__file__).resolve().parent
     # data_dir = current_dir.parent / "testdata"
-    output_dir = Path("E:/Autodesk/FusionGallery/Data/Reconstruction/d7/ExtrudeTools")
+    output_dir = Path("E:/Autodesk/FusionGallery/Data/Reconstruction/d7/SketchDLExtrudes")
     # We use the timestamp of this file to check we haven't timed out
     # This file is updated at regular intervals when all is working
     results_file = output_dir / "reconverter_results.json"
