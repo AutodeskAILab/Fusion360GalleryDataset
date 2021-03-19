@@ -7,6 +7,7 @@ import sys
 import time
 from pathlib import Path
 import importlib
+import random
 
 
 # Add the common folder to sys.path
@@ -27,8 +28,9 @@ class Reconverter():
         Takes a reconstruction json file and converts it
         to different formats"""
 
-    def __init__(self, json_file):
+    def __init__(self, json_file, logger):
         self.json_file = json_file
+        self.logger = logger
         # Export data to this directory
         self.output_dir = json_file.parent / "output"
         if not self.output_dir.exists():
@@ -36,93 +38,106 @@ class Reconverter():
         # References to the Fusion design
         self.app = adsk.core.Application.get()
         self.design = adsk.fusion.Design.cast(self.app.activeProduct)
-        # Counter for the number of design actions that have taken place
-        self.inc_action_index = 0
-        # Size of the images to export
-        self.width = 1024
-        self.height = 1024
-
-    def reconstruct(self):
-        """Reconstruct the design from the json file"""
+        self.root_comp = self.design.rootComponent 
         self.home_camera = self.app.activeViewport.camera
         self.home_camera.isSmoothTransition = False
         self.home_camera.isFitView = True
+        self.length = 0.5
+
+    def reconstruct(self):
+        """Reconstruct the design from the json file"""
         importer = SketchExtrudeImporter(self.json_file)
-        importer.reconstruct(self.inc_export)
-        
-
-    def inc_export(self, data):
-        """Callback function called whenever a the design changes
-            i.e. when a curve is added or an extrude
-            This enables us to save out incremental data"""
-        if "curve" in data:
-            self.inc_export_curve(data)
-        elif "sketch" in data:
-            # No new geometry is added
-            pass
-        elif "extrude" in data:
-            self.inc_export_extrude(data)
-        self.inc_action_index += 1
-
-    def inc_export_curve(self, data):
-        """Save out incremental sketch data as reconstruction takes place"""
-        png_file = f"{self.json_file.stem}_{self.inc_action_index:04}.png"
-        png_file_path = self.output_dir / png_file
-        # Show all geometry
-        view_control.set_geometry_visible(True, True, True)
-        exporter.export_png_from_sketch(
-            png_file_path,
-            data["sketch"],  # Reference to the sketch object that was updated
-            reset_camera=True,  # Zoom to fit the sketch
-            width=self.width,
-            height=self.height
-        )
-
-    def inc_export_extrude(self, data):
-        """Save out incremental extrude data as reconstruction takes place"""
-        png_file = f"{self.json_file.stem}_{self.inc_action_index:04}.png"
-        png_file_path = self.output_dir / png_file
-        # Show bodies, sketches, and hide profiles
-        view_control.set_geometry_visible(True, True, False)
-        # Restore the home camera
-        self.app.activeViewport.camera = self.home_camera
-        # save view of bodies enabled, sketches turned off
-        exporter.export_png_from_component(
-            png_file_path,
-            self.design.rootComponent,
-            reset_camera=False,
-            width=self.width,
-            height=self.height
-        )
-        # Save out just obj file geometry at each extrude
-        obj_file = f"{self.json_file.stem}_{self.inc_action_index:04}.obj"
-        obj_file_path = self.output_dir / obj_file
-        exporter.export_obj_from_component(obj_file_path, self.design.rootComponent)
+        sketches = self.root_comp.sketches
+        sketch = sketches.addWithoutEdges(self.root_comp.xYConstructionPlane)
+        sketch_data = importer.data
+        curves_data = sketch_data["curves"]
+        points_data = sketch_data["points"]
+        sketch.isComputeDeferred = True
+        for curve_uuid in curves_data:
+            curve_data = curves_data[curve_uuid]
+            importer.reconstruct_sketch_curve(sketch, curve_data, curve_uuid, points_data)
+        sketch.isComputeDeferred = False
+        constructed_profiles = sketch.profiles
+        print(f"{len(constructed_profiles)} profiles")
+        sketch_box = sketch.boundingBox
+        dx = sketch_box.maxPoint.x - sketch_box.minPoint.x
+        dy = sketch_box.maxPoint.y - sketch_box.minPoint.y
+        max_box_length = dx
+        if dy > max_box_length:
+            max_box_length = dy
+        self.create_extrude_feature(constructed_profiles, max_box_length)
 
     def export(self):
         """Export the final design in a different format"""
         # Meshes
-        stl_file = self.output_dir / f"{self.json_file.stem}.stl"
-        exporter.export_stl_from_component(stl_file, self.design.rootComponent)
         obj_file = self.output_dir / f"{self.json_file.stem}.obj"
         exporter.export_obj_from_component(obj_file, self.design.rootComponent)
         # B-Reps
-        step_file = self.output_dir / f"{self.json_file.stem}.step"
-        exporter.export_step_from_component(
-            step_file, self.design.rootComponent)
         smt_file = self.output_dir / f"{self.json_file.stem}.smt"
         exporter.export_smt_from_component(smt_file, self.design.rootComponent)
-        # Image
+        f3d_file = self.output_dir / f"{self.json_file.stem}.f3d"
+        exporter.export_f3d(f3d_file)
+        # Screenshot
         png_file = self.output_dir / f"{self.json_file.stem}.png"
-        # Hide sketches
-        view_control.set_geometry_visible(True, False, False)
-        exporter.export_png_from_component(
-            png_file,
-            self.design.rootComponent,
-            reset_camera=False,
-            width=1024,
-            height=1024
-        )
+        exporter.export_png_from_component(png_file, self.root_comp)
+
+
+    def get_profile_properties(self, sketch_profiles):
+        profile_properties = []
+        for profile in sketch_profiles:
+            props = profile.areaProperties(adsk.fusion.CalculationAccuracy.HighCalculationAccuracy)
+            prop = {
+                "profile": profile,
+                "area": props.area,
+                "centroid": props.centroid,
+                "perimeter": props.perimeter
+            }
+            profile_properties.append(prop)
+        # Sort so the first profile has the largest area
+        profile_properties = sorted(profile_properties, key=lambda i: i["area"], reverse=True)
+        return profile_properties
+
+    def create_extrude_feature(self, sketch_profiles, max_box_length):
+        extrudes = self.root_comp.features.extrudeFeatures
+        profile_properties = self.get_profile_properties(sketch_profiles)
+
+        # Extrude all the profiles as a base extrude
+        all_profiles = adsk.core.ObjectCollection.create()
+        for profile in profile_properties:
+            all_profiles.add(profile["profile"])
+        operation = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+        distance = adsk.core.ValueInput.createByReal(max_box_length * self.length)
+        base_extrude = extrudes.addSimple(all_profiles, distance, operation)
+
+        # The largest profile
+        largest_profile = profile_properties[0]["profile"]
+
+        # Then extrude all of the smaller profiles next
+        for profile in profile_properties[1:]:
+            
+            distance_float = max_box_length * self.length * random.uniform(0.15, 0.25)
+
+            # Cut down if we are inside the larger profile
+            if largest_profile.boundingBox.contains(profile["centroid"]) and len(base_extrude.endFaces) > 0:
+                operation = adsk.fusion.FeatureOperations.CutFeatureOperation
+                extrude_input = extrudes.createInput(profile["profile"], operation)
+                distance = adsk.core.ValueInput.createByReal(-distance_float)
+                extent_distance = adsk.fusion.DistanceExtentDefinition.create(distance)
+                taper_angle = adsk.core.ValueInput.createByReal(0)
+                extrude_input.setOneSideExtent(extent_distance, adsk.fusion.ExtentDirections.PositiveExtentDirection, taper_angle)
+
+                # Use the first end face to extrude from
+                entity = base_extrude.endFaces[0]
+                offset_distance = adsk.core.ValueInput.createByReal(0)
+                entity_start_def = adsk.fusion.FromEntityStartDefinition.create(entity, offset_distance)
+                extrude_input.startExtent = entity_start_def
+                extrudes.add(extrude_input)
+            
+            # Else just do a normal extrude and try to join
+            else:
+                operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+                distance = adsk.core.ValueInput.createByReal(distance_float)
+                extrudes.addSimple(profile["profile"], distance, operation)            
 
 
 def run(context):
@@ -132,19 +147,20 @@ def run(context):
         logger = Logger()
         # Fusion requires an absolute path
         current_dir = Path(__file__).resolve().parent
-        data_dir = current_dir.parent / "testdata"
+        data_dir = current_dir.parent / "testdata/sketchdl"
 
         # Get all the files in the data folder
-        json_files = [
-            data_dir / "Couch.json",
-            # data_dir / "Hexagon.json"
-        ]
+        # json_files = [
+        #     data_dir / "wire-00002.json",
+        #     # data_dir / "Hexagon.json"
+        # ]
+        json_files = [f for f in data_dir.glob("*.json")]
 
         json_count = len(json_files)
         for i, json_file in enumerate(json_files, start=1):
             try:
                 logger.log(f"[{i}/{json_count}] Reconstructing {json_file}")
-                reconverter = Reconverter(json_file)
+                reconverter = Reconverter(json_file, logger)
                 reconverter.reconstruct()
                 # At this point the final design
                 # should be available in Fusion
