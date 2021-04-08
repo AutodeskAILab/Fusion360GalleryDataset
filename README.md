@@ -33,7 +33,7 @@ Please cite the relevant paper below if you use the Fusion 360 Gallery dataset i
 ```
 
 #### Segmentation Dataset
-[BRepNet: A topological message passing system for solid models](https://arxiv.org/abs/2010.02392)
+[BRepNet: A topological message passing system for solid models](https://arxiv.org/abs/2104.00706)
 ```
 @inproceedings{lambourne2021brepnet,
  title = {BRepNet: A topological message passing system for solid models},
