@@ -33,14 +33,26 @@ Please cite the relevant paper below if you use the Fusion 360 Gallery dataset i
 ```
 
 #### Segmentation Dataset
-Coming soon...
+[BRepNet: A topological message passing system for solid models](https://arxiv.org/abs/2104.00706)
+```
+@inproceedings{lambourne2021brepnet,
+ title = {BRepNet: A topological message passing system for solid models},
+ author = {Joseph G. Lambourne and Karl D.D. Willis and Pradeep Kumar Jayaraman and Aditya Sanghi and Peter Meltzer and Hooman Shayani},
+ eprint = {2104.00706},
+ eprinttype = {arXiv},
+ eprintclass = {cs.LG},
+ booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+ year = {2021}
+}
+```
 
 ## Download
 
 | Dataset | Designs | Documentation | Download | Paper |
 | - | - | - | - | - |
 | Reconstruction | 8,625 | [Documentation](docs/reconstruction.md) | [r1.0.0 - 2.0 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0.zip) | [Paper](https://arxiv.org/abs/2010.02392) |
-| Segmentation |  35,858 | [Documentation](docs/segmentation.md) | [s1.0.0 - 2.9 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s1.0.0/s1.0.0.zip) | Forthcoming |
+| Segmentation |  35,858 | [Documentation](docs/segmentation.md) | [s1.0.0 - 2.9 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s1.0.0/s1.0.0.zip) | [Paper](https://arxiv.org/abs/2104.00706) |
+
 
 ## Tools
 As part of the dataset we provide various tools for working with the data. These tools leverage the [Fusion 360 API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B5A90C8-E94C-48DA-B16B-430729B734DC) to perform operations such as geometry reconstruction, traversing B-Rep data structures, and conversion to other formats. More information can be found in the [tools directory](tools).
