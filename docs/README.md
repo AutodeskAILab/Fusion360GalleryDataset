@@ -7,11 +7,11 @@ We derive several datasets focused on specific areas of research. The 3D model c
 
 ### [Segmentation Dataset](segmentation.md)
 The Segmentation Dataset contains segmented 3D models based on the modeling operation used to create each face, e.g. Extrude, Fillet, Chamfer etc... 
-![Segmentation Subset](images/segmentation_mosaic.jpg)
+![Segmentation Dataset](images/segmentation_mosaic.jpg)
 
 ### [Reconstruction Dataset](reconstruction.md)
 The Reconstruction Dataset contains construction sequence information from a subset of simple 'sketch and extrude' designs.
-![Reconstruction Subset](images/reconstruction_mosaic.jpg)
+![Reconstruction Dataset](images/reconstruction_mosaic.jpg)
 
 ## Tools
 We provide [tools](../tools) to work with the data using Fusion 360. Full documentation of how to use these tools and write your own is provided in the [tools](../tools) directory.

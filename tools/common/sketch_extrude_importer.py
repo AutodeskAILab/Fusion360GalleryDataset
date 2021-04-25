@@ -1,7 +1,7 @@
 """
 
 Import and reconstruction of sketch and extrude designs
-from the Reconstruction Subset
+from the Reconstruction Dataset
 
 """
 

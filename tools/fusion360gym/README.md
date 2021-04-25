@@ -92,7 +92,7 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 
 
 ### Reconstruction
-Reconstruct entire designs or parts of them from the json files provided with the reconstruction subset.
+Reconstruct entire designs or parts of them from the json files provided with the reconstruction dataset.
 - `reconstruct(file)`: Reconstruct a design from the provided json file
 - `reconstruct_sketch(sketch_data, sketch_plane, scale, translate, rotate)`: Reconstruct a sketch from the provided sketch data
     - `sketch_data`: is the sketch entity data structure from the json data
