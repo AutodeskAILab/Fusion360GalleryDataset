@@ -252,7 +252,7 @@ class CommandSketchExtrusion(CommandBase):
             start_point,
             angle_radians
         )
-        end_point = serialize.point3d(arc.endSketchPoint)
+        end_point = serialize.point3d(arc.endSketchPoint.geometry)
         curve_uuid = name.set_uuid(arc)
         name.set_uuids_for_sketch(sketch)
         profile_data = serialize.sketch_profiles(sketch.profiles)
@@ -268,7 +268,7 @@ class CommandSketchExtrusion(CommandBase):
         })
 
     def __add_circle(self, sketch, sketch_uuid, pt1, radius, transform=None):
-        center_point = deserialize.point3d(pt2)
+        center_point = deserialize.point3d(pt1)
         if transform is not None:
             if isinstance(transform, str):
                 # Transform world coords to sketch coords

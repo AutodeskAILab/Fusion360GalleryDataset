@@ -332,7 +332,7 @@ class Fusion360GymClient():
             return self.__return_error(f"Invalid radius")
         command_data = {
             "sketch_name": sketch_name,
-            "pt1": pt1,
+            "pt": pt1,
             "radius": radius
         }
         if transform is not None:
