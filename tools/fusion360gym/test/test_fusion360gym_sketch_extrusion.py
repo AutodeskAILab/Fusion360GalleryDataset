@@ -92,9 +92,6 @@ class TestFusion360ServerSketchExtrusion(unittest.TestCase):
         self.assertIsInstance(response_data["profiles"], dict, msg="add_line profiles are dict")
         self.assertEqual(len(response_data["profiles"]), 0, msg="add_line profiles length equals 0")
 
-        # self.client.clear()
-        # r = self.client.detach()
-
     def test_add_lines(self):
         self.client.clear()
         r = self.client.add_sketch("XY")
@@ -147,6 +144,63 @@ class TestFusion360ServerSketchExtrusion(unittest.TestCase):
 
         # self.client.clear()
         # r = self.client.detach()
+
+    def test_add_circle(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+        pt1 = {"x": 0, "y": 0}
+        r = self.client.add_circle(sketch_name, pt1, 5)
+        self.assertEqual(r.status_code, 200, msg="add_circle status code")
+        response_json = r.json()
+        self.assertIn("data", response_json, msg="add_circle response has data")
+        response_data = response_json["data"]
+        # sketch_id
+        self.assertIn("sketch_id", response_data, msg="add_circle response has sketch_id")
+        self.assertIsInstance(response_data["sketch_id"], str, msg="add_circle sketch_id is string")
+        # sketch_name
+        self.assertIn("sketch_name", response_data, msg="add_circle response has sketch_name")
+        self.assertIsInstance(response_data["sketch_name"], str, msg="add_circle sketch_name is string")
+        # curve_id
+        self.assertIn("curve_id", response_data, msg="add_circle response has curve_id")
+        self.assertIsInstance(response_data["curve_id"], str, msg="add_circle curve_id is string")
+        self.assertEqual(len(response_data["curve_id"]), 36, msg="add_circle curve_id length equals 36")
+        # profiles
+        self.assertIn("profiles", response_data, msg="add_circle response has profiles")
+        self.assertIsInstance(response_data["profiles"], dict, msg="add_circle profiles are dict")
+        self.assertEqual(len(response_data["profiles"]), 1, msg="add_circle profiles length equals 1")
+
+    def test_add_arc(self):
+        self.client.clear()
+        r = self.client.add_sketch("XY")
+        response_json = r.json()
+        response_data = response_json["data"]
+        sketch_name = response_data["sketch_name"]
+        # Start of arc
+        pt1 = {"x": 10, "y": 0}
+        # Center of arc
+        pt2 = {"x": 0, "y": 0} 
+        r = self.client.add_arc(sketch_name, pt1, pt2, 90)
+        self.assertEqual(r.status_code, 200, msg="add_arc status code")
+        response_json = r.json()
+        self.assertIn("data", response_json, msg="add_arc response has data")
+        response_data = response_json["data"]
+        # sketch_id
+        self.assertIn("sketch_id", response_data, msg="add_arc response has sketch_id")
+        self.assertIsInstance(response_data["sketch_id"], str, msg="add_arc sketch_id is string")
+        # sketch_name
+        self.assertIn("sketch_name", response_data, msg="add_arc response has sketch_name")
+        self.assertIsInstance(response_data["sketch_name"], str, msg="add_arc sketch_name is string")
+        # curve_id
+        self.assertIn("curve_id", response_data, msg="add_arc response has curve_id")
+        self.assertIsInstance(response_data["curve_id"], str, msg="add_arc curve_id is string")
+        self.assertEqual(len(response_data["curve_id"]), 36, msg="add_arc curve_id length equals 36")
+        # profiles
+        self.assertIn("profiles", response_data, msg="add_arc response has profiles")
+        self.assertIsInstance(response_data["profiles"], dict, msg="add_arc profiles are dict")
+        self.assertEqual(len(response_data["profiles"]), 0, msg="add_arc profiles length equals 0")
 
     def test_add_extrude(self):
         self.client.clear()
