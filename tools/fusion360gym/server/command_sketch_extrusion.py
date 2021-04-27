@@ -9,6 +9,7 @@ import adsk.fusion
 import os
 import sys
 import importlib
+import math
 
 from .command_base import CommandBase
 
@@ -63,7 +64,13 @@ class CommandSketchExtrusion(CommandBase):
             })
         state = self.state[sketch.name]
         transform = data["transform"] if "transform" in data else None
-        return self.__add_line(sketch, sketch_uuid, state["last_pt"], data["pt"], transform)
+        return self.__add_line(
+            sketch,
+            sketch_uuid,
+            state["last_pt"],
+            data["pt"],
+            transform
+        )
 
     def add_line(self, data):
         """Add a line to an existing sketch"""
@@ -78,7 +85,57 @@ class CommandSketchExtrusion(CommandBase):
             return self.runner.return_failure("sketch not found")
         sketch_uuid = name.get_uuid(sketch)
         transform = data["transform"] if "transform" in data else None
-        return self.__add_line(sketch, sketch_uuid, data["pt1"], data["pt2"], transform)
+        return self.__add_line(
+            sketch,
+            sketch_uuid,
+            data["pt1"],
+            data["pt2"],
+            transform
+        )
+
+    def add_arc(self, data):
+        """Add an arc to an existing sketch"""
+        if (data is None or "sketch_name" not in data or
+                "pt1" not in data or "pt2" not in data or
+                "angle" not in data):
+            return self.runner.return_failure("add_arc data not specified")
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
+        if sketch is None:
+            return self.runner.return_failure("sketch not found")
+        sketch_uuid = name.get_uuid(sketch)
+        transform = data["transform"] if "transform" in data else None
+        return self.__add_arc(
+            sketch,
+            sketch_uuid,
+            data["pt1"],
+            data["pt2"],
+            data["angle"],
+            transform
+        )
+
+    def add_circle(self, data):
+        """Add a circle to an existing sketch"""
+        if (data is None or "sketch_name" not in data or
+                "pt" not in data or "radius" not in data):
+            return self.runner.return_failure("add_circle data not specified")
+        sketch = match.sketch_by_name(
+            data["sketch_name"],
+            sketches=self.design_state.reconstruction.component.sketches
+        )
+        if sketch is None:
+            return self.runner.return_failure("sketch not found")
+        sketch_uuid = name.get_uuid(sketch)
+        transform = data["transform"] if "transform" in data else None
+        return self.__add_circle(
+            sketch,
+            sketch_uuid,
+            data["pt"],
+            data["radius"],
+            transform
+        )
 
     def close_profile(self, data):
         """Close the current set of lines to create one or more profiles
@@ -101,7 +158,13 @@ class CommandSketchExtrusion(CommandBase):
         if state["last_pt"] is None or state["first_pt"] is None:
             return self.runner.return_failure("sketch end points invalid")
         transform = state["transform"]
-        return self.__add_line(sketch, sketch_uuid, state["last_pt"], state["first_pt"], transform)
+        return self.__add_line(
+            sketch,
+            sketch_uuid,
+            state["last_pt"],
+            state["first_pt"],
+            transform
+        )
 
     def add_extrude(self, data):
         """Add an extrude feature from a sketch"""
@@ -158,6 +221,74 @@ class CommandSketchExtrusion(CommandBase):
             self.__init_sketch_state(sketch.name, pt1, pt2, transform=transform)
         else:
             self.__inc_sketch_state(sketch.name, pt2, transform=transform)
+        return self.runner.return_success({
+            "sketch_id": sketch_uuid,
+            "sketch_name": sketch.name,
+            "curve_id": curve_uuid,
+            "profiles": profile_data
+        })
+
+    def __add_arc(self, sketch, sketch_uuid, pt1, pt2, angle_degrees, transform=None):
+        start_point = deserialize.point3d(pt1)
+        center_point = deserialize.point3d(pt2)
+        angle_radians = math.radians(angle_degrees)
+        if transform is not None:
+            if isinstance(transform, str):
+                # Transform world coords to sketch coords
+                if transform.lower() == "world":
+                    start_point = sketch.modelToSketchSpace(start_point)
+                    center_point = sketch.modelToSketchSpace(center_point)
+            elif isinstance(transform, dict):
+                # For mapping Fusion exported data back correctly
+                xform = deserialize.matrix3d(transform)
+                sketch_transform = sketch.transform
+                sketch_transform.invert()
+                xform.transformBy(sketch_transform)
+                start_point.transformBy(xform)
+                center_point.transformBy(xform)
+
+        arc = sketch.sketchCurves.sketchArcs.addByCenterStartSweep(
+            center_point,
+            start_point,
+            angle_radians
+        )
+        end_point = serialize.point3d(arc.endSketchPoint)
+        curve_uuid = name.set_uuid(arc)
+        name.set_uuids_for_sketch(sketch)
+        profile_data = serialize.sketch_profiles(sketch.profiles)
+        if sketch.name not in self.state:
+            self.__init_sketch_state(sketch.name, pt1, end_point, transform=transform)
+        else:
+            self.__inc_sketch_state(sketch.name, end_point, transform=transform)
+        return self.runner.return_success({
+            "sketch_id": sketch_uuid,
+            "sketch_name": sketch.name,
+            "curve_id": curve_uuid,
+            "profiles": profile_data
+        })
+
+    def __add_circle(self, sketch, sketch_uuid, pt1, radius, transform=None):
+        center_point = deserialize.point3d(pt2)
+        if transform is not None:
+            if isinstance(transform, str):
+                # Transform world coords to sketch coords
+                if transform.lower() == "world":
+                    center_point = sketch.modelToSketchSpace(center_point)
+            elif isinstance(transform, dict):
+                # For mapping Fusion exported data back correctly
+                xform = deserialize.matrix3d(transform)
+                sketch_transform = sketch.transform
+                sketch_transform.invert()
+                xform.transformBy(sketch_transform)
+                center_point.transformBy(xform)
+
+        circle = sketch.sketchCurves.sketchCircles.addByCenterRadius(
+            center_point,
+            radius
+        )
+        curve_uuid = name.set_uuid(circle)
+        name.set_uuids_for_sketch(sketch)
+        profile_data = serialize.sketch_profiles(sketch.profiles)
         return self.runner.return_success({
             "sketch_id": sketch_uuid,
             "sketch_name": sketch.name,
