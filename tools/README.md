@@ -1,5 +1,5 @@
 # Fusion 360 Gallery Dataset Tools
-Here we provide various tools for working with the Fusion 360 Gallery Dataset. Several tools leverage the [Fusion 360 API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B5A90C8-E94C-48DA-B16B-430729B734DC) to perform geometry operations and require Fusion 360 to be installed. 
+Here we provide various tools for working with the Fusion 360 Gallery Dataset, including the CAD reconstruction code used in [our paper](https://arxiv.org/abs/2010.02392). Several tools leverage the [Fusion 360 API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B5A90C8-E94C-48DA-B16B-430729B734DC) to perform geometry operations and require Fusion 360 to be installed. 
 
 ## Getting Started
 Below are some general instructions for getting started setup with Fusion 360. Please refer to the readme provided along with each tool for specific instructions.
@@ -24,9 +24,9 @@ To debug any of tools that use Fusion 360 you need to install [Visual Studio Cod
 
 ## Tools
 - [`Fusion 360 Gym`](fusion360gym): A 'gym' environment for training ML models to design using Fusion 360. 
-- [`Reconverter`](reconverter): Demonstrates how to batch convert the raw data structure provided with the Reconstruction Subset into other representations using Fusion 360.
-- [`Regraph`](regraph): Demonstrates how to create a B-Rep graph data structure from data provided with the Reconstruction Subset using Fusion 360.
-- [`RegraphNet`](regraphnet): A neural network for predicting reconstruction actions.
-- [`Search`](search): A framework for running neurally guided search to recover a construction sequence from B-Rep input. 
+- [`Reconverter`](reconverter): Demonstrates how to batch convert the raw data structure provided with the reconstruction dataset into other representations using Fusion 360.
+- [`Regraph`](regraph): Demonstrates how to create a B-Rep graph data structure from data provided with the reconstruction dataset using Fusion 360.
+- [`RegraphNet`](regraphnet): A neural network for predicting CAD reconstruction actions. This network takes the output from [`Regraph`](regraph) and is the underlying network used with neurally guided search in [our paper](https://arxiv.org/abs/2010.02392).
+- [`Search`](search): A framework for running neurally guided search to recover a construction sequence from B-Rep input. We use this code in [our paper](https://arxiv.org/abs/2010.02392).
 - [`sketch2image`](sketch2image): Convert sketches provided in json format to images using matplotlib.
 

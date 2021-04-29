@@ -180,9 +180,8 @@ class Fusion360GymClient():
             command_data["rotate"] = rotate
         return self.send_command("reconstruct_curve", data=command_data)
 
-
     def reconstruct_curves(self, sketch_data, sketch_name,
-                          scale=None, translate=None, rotate=None):
+                           scale=None, translate=None, rotate=None):
         """Reconstruct all curves from the provided
             sketch data and sketch name"""
         if not isinstance(sketch_data, dict) or not sketch_data:
@@ -267,7 +266,7 @@ class Fusion360GymClient():
         pt1_is_dict = isinstance(pt1, dict)
         if not pt1_is_dict or "x" not in pt1 or "y" not in pt1:
             return self.__return_error(f"Invalid pt1 value")
-        pt2_is_dict = isinstance(pt1, dict)
+        pt2_is_dict = isinstance(pt2, dict)
         if not pt2_is_dict or "x" not in pt2 or "y" not in pt2:
             return self.__return_error(f"Invalid pt2 value")
         if "z" not in pt1:
@@ -286,6 +285,61 @@ class Fusion360GymClient():
                     isinstance(transform, str)):
                 command_data["transform"] = transform
         return self.send_command("add_line", data=command_data)
+
+    def add_arc(self, sketch_name, pt1, pt2, angle, transform=None):
+        """Add an arc to the given sketch"""
+        if not isinstance(sketch_name, str):
+            return self.__return_error(f"Invalid sketch_name")
+        pt1_is_dict = isinstance(pt1, dict)
+        if not pt1_is_dict or "x" not in pt1 or "y" not in pt1:
+            return self.__return_error(f"Invalid pt1 value")
+        pt2_is_dict = isinstance(pt2, dict)
+        if not pt2_is_dict or "x" not in pt2 or "y" not in pt2:
+            return self.__return_error(f"Invalid pt2 value")
+        if "z" not in pt1:
+            pt1["z"] = 0.0
+        if "z" not in pt2:
+            pt2["z"] = 0.0
+        pt1["type"] = "Point3D"
+        pt2["type"] = "Point3D"
+        is_number = isinstance(angle, float) or isinstance(angle, int)
+        if not is_number:
+            return self.__return_error(f"Invalid angle")
+        command_data = {
+            "sketch_name": sketch_name,
+            "pt1": pt1,
+            "pt2": pt2,
+            "angle": angle
+        }
+        if transform is not None:
+            if (isinstance(transform, dict) or
+                    isinstance(transform, str)):
+                command_data["transform"] = transform
+        return self.send_command("add_arc", data=command_data)
+
+    def add_circle(self, sketch_name, pt1, radius, transform=None):
+        """Add a circle to the given sketch"""
+        if not isinstance(sketch_name, str):
+            return self.__return_error(f"Invalid sketch_name")
+        pt1_is_dict = isinstance(pt1, dict)
+        if not pt1_is_dict or "x" not in pt1 or "y" not in pt1:
+            return self.__return_error(f"Invalid pt1 value")
+        if "z" not in pt1:
+            pt1["z"] = 0.0
+        pt1["type"] = "Point3D"
+        is_number = isinstance(radius, float) or isinstance(radius, int)
+        if not is_number:
+            return self.__return_error(f"Invalid radius")
+        command_data = {
+            "sketch_name": sketch_name,
+            "pt": pt1,
+            "radius": radius
+        }
+        if transform is not None:
+            if (isinstance(transform, dict) or
+                    isinstance(transform, str)):
+                command_data["transform"] = transform
+        return self.send_command("add_circle", data=command_data)
 
     def close_profile(self, sketch_name):
         """Close the current set of lines to create one or more profiles
@@ -323,7 +377,7 @@ class Fusion360GymClient():
     # -------------------------------------------------------------------------
 
     def set_target(self, file):
-        """Set the target that we want to reconstruct with a .step or .smt file.
+        """Set the target that we want to reconstruct with a .step or .smt file
             This call will clear the current design"""
         if isinstance(file, str):
             file = Path(file)
@@ -466,7 +520,7 @@ class Fusion360GymClient():
             curve_counts.append(curve_count)
             sketch_areas.append(sketch_area)
         # calculate distributions
-        plane_distribution = [[],[]]
+        plane_distribution = [[], []]
         for plane in plane_counts:
             plane_distribution[0].append(plane)
             plane_distribution[1].append(plane_counts[plane] / sum(plane_counts.values()))
@@ -477,14 +531,16 @@ class Fusion360GymClient():
         body_distribution = self.__get_per_distribution(body_counts, 0, 11, 11, True)
         sketch_area_distribution = self.__get_per_distribution(sketch_areas, 0, 500, 25)
         profile_area_distribution = self.__get_per_distribution(profile_areas, 0, 100, 25)
-        distributions = {"sketch_plane": plane_distribution,
-                        "num_faces": face_distribution,
-                        "num_extrusions": extrusion_distribution, 
-                        "length_sequences": sequence_distribution,
-                        "num_curves": curve_distribution,
-                        "num_bodies": body_distribution,
-                        "sketch_areas": sketch_area_distribution,
-                        "profile_areas": profile_area_distribution}
+        distributions = {
+            "sketch_plane": plane_distribution,
+            "num_faces": face_distribution,
+            "num_extrusions": extrusion_distribution,
+            "length_sequences": sequence_distribution,
+            "num_curves": curve_distribution,
+            "num_bodies": body_distribution,
+            "sketch_areas": sketch_area_distribution,
+            "profile_areas": profile_area_distribution
+        }
         return distributions
 
     def get_distributions_from_json(self, file):
@@ -508,7 +564,11 @@ class Fusion360GymClient():
         sampled_parameters = {}
         if parameters is None:
             for key in distributions:
-                sampled_parameters[key] = np.random.choice(distributions[key][0], 1, p=distributions[key][1])[0]
+                sampled_parameters[key] = np.random.choice(
+                    distributions[key][0],
+                    1,
+                    p=distributions[key][1]
+                )[0]
             return sampled_parameters
         else:
             if not isinstance(parameters, list):
@@ -516,7 +576,11 @@ class Fusion360GymClient():
             for parameter in parameters:
                 if parameter not in self.distribution_categories:
                     return self.__return_error(f"Invalid parameters")
-                sampled_parameters[parameter] = np.random.choice(distributions[parameter][0], 1, p=distributions[parameter][1])[0]
+                sampled_parameters[parameter] = np.random.choice(
+                    distributions[parameter][0],
+                    1,
+                    p=distributions[parameter][1]
+                )[0]
             return sampled_parameters
 
     def sample_design(self, data_dir, filter=True, split_file=None):
@@ -581,7 +645,7 @@ class Fusion360GymClient():
         """sample profiles from the provided sketch"""
         if not isinstance(sketch_data, dict) or not sketch_data:
             return self.__return_error("Sketch data is invalid")
-        if not "profiles" in sketch_data:
+        if "profiles" not in sketch_data:
             return self.__return_error("No profile data in the sketch")
         profiles = sketch_data["profiles"]
         if not isinstance(max_number_profiles, int) or max_number_profiles < 1:
@@ -590,8 +654,9 @@ class Fusion360GymClient():
             num_sampled_profiles = max_number_profiles
         else:
             num_sampled_profiles = len(profiles)
-        if not sampling_type == "random" and not sampling_type == "deterministic" and \
-            not sampling_type == "distributive":
+        if not sampling_type == "random" and \
+           not sampling_type == "deterministic" and \
+           not sampling_type == "distributive":
             return self.__return_error("Invalid sampling type")
         if sampling_type == "random":
             profile_objects = list(profiles.values())
@@ -610,7 +675,7 @@ class Fusion360GymClient():
                 if profile_areas[profile_id] >= average_area:
                     filtered_profile_areas[profile_id] = profile_areas[profile_id]
             sorted_profile_areas = {k: v for k, v in sorted(filtered_profile_areas.items(), key=lambda item: item[1], reverse=True)}
-            # retrun the sampled profiles 
+            # retrun the sampled profiles
             sampled_profiles = []
             index = 0
             for profile_id in sorted_profile_areas:
@@ -630,7 +695,7 @@ class Fusion360GymClient():
                 profile_areas[profile_id] = profile_object["properties"]["area"]
                 if profile_object["properties"]["area"] > sampled_area:
                     filtered_profile_areas[profile_id] = profile_object["properties"]["area"]
-            # if no qualified profiles, sample the profiles in descending order 
+            # if no qualified profiles, sample the profiles in descending order
             if len(filtered_profile_areas) > 0:
                 sorted_profile_areas = {k: v for k, v in sorted(filtered_profile_areas.items(), key=lambda item: item[1], reverse=True)}
             else:
@@ -673,7 +738,7 @@ class Fusion360GymClient():
         return json_files
 
     def __get_per_distribution(self, data, range_min, range_max, num_bins, shift=False):
-        np_counts, np_bins = np.histogram(data, num_bins, range=(range_min,range_max))
+        np_counts, np_bins = np.histogram(data, num_bins, range=(range_min, range_max))
         if not shift:
             np_bins = np.delete(np_bins, 0)
         else:

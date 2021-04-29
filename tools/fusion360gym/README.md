@@ -92,7 +92,7 @@ Note that when returning binary data (e.g. mesh, brep) the above keys will not b
 
 
 ### Reconstruction
-Reconstruct entire designs or parts of them from the json files provided with the reconstruction subset.
+Reconstruct entire designs or parts of them from the json files provided with the reconstruction dataset.
 - `reconstruct(file)`: Reconstruct a design from the provided json file
 - `reconstruct_sketch(sketch_data, sketch_plane, scale, translate, rotate)`: Reconstruct a sketch from the provided sketch data
     - `sketch_data`: is the sketch entity data structure from the json data
@@ -148,16 +148,31 @@ Incrementally create designs by generating the underlying sketch primitives and 
         - B-Rep planar face id
         - point3d on a planar face of a B-Rep
     - Returns the `sketch_name` and `sketch_id`.
-- `add_point(sketch_name, p1, transform)`: Add a point to create a new sequential line in the given sketch
+- `add_point(sketch_name, p, transform)`: Add a point to create a new sequential line in the given sketch
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
-    - `p1`: a point in sketch space 2D coords in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords
+    - `p`: a point in sketch space 2D coords in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords
     - `transform` (optional): the transform for the sketch (necessary if you are replaying json data exported from Fusion) or a string `world` denoting use of world coordinates.
     - Returns the sketch `profiles` or an empty dict if there are no `profiles`. Note that profile uuid returned is only valid while the design does not change.
 - `add_line(sketch_name, p1, p2, transform)`: Adds a line to the given sketch. 
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
-    - `p1` and `p2`: are sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords
+    - `p1`: Start point. Passed in sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords.
+    - `p2`: End point. Passed in sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords.
     - `transform` (optional): the transform for the sketch (necessary if you are replaying json data exported from Fusion) or a string `world` denoting use of world coordinates.
     - Returns the sketch profiles or an empty dict if there are no profiles. Note that profile uuid returned is only valid while the design does not change.
+- `add_arc(sketch_name, p1, p2, angle, transform)`: Adds an arc to the given sketch. 
+    - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
+    - `p1`: Start point of the arc. Passed in sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords.
+    - `p2`: Center point of the arc. Passed in sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords.
+    - `angle`: The sweep angle of the arc. This is defined in degrees with a positive value creating a counter-clockwise sweep.
+    - `transform` (optional): the transform for the sketch (necessary if you are replaying json data exported from Fusion) or a string `world` denoting use of world coordinates.
+    - Returns the sketch profiles or an empty dict if there are no profiles. Note that profile uuid returned is only valid while the design does not change.
+- `add_circle(sketch_name, p, radius, transform)`: Adds a circle to the given sketch. 
+    - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
+    - `p`: Center point of the circle. Passed in sketch space 2D coords of the line in a dict e.g. `{"x": 0, "y": 0}` or 3D coords if `transform="world"` is specified, indicating use of world coords.
+    - `radius`: The radius of the circle.
+    - `transform` (optional): the transform for the sketch (necessary if you are replaying json data exported from Fusion) or a string `world` denoting use of world coordinates.
+    - Returns the sketch profiles or an empty dict if there are no profiles. Note that profile uuid returned is only valid while the design does not change.    
+
 - `close_profile(sketch_name)`: Close the current set of lines to create one or more profiles by joining the first point to the last point
     - `sketch_name`: is the string name of the sketch returned by `add_sketch()`
 - `add_extrude(sketch_name, profile_id, distance, operation)`: Add an extrude to the design

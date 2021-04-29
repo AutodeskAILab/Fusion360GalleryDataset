@@ -20,7 +20,7 @@ For further details on the method, please refer to [our paper](https://arxiv.org
     - `torch_geometric` tested with 1.6.1
     - `numpy` tested with 1.18.1
     - `scipy` tested with 1.4.1
-
+2. Prepare data using [Regraph](../regraph) or [download the pre-processed data](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/regraph_05.zip) used for training in the paper.
 
 ## Training
 Launch by running [`train.py`](./src/train.py) from the `src` directory run:
@@ -37,7 +37,7 @@ python inference.py
 ### Arguments
 The full list of arguments is as follows:
 - `--no-cuda`: Train on CPU [default: False]
-- `--dataset`: Folder name of the supervised dataset
+- `--dataset`: Folder name of the supervised dataset created with [Regraph](../regraph)
 - `--split` (optional): Train/test split file, as provided with the reconstruction dataset, to run only test files from the input folder
 - `--no_gcn`: Use the MLP network instead of MPN [default: False]
 - `--only_augment`: Train using only the augmented data [default: False]

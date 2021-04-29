@@ -64,7 +64,7 @@ class CommandRunner():
             elif command == "reconstruct_curve":
                 result = self.reconstruct.reconstruct_curve(data)
             elif command == "reconstruct_curves":
-                result = self.reconstruct.reconstruct_curves(data)                
+                result = self.reconstruct.reconstruct_curves(data)
             elif command == "clear":
                 result = self.design_state.clear()
             elif command == "mesh":
@@ -83,6 +83,10 @@ class CommandRunner():
                 result = self.sketch_extrusion.add_point(data)
             elif command == "add_line":
                 result = self.sketch_extrusion.add_line(data)
+            elif command == "add_arc":
+                result = self.sketch_extrusion.add_arc(data)
+            elif command == "add_circle":
+                result = self.sketch_extrusion.add_circle(data)
             elif command == "close_profile":
                 result = self.sketch_extrusion.close_profile(data)
             elif command == "add_extrude":
