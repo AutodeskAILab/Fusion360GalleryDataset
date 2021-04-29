@@ -23,7 +23,7 @@ parser.add_argument("--output", type=str, help="Folder to save the output logs t
 parser.add_argument("--screenshot", dest="screenshot", default=False, action="store_true", help="Save screenshots during reconstruction [default: False]")
 parser.add_argument("--launch_gym", dest="launch_gym", default=False, action="store_true",
                     help="Launch the Fusion 360 Gym automatically, requires the gym to be set to run on startup [default: False]")
-parser.add_argument("--agent", type=str, default="rand", help="Agent to use, can be rand, gcn, gat, gin, or mlp [default: rand]")
+parser.add_argument("--agent", type=str, default="rand", choices=["rand", "gcn", "gat", "gin", "mlp"], help="Agent to use, can be rand, gcn, gat, gin, or mlp [default: rand]")
 parser.add_argument("--search", type=str, default="rand", help="Search to use, can be rand, beam or best [default: rand]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
 parser.add_argument("--synthetic_data", type=str, help="Type of synthetic data to use, can be aug, semisyn, or syn")
