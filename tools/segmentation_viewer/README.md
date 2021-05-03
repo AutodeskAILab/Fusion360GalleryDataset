@@ -1,6 +1,8 @@
 # Segmentation Viewer
 
-The easiest way to view the segmentation dataset is by visualizing the `.obj` files with the triangles colored according to the segment index values n the .seg files.   A very small example utility to do this is provided in [segmentation_viewer.py](tools/segmentation_viewer/segmentation_viewer.py). 
+The easiest way to view the segmentation dataset is by visualizing the `.obj` files with the triangles colored according to the segment index values in the `.seg` files.   A very small example utility to do this is provided in [segmentation_viewer.py](tools/segmentation_viewer/segmentation_viewer.py). 
+
+<img src="https://i.gyazo.com/4b6b076190dc775f62cf8fb903f5a6cb.png" alt="Example Segmentation" />
 
 ## Setup
 Install requirements:
@@ -9,10 +11,10 @@ Install requirements:
    - `igl`
 
 ## Notebook
-An example of using the segmentation viewer is included in this [jupyter notebook](tools/segmentation_viewer/segmentation_viewer_demo.ipynb).
+An example of using the segmentation viewer is included in this [jupyter notebook](segmentation_viewer_demo.ipynb).
 
 ## Extracting html files for every example in the dataset
-Alternatively you may find it useful to extract an html view for each file in the dataset.   The mesh and associated segmentation are then shown in threesj.   To extract the html data then run the segmentation viewer as follows.
+Alternatively you may find it useful to extract an html view for each file in the dataset.   The mesh and associated segmentation are then shown in threejs.   To extract the html data run the segmentation viewer as follows.
 
 ```
 python -m tools.segmentation_viewer.segmentation_viewer \
