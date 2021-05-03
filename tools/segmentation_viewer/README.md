@@ -2,7 +2,7 @@
 
 The easiest way to view the segmentation dataset is by visualizing the `.obj` files with the triangles colored according to the segment index values in the `.seg` files.   A very small example utility to do this is provided in [segmentation_viewer.py](tools/segmentation_viewer/segmentation_viewer.py). 
 
-<img src="https://i.gyazo.com/4b6b076190dc775f62cf8fb903f5a6cb.png" alt="Example Segmentation" />
+<img src="https://i.gyazo.com/4b6b076190dc775f62cf8fb903f5a6cb.png" alt="Example Segmentation" width="400"/>
 
 ## Setup
 Install requirements:
