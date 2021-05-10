@@ -8,44 +8,98 @@ import argparse
 import numpy as np
 import scipy.sparse as sp
 from tqdm import tqdm
-
+import math
 
 import torch
 import torch.nn as nn
+from torch.nn import Sequential,Linear,ReLU
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from models.model_gcn import GCN
+from torch_geometric.nn import GATConv,GINConv,GCNConv,global_add_pool
+
+class GCN(torch.nn.Module):
+    def __init__(self,nhid,dropout):
+        super(GCN,self).__init__()
+        self.conv1=GCNConv(nhid,nhid)
+        self.conv2=GCNConv(nhid,nhid)
+        self.dropout=dropout
+
+    def forward(self,x,edges_idx):
+        x=F.relu(self.conv1(x,edges_idx))
+        x=F.dropout(x,p=self.dropout,training=self.training)
+        x=self.conv2(x,edges_idx)
+        return x
+
+class GAT(torch.nn.Module):
+    def __init__(self,nhid,dropout):
+        super(GAT,self).__init__()
+        self.conv1=GATConv(nhid,nhid//8,heads=8,dropout=dropout)
+        self.conv2=GATConv(nhid,nhid//8,heads=8,dropout=dropout)
+        self.dropout=dropout
+
+    def forward(self,x,edges_idx):
+        x=F.dropout(x,p=self.dropout,training=self.training)
+        x=F.elu(self.conv1(x,edges_idx))
+        x=F.dropout(x,p=self.dropout,training=self.training)
+        x=self.conv2(x,edges_idx)
+        return x
+
+class GIN(torch.nn.Module):
+    def __init__(self,nhid,dropout):
+        super(GIN,self).__init__()
+        num_features,dim=nhid,nhid
+        self.dropout=dropout
+        nn1=Sequential(Linear(num_features,dim),ReLU(),Linear(dim,dim))
+        self.conv1=GINConv(nn1)
+        nn2=Sequential(Linear(dim,dim),ReLU(),Linear(dim,dim))
+        self.conv2=GINConv(nn2)
+        self.fc1=Linear(dim,dim)
+
+    def forward(self,x,edges_idx):
+        x=F.relu(self.conv1(x,edges_idx))
+        x=F.relu(self.conv2(x,edges_idx))
+        x=F.relu(self.fc1(x))
+        x=F.dropout(x,p=self.dropout,training=self.training)
+        return x
 
 class NodePointer(nn.Module):
-    def __init__(self,nfeat,nhid,dropout=0.0,Use_GCN=True):
+    def __init__(self,nfeat,nhid,dropout=0.0,MPN_type='GAT'):
         super(NodePointer,self).__init__()
-        self.Use_GCN=Use_GCN
+        self.MPN_type=MPN_type
+        assert(MPN_type in ['GAT','GIN','GCN','MLP'])
         self.nhid=nhid
-        if Use_GCN:
-            self.fc00=nn.Linear(nfeat,nhid)
-            self.fc01=nn.Linear(nhid,nhid)
-            self.fc10=nn.Linear(nfeat,nhid)
-            self.fc11=nn.Linear(nhid,nhid)
-            self.fc20=nn.Linear(nfeat*2,nhid)
-            self.fc21=nn.Linear(nhid,nhid)
-            self.gcn0=GCN(nfeat=nhid,nhid=nhid,dropout=dropout)
-            self.gcn1=GCN(nfeat=nhid,nhid=nhid,dropout=dropout)
-            self.gcn2=GCN(nfeat=nhid,nhid=nhid,dropout=dropout)
-            self.fc02=nn.Linear(nhid,nhid)
-            self.fc03=nn.Linear(nhid,nhid)
-            self.fc12=nn.Linear(nhid,nhid)
-            self.fc13=nn.Linear(nhid,nhid)
-            self.fc22=nn.Linear(nhid,nhid)
-            self.fc23=nn.Linear(nhid,nhid)
-        else:
-            self.fc00=nn.Linear(nfeat,nhid)
-            self.fc01=nn.Linear(nhid,nhid)
-            self.fc10=nn.Linear(nfeat,nhid)
-            self.fc11=nn.Linear(nhid,nhid)
-            self.fc20=nn.Linear(nfeat*2,nhid)
-            self.fc21=nn.Linear(nhid,nhid)
+        if MPN_type=='GAT':
+            self.mpn0=GAT(nhid,dropout)
+            self.mpn1=GAT(nhid,dropout)
+            self.mpn2=GAT(nhid,dropout)
+        elif MPN_type=='GIN':
+            self.mpn0=GIN(nhid,dropout)
+            self.mpn1=GIN(nhid,dropout)
+            self.mpn2=GIN(nhid,dropout)
+        elif MPN_type=='GCN':
+            self.mpn0=GCN(nhid,dropout)
+            self.mpn1=GCN(nhid,dropout)
+            self.mpn2=GCN(nhid,dropout)
+        elif MPN_type=='MLP':
+            self.mpn0=nn.Linear(nhid,nhid)
+            self.mpn1=nn.Linear(nhid,nhid)
+            self.mpn2=nn.Linear(nhid,nhid)
+
+        self.fc00=nn.Linear(nfeat,nhid)
+        self.fc01=nn.Linear(nhid,nhid)
+        self.fc10=nn.Linear(nfeat,nhid)
+        self.fc11=nn.Linear(nhid,nhid)
+        self.fc20=nn.Linear(nfeat*2,nhid)
+        self.fc21=nn.Linear(nhid,nhid)
+        self.fc02=nn.Linear(nhid,nhid)
+        self.fc03=nn.Linear(nhid,nhid)
+        self.fc12=nn.Linear(nhid,nhid)
+        self.fc13=nn.Linear(nhid,nhid)
+        self.fc22=nn.Linear(nhid,nhid)
+        self.fc23=nn.Linear(nhid,nhid)
+
         self.fc_operation=nn.Linear(nhid,5)
         self.fc0=nn.Linear(nhid*2,nhid*2)
         self.fc1=nn.Linear(nhid*2,nhid*2)
@@ -60,36 +114,37 @@ class NodePointer(nn.Module):
         for m in self.modules():
             if isinstance(m,nn.Linear):
                 torch.nn.init.xavier_uniform_(m.weight)
-                m.bias.data.fill_(0.00)
+                try:
+                    m.bias.data.fill_(0.00)
+                except:
+                    print('default init')
 
     def forward(self,gpf,use_gpu=True):
         x2=torch.cat((gpf[1],gpf[1][gpf[4],:].repeat(gpf[1].size()[0],1)),dim=1)
-        if self.Use_GCN:
-            x0=F.relu(self.fc01(F.relu(self.fc00(gpf[1]))))
-            x0=self.gcn0(x0,gpf[0])
-            x0=F.relu(self.fc03(F.relu(self.fc02(x0))))
-            x2=F.relu(self.fc21(F.relu(self.fc20(x2))))
-            x2=self.gcn2(x2,gpf[0])
-            x2=F.relu(self.fc23(F.relu(self.fc22(x2))))
-            if gpf[2].size()[0]==0:
-                if use_gpu:
-                    x1=torch.zeros((1,self.nhid)).cuda()
-                else:
-                    x1=torch.zeros((1,self.nhid))
-            else:
-                x1=F.relu(self.fc11(F.relu(self.fc10(gpf[3]))))
-                x1=self.gcn1(x1,gpf[2])
-                x1=F.relu(self.fc13(F.relu(self.fc12(x1))))
+        x0=F.relu(self.fc01(F.relu(self.fc00(gpf[1]))))
+        if self.MPN_type=='MLP':
+            x0=self.mpn0(x0)
         else:
-            x0=F.relu(self.fc01(F.relu(self.fc00(gpf[1]))))
-            x2=F.relu(self.fc21(F.relu(self.fc20(x2))))
-            if gpf[2].size()[0]==0:
-                if use_gpu:
-                    x1=torch.zeros((1,self.nhid)).cuda()
-                else:
-                    x1=torch.zeros((1,self.nhid))
+            x0=self.mpn0(x0,gpf[0])
+        x0=F.relu(self.fc03(F.relu(self.fc02(x0))))
+        x2=F.relu(self.fc21(F.relu(self.fc20(x2))))
+        if self.MPN_type=='MLP':
+            x2=self.mpn2(x2)
+        else:
+            x2=self.mpn2(x2,gpf[0])
+        x2=F.relu(self.fc23(F.relu(self.fc22(x2))))
+        if gpf[2].size()[0]==0:
+            if use_gpu:
+                x1=torch.zeros((1,self.nhid)).cuda()
             else:
-                x1=F.relu(self.fc11(F.relu(self.fc10(gpf[3]))))
+                x1=torch.zeros((1,self.nhid))
+        else:
+            x1=F.relu(self.fc11(F.relu(self.fc10(gpf[3]))))
+            if self.MPN_type=='MLP':
+                x1=self.mpn1(x1)
+            else:
+                x1=self.mpn1(x1,gpf[2])
+            x1=F.relu(self.fc13(F.relu(self.fc12(x1))))
         x1=torch.sum(x1,dim=0,keepdim=True).repeat(x0.size()[0],1)
         op=self.fc_operation(x1[0:1,:])
         x=torch.cat((x0,x1),dim=1)
@@ -123,7 +178,7 @@ def load_dataset(args):
         aug_dir_list=os.listdir(aug_dataset_path)
         aug_seqs=[x[:-14] for x in aug_dir_list if (x.endswith('_sequence.json'))]
         seqs.extend(aug_seqs)
-        dir_list.extend(aug_dir_list)  
+        dir_list.extend(aug_dir_list)
     # Check if this is a full path to a valid file
     if os.path.isfile(args.split):
         split_file=args.split
@@ -160,25 +215,25 @@ def load_dataset(args):
 #         assert(len(data_seq['sequence'])==seqs_num_step[seq])
         with open('%s/%s'%(alt_dataset_path,data_seq['sequence'][-1]['graph'])) as json_data:
             data_tar=json.load(json_data)
-        adj_tar,features_tar=format_graph_data(data_tar,bbox)
+        edges_idx_tar,features_tar=format_graph_data(data_tar,bbox)
         node_names_tar=[x['id'] for x in data_tar['nodes']]
         for sid,step in enumerate(data_seq['sequence']):
             if sid==0:
-                adj_cur,features_cur=torch.zeros((0)),torch.zeros((0))
+                edges_idx_cur,features_cur=torch.zeros((0)),torch.zeros((0))
             else:
                 with open('%s/%s'%(alt_dataset_path,data_seq['sequence'][sid-1]['graph'])) as json_data:
                     data_cur=json.load(json_data)
-                adj_cur,features_cur=format_graph_data(data_cur,bbox)
+                edges_idx_cur,features_cur=format_graph_data(data_cur,bbox)
             label_start_now=[node_names_tar.index(step['start_face'])]
             label_end_now=[node_names_tar.index(step['end_face'])]
             label_action_now=[action_type_dict[step['operation']]]
             label_start_now=torch.LongTensor(label_start_now)
             label_end_now=torch.LongTensor(label_end_now)
             label_action_now=torch.LongTensor(label_action_now)
-            graph_pairs_formatted.append([adj_tar,features_tar,adj_cur,features_cur,label_start_now,label_end_now,label_action_now,seq,sid])
+            graph_pairs_formatted.append([edges_idx_tar,features_tar,edges_idx_cur,features_cur,label_start_now,label_end_now,label_action_now,seq,sid])
             counter[0]+=1
             counter[1]+=len(node_names_tar)
-            counter[2]+=adj_tar.shape[0]
+            counter[2]+=features_tar.shape[0]
     print('total graph pairs: %d, total nodes: %d - %d'%(counter[0],counter[1],counter[2]))
     return graph_pairs_formatted
 
@@ -218,30 +273,16 @@ def format_graph_data(data,bbox):
         idx2=node_names.index(link['target'])
         edges_from.append(idx1)
         edges_to.append(idx2)
-    adj=build_adjacency_matrix(len(node_names),edges_from,edges_to)
+    edges_idx=torch.tensor([edges_from,edges_to])
+    '''adj=build_adjacency_matrix(len(node_names),edges_from,edges_to)
     adj=normalize(adj+sp.eye(adj.shape[0]))
-    adj=sparse_mx_to_torch_sparse_tensor(adj)
-    return adj,features
+    adj=sparse_mx_to_torch_sparse_tensor(adj)'''
+    return edges_idx,features
 
 def build_adjacency_matrix(num_nodes,edges_from,edges_to):
     adj=sp.coo_matrix((np.ones(len(edges_from)),(edges_from,edges_to)),shape=(num_nodes,num_nodes),dtype=np.float32)
     adj=adj+adj.T.multiply(adj.T>adj)-adj.multiply(adj.T>adj)
     return adj
-
-def normalize(mx):
-    rowsum=np.array(mx.sum(1))
-    r_inv=np.power(rowsum,-1).flatten()
-    r_inv[np.isinf(r_inv)]=0.
-    r_mat_inv=sp.diags(r_inv)
-    mx=r_mat_inv.dot(mx)
-    return mx
-
-def sparse_mx_to_torch_sparse_tensor(sparse_mx):
-    sparse_mx=sparse_mx.tocoo().astype(np.float32)
-    indices=torch.from_numpy(np.vstack((sparse_mx.row,sparse_mx.col)).astype(np.int64))
-    values=torch.from_numpy(sparse_mx.data)
-    shape=torch.Size(sparse_mx.shape)
-    return torch.sparse.FloatTensor(indices,values,shape)
 
 def accuracy(acc,output,labels):
     preds=output.max(1)[1].type_as(labels)
@@ -265,7 +306,7 @@ def accuracy_overall(acc_all,output0,output1,output2,labels0,labels1,labels2):
 
 def train_test(graph_pairs_formatted,args):
     results=[]
-    exp_name=f'model_{time.strftime("%Y-%m-%d_%H-%M-%S",time.localtime())}'
+    exp_name=f'model_{args.mpn}_{time.strftime("%Y-%m-%d_%H-%M-%S",time.localtime())}'
     if args.exp_name is not None:
         exp_name = args.exp_name
     # Check if this is a full path to a valid file
@@ -365,7 +406,7 @@ if __name__=="__main__":
     # args
     parser=argparse.ArgumentParser()
     parser.add_argument('--no-cuda',action='store_true',default=False,help='Disables CUDA training.')
-    parser.add_argument('--dataset',type=str,default='RegraphPerFace_04',help='Dataset name.')
+    parser.add_argument('--dataset',type=str,default='RegraphPerFace_05',help='Dataset name.')
     parser.add_argument('--split',type=str,default='train_test',help='Split name.')
     parser.add_argument('--seed',type=int,default=42,help='Random seed.')
     parser.add_argument('--epochs',type=int,default=100,help='Number of epochs to train.')
@@ -373,13 +414,12 @@ if __name__=="__main__":
     parser.add_argument('--weight_decay',type=float,default=5e-4,help='Weight decay (L2 loss on parameters).')
     parser.add_argument('--hidden',type=int,default=256,help='Number of hidden units.')
     parser.add_argument('--dropout',type=float,default=0.1,help='Dropout rate.')
-    parser.add_argument('--no_gcn',action='store_true',default=False,help='Use GCN.')
+    parser.add_argument('--mpn',type=str,default='GCN',help='GAT or GIN or GCN or MLP')
     parser.add_argument('--augment',type=str,help='Directory for augmentation data.')
     parser.add_argument('--only_augment',dest='only_augment',default=False,action='store_true',help='Train with only augmented data')
     parser.add_argument('--exp_name',type=str,help='Name of the experiment. Used for the checkpoint and log files.')
     args=parser.parse_args()
     args.cuda=not args.no_cuda and torch.cuda.is_available()
-    args.gcn=not args.no_gcn
     # seed
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -387,7 +427,7 @@ if __name__=="__main__":
         torch.cuda.manual_seed(args.seed)
     # data and model
     graph_pairs_formatted=load_dataset(args)
-    model=NodePointer(nfeat=graph_pairs_formatted[0][1].size()[1],nhid=args.hidden,dropout=args.dropout,Use_GCN=args.gcn)
+    model=NodePointer(nfeat=graph_pairs_formatted[0][1].size()[1],nhid=args.hidden,dropout=args.dropout,MPN_type=args.mpn)
     optimizer=optim.Adam(model.parameters(),lr=args.lr)
     scheduler=ReduceLROnPlateau(optimizer,'min')
     # cuda

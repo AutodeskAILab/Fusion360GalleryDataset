@@ -18,14 +18,14 @@ def load_graph_pair(path_tar,path_cur,bbox):
     operation_names=['JoinFeatureOperation','CutFeatureOperation','IntersectFeatureOperation','NewBodyFeatureOperation','NewComponentFeatureOperation']
     with open(path_tar) as json_data:
         data_tar=json.load(json_data)
-    adj_tar,features_tar=format_graph_data(data_tar,bbox)
+    edges_idx_tar,features_tar=format_graph_data(data_tar,bbox)
     if not path_cur:
-        adj_cur,features_cur=torch.zeros((0)),torch.zeros((0))
+        edges_idx_cur,features_cur=torch.zeros((0)),torch.zeros((0))
     else:
         with open(path_cur) as json_data:
             data_cur=json.load(json_data)
-        adj_cur,features_cur=format_graph_data(data_cur,bbox)
-    graph_pair_formatted=[adj_tar,features_tar,adj_cur,features_cur]
+        edges_idx_cur,features_cur=format_graph_data(data_cur,bbox)
+    graph_pair_formatted=[edges_idx_tar,features_tar,edges_idx_cur,features_cur]
     node_names=[x['id'] for x in data_tar['nodes']]
     return graph_pair_formatted,node_names,operation_names
 
@@ -69,11 +69,15 @@ if __name__=="__main__":
     parser=argparse.ArgumentParser()
     parser.add_argument('--no-cuda',action='store_true',default=True,help='Disables CUDA training.')
     parser.add_argument('--dataset',type=str,default='data',help='Dataset name.')
+    parser.add_argument('--mpn',type=str,default='GCN',help='GAT or GIN or GCN or MLP')
     args=parser.parse_args()
     args.cuda=not args.no_cuda and torch.cuda.is_available()
     # load model
-    model=NodePointer(nfeat=708,nhid=256)
-    checkpoint_file='../ckpt/model_mpn.ckpt'
+    model=NodePointer(nfeat=708,nhid=256,MPN_type=args.mpn)
+    model_parameters=filter(lambda p: p.requires_grad, model.parameters())
+    params=sum([np.prod(p.size()) for p in model_parameters])
+    print('Number params: ',params)
+    checkpoint_file='../ckpt/model_%s.ckpt'%(args.mpn)
     if args.cuda:
         model.load_state_dict(torch.load(checkpoint_file))
         model.cuda()
