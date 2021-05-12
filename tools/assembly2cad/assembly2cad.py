@@ -21,9 +21,6 @@ def run(context):
         app = adsk.core.Application.get()
         ui  = app.userInterface
         assembly_file = Path(os.path.join(os.path.dirname(__file__), "assembly_data/assembly.json")) 
-        if not assembly_file.exists():
-            ui.messageBox('assembly_data/assembly.json is missing')
-            return
         assembly_importer = AssemblyImporter(assembly_file)
         assembly_importer.reconstruct()
         reconstructed_file = Path(os.path.join(os.path.dirname(__file__), "reconstructed.f3d"))

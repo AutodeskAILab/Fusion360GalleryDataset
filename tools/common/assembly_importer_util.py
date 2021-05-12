@@ -6,24 +6,39 @@ import glob
 from pathlib import Path
 import deserialize
 
+class AssemblyImporterException(Exception):
+    """Raised when something goes wrong with AssemblyImporter"""
+    pass
 
 class AssemblyImporter():
-    """Reconstruct a model based on assembly json and stp files"""
+    """Reconstruct a model based on assembly json and smt files"""
 
     def __init__(self, assembly_file):
+        """
+            Assembly Importer Connstructor receives one mandatory parameter
+            Parameters:
+            assembly_file  - Path - path type from pathlib library 
+        """
         self.assembly_file = assembly_file
-        self.app = adsk.core.Application.get()
-        self.body_proxy_id_map = {}
-        self.joint_origin_id_map = {}
-        self.comp_id_map = {}
-        self.occ_id_map = {}
-        self.occurrences_affected = {}
-        with open(assembly_file, "r", encoding="utf-8") as f:
-            self.assembly_data = json.load(f)
-
-        product = self.app.activeProduct
+        app = adsk.core.Application.get()
+        product = app.activeProduct
         self.design = adsk.fusion.Design.cast(product)
         self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
+        # memoize vars ----------------->
+        self.body_proxy_id_map = {}
+        self.joint_origin_id_map = {}
+        # hash map for quick components retrieval. 
+        self.comp_id_map = {}
+        # hash map for quick occurrences retrieval. 
+        self.occ_id_map = {}
+        # we will have a record on occurrences affected by joints definition
+        # it is possible that its transform changed by the joint
+        self.occurrences_affected = {}
+        # memoize vars ----------------->
+        if not assembly_file.exists():
+            raise AssemblyImporterException("Assembly file is missing")
+        with open(assembly_file, "r", encoding="utf-8") as f:
+            self.assembly_data = json.load(f)
     
     def get_uuid(self, entity):
         uuid_att = entity.attributes.itemByName("Dataset", "uuid")
@@ -39,20 +54,28 @@ class AssemblyImporter():
 
 
     def reconstruct(self):
+        """
+            Starts model recostruction using as a reference
+            the path of self.assembly_file
+        """
         derivatives_folder = self.assembly_file.parent
-        derivatives_path_files = [Path(f) for f in glob.glob(
-            str(derivatives_folder) + "**/*.smt")]
+        derivatives_path_files = [Path(f) for f in glob.glob(str(derivatives_folder) + "**/*.smt")]
+        if len(derivatives_path_files) == 0:
+            raise AssemblyImporterException("smt files are missing")
         root_key = self.get_root_key()
         root_bodies = self.assembly_data["root"].get("bodies", {})
         root_component = self.design.rootComponent
         self.set_uuid(root_component, root_key)
         self.comp_id_map[root_key] = root_component
         # First reconstruct the bodies that are located at root component level
-        self.reconstruct_bodies_at_comp_level(
-            root_component, derivatives_path_files, root_bodies)
+        self.reconstruct_bodies_at_comp_level(root_component, derivatives_path_files, root_bodies)
 
-        self.start(derivatives_path_files,
-                   root_component, self.assembly_data["tree"]["root"], self.assembly_data["occurrences"])
+        self.start_tree_reconstruction(derivatives_path_files,
+                                        root_component, 
+                                        self.assembly_data["tree"]["root"], 
+                                        parent_occ=None,
+                                        occ_branch=[],
+                                        components_reconstructed={})
 
         # Joints are part of parametric design
         self.design.designType = adsk.fusion.DesignTypes.ParametricDesignType
@@ -65,6 +88,10 @@ class AssemblyImporter():
                 return key
 
     def import_single_brep_to_target(self, temp_brep_mgr, breps):
+        """
+            this function will put together an array of breps
+            using a boolean operation
+        """
         new_body = temp_brep_mgr.copy(breps[0])
         for i, body in enumerate(breps):
             if i == 0:
@@ -73,25 +100,27 @@ class AssemblyImporter():
         return new_body
 
     def import_smt_to_target(self, target, smt_file, body_key, body_value):
+        """
+            Import smt first as a temporal brep and then add it to the component
+            createFromFile function may return more than one brep, meaning that 
+            one smt file could contain two or more breps.
+        """
         temp_brep_mgr = adsk.fusion.TemporaryBRepManager.get()
         breps = temp_brep_mgr.createFromFile(str(smt_file))
         if len(breps) > 1:
+            # turn multiple breps into a single one by joining them
             brep = self.import_single_brep_to_target(temp_brep_mgr, breps)
         elif len(breps) == 1:
             brep = breps[0]
         else:
             raise Exception(f'No Bodies present in {smt_file} file')
         new_brep = target.bRepBodies.add(brep)
+        # use assembly file information to set properties in the newly body added
         new_brep.isLightBulbOn = body_value["is_visible"]
         self.set_uuid(new_brep, body_key)
 
-    def reconstruct_bodies_at_comp_level(self, component,
-                                         derivatives_path_files,
-                                         bodies_to_import, is_root=True,
-                                         occ_from_comp=None):
+    def reconstruct_bodies_at_comp_level(self, component, derivatives_path_files, bodies_to_import):
         """Import all smt bodies that belongs to that component
-            All bodies have its own component, so we copy and paste
-            body in the actual component and delete the old one
         """
         for body_k, body_value in bodies_to_import.items():
             body_smt_file = \
@@ -109,21 +138,23 @@ class AssemblyImporter():
 
     def get_transform_by_name(self, child_occ_tree, name):
         for occ_key, tree_value in child_occ_tree.items():
-            occ_value = self.assembly_data["occurrences"][occ_key]
-            _name = occ_value["name"][:occ_value["name"].find(":")]
-            if _name == name and "used" not in occ_value:
-                occ_value["used"] = True
-                return (occ_key, occ_value["is_visible"],
-                        occ_value["transform"], tree_value)
+            occurrence_properties = self.assembly_data["occurrences"][occ_key]
+            # occurrence name usually have this format -> <component name>:<number>
+            # if occurrence_properties["name"] = "Low Cap v8:1" then _name="Low Cap v8"
+            _name = occurrence_properties["name"][:occurrence_properties["name"].find(":")]
+            if _name == name and "used" not in occurrence_properties:
+                occurrence_properties["used"] = True
+                return (occ_key, occurrence_properties["is_visible"],
+                        occurrence_properties["transform"], tree_value)
 
-    def update_child_occ(self, child_occurrences, child_occ_tree,
-                         branch_register):
+    def update_child_occ(self, child_occurrences, child_occ_tree, branch_register):
         try:
             for child in child_occurrences:
+                # occurrence name usually have this format -> <component name>:<number>
+                # if child.name = "Low Cap v8:1" then child_name="Low Cap v8"
                 child_name = child.name[:child.name.find(":")]
                 identity_transform = adsk.core.Matrix3D.create()
-                occ_key, is_visible, transform, new_child_occ_tree = \
-                    self.get_transform_by_name(child_occ_tree, child_name)
+                occ_key, is_visible, transform, new_child_occ_tree = self.get_transform_by_name(child_occ_tree, child_name)
                 fusion_transform = deserialize.matrix3d(transform)
                 self.set_uuid(child, occ_key)
                 child.transform = identity_transform
@@ -139,99 +170,83 @@ class AssemblyImporter():
             print(ex)
 
     def apply_transformations(self, occ_branch):
+        """
+            set tranformation from bottom to top occurrences
+        """
         for occ_dict in reversed(occ_branch):
             occ = occ_dict["occurrence"]
             transform = occ_dict["transform"]
             occ.transform = transform
 
-    def start(self, derivatives_path_files, parent_comp,
-              occ_tree, occurrences, parent_occ=None, occ_branch=[], components_reconstructed={}):
-        """Start reconstruction, this is a concurrent function
-            to reconstruct occurrence tree in each occurrence
+    def start_tree_reconstruction(self, derivatives_path_files, parent_comp,
+              occ_tree, parent_occ, occ_branch, components_reconstructed):
+        """Start reconstruction, this is a recursive function
+            to reconstruct occurrence tree 
         """
-        for occ_key, value in occ_tree.items():
-            # This is the only  key we want to ignore
-            if occ_key == "bodies":
-                continue
-            # Get transformation needed to apply on the new occurrence
-            # we'll create
-            occ_values = occurrences[occ_key]
-            transform = occ_values["transform"]
+        for occ_key, occ_value in occ_tree.items():
+            occurrence_properties = self.assembly_data["occurrences"][occ_key]
+            transform = occurrence_properties["transform"]
             fusion_transform = deserialize.matrix3d(transform)
             # we stored components that are reconstructed already in a variable
-            # if the component was reconstructed already we use it to create
-            # the new occurrence
-            if occ_values["component"] in components_reconstructed:
-                component = components_reconstructed[occ_values["component"]]
+            # if the component was reconstructed already we use it to create the new occurrence
+            if occurrence_properties["component"] in components_reconstructed:
+                component = components_reconstructed[occurrence_properties["component"]]
                 # This branch register is to store the key-pair of occurrence and
                 # transformation . we'll going to use this info once all the pieces
                 # of the component/occurrences are in place. we apply transformations
                 # from childs to parent due to a bug found in nested occurrence rotation.
                 branch_register = []
                 transform = adsk.core.Matrix3D.create()
-                new_occ = parent_comp.occurrences.addExistingComponent(
-                    component, fusion_transform)
+                new_occ = parent_comp.occurrences.addExistingComponent(component, fusion_transform)
                 new_occ.transform = transform
                 # You can think it is doing nothing but for some reason in
                 # occurrence sub-tree(recursive call) setting custom uuid
                 # doesn"t have any effect in new_occ comming from function
                 # above
                 new_occ = self.get_occ_by_name(new_occ.name)
-                new_occ.isLightBulbOn = occ_values["is_visible"]
-                new_occ.isGrounded = occ_values["is_grounded"]
+                new_occ.isLightBulbOn = occurrence_properties["is_visible"]
+                new_occ.isGrounded = occurrence_properties["is_grounded"]
                 self.set_uuid(new_occ, occ_key)
                 self.occ_id_map[occ_key] = new_occ
                 branch_register.append({
                     "occurrence": new_occ,
                     "transform": fusion_transform
                 })
-                # we need to collect childs transformation and after that apply it to
-                # all
+                # we need to collect childs transformation and after that apply
+                # transformation from bottom to top in the tree
                 if new_occ.childOccurrences.count > 0:
-                    self.update_child_occ(
-                        new_occ.childOccurrences, value, branch_register)
+                    self.update_child_occ(new_occ.childOccurrences, occ_value, branch_register)
                 self.apply_transformations(branch_register)
             else:
                 # create Identity transform
                 transform = adsk.core.Matrix3D.create()
-                new_occ = parent_comp.occurrences.addNewComponent(
-                    transform)
-
+                new_occ = parent_comp.occurrences.addNewComponent(transform)
                 occ_branch.append({
                     "occurrence": new_occ,
                     "transform": fusion_transform
                 })
-
-                # assign name to compoent and custom uuids in oder to
-                # fit with the original model
                 new_comp = new_occ.component
-                # if self.assembly_data["components"][value["component"]]["name"] =="Saturn v2":
-                #     print("·")
-                comp_name = self.assembly_data["components"][occ_values["component"]]["name"]
+                comp_name = self.assembly_data["components"][occurrence_properties["component"]]["name"]
                 # An issue found with this character included in component name
                 if "/" in comp_name:
                     comp_name = comp_name.replace("/", "-")
                 new_comp.name = comp_name
                 new_occ = self.get_occ_by_name(new_occ.name)
-                new_occ.isLightBulbOn = occ_values["is_visible"]
-                new_occ.isGrounded = occ_values["is_grounded"]
-                self.set_uuid(new_comp, occ_values["component"])
-                self.comp_id_map[occ_values["component"]] = new_comp
+                new_occ.isLightBulbOn = occurrence_properties["is_visible"]
+                new_occ.isGrounded = occurrence_properties["is_grounded"]
+                self.set_uuid(new_comp, occurrence_properties["component"])
+                self.comp_id_map[occurrence_properties["component"]] = new_comp
                 self.set_uuid(new_occ, occ_key)
                 self.occ_id_map[occ_key] = new_occ
                 # create this transient component to import the body
                 # with its component, then we move only the body where
                 # it corresponds and finally deletes the component
                 # that came with the body and also delete transient
-                bodies_to_import = occ_values.get("bodies", {})
-                self.reconstruct_bodies_at_comp_level(
-                    new_comp, derivatives_path_files,
-                    bodies_to_import, is_root=False,
-                    occ_from_comp=new_occ)
-
-                new_occ_tree = value
+                bodies_to_import = occurrence_properties.get("bodies", {})
+                self.reconstruct_bodies_at_comp_level(new_comp, derivatives_path_files, bodies_to_import)
+                new_occ_tree = occ_value
                 if new_occ_tree:
-                    self.start(
+                    self.start_tree_reconstruction(
                         derivatives_path_files,
                         new_comp, new_occ_tree, occurrences, new_occ, occ_branch, components_reconstructed)
                 # When Component/Occurrences is fully reconstructed
@@ -239,9 +254,14 @@ class AssemblyImporter():
                 if parent_occ is None:
                     self.apply_transformations(occ_branch)
                     occ_branch.clear()
-                components_reconstructed[occ_values["component"]] = new_comp
+                components_reconstructed[occurrence_properties["component"]] = new_comp
 
     def create_bodyid_bodyproxy_cache(self):
+        """
+            creates a bodies hash map for faster retrieval
+            as bodies ids are not unique we create a hash map
+            by combining occurrence/component id + body id
+        """
         root_comp = self.design.rootComponent
         root_uuid = self.get_uuid(root_comp)
         for body in root_comp.bRepBodies:
@@ -463,12 +483,7 @@ class AssemblyImporter():
     def create_joints(self):
         joints = self.assembly_data.get("joints",{})
         joints_origin = self.assembly_data.get("joint_origins",{})
-        as_built_joints = self.assembly_data.get("as_built_joints",{})
-        # we will have a record on occurrences affected by joints definition
-        # it is possible that its transform changed by the joint
-        # 
-        # We set the isLightBulbOn to false so the joint is not shown
-        # when we capture thumbnails
+        as_built_joints = self.assembly_data.get("as_built_joints",{}) 
         self.create_bodyid_bodyproxy_cache()
         for j_origin_key, joint_origin_val in joints_origin.items():
             joint_origin = self.create_joint_origin(joint_origin_val)
@@ -524,6 +539,12 @@ class AssemblyImporter():
 
 
     def verify_occurrences_transformation(self):
+        """
+            Occurrence transformation might be affected
+            after setting a joint, for that reason 
+            we re-set occurrence transformation in occurrences
+            that might be affected
+        """
         for occ_ in self.occurrences_affected.values():
             occ = occ_["occ"]
             occ.transform = occ_["transform"]
