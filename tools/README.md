@@ -27,6 +27,7 @@ To debug any of tools that use Fusion 360 you need to install [Visual Studio Cod
 - [`Reconverter`](reconverter): Demonstrates how to batch convert the raw data structure provided with the reconstruction dataset into other representations using Fusion 360.
 - [`Regraph`](regraph): Demonstrates how to create a B-Rep graph data structure from data provided with the reconstruction dataset using Fusion 360.
 - [`RegraphNet`](regraphnet): A neural network for predicting CAD reconstruction actions. This network takes the output from [`Regraph`](regraph) and is the underlying network used with neurally guided search in [our paper](https://arxiv.org/abs/2010.02392).
+- [`Segmentation Viewer`](segmentation_viewer): Viewer for the segmentation dataset to visualize the 3D models with different colors based on the modeling operation.
 - [`Search`](search): A framework for running neurally guided search to recover a construction sequence from B-Rep input. We use this code in [our paper](https://arxiv.org/abs/2010.02392).
 - [`sketch2image`](sketch2image): Convert sketches provided in json format to images using matplotlib.
 
