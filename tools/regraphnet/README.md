@@ -39,7 +39,7 @@ The full list of arguments is as follows:
 - `--no-cuda`: Train on CPU [default: False]
 - `--dataset`: Folder name of the supervised dataset created with [Regraph](../regraph)
 - `--split` (optional): Train/test split file, as provided with the reconstruction dataset, to run only test files from the input folder
-- `--no_gcn`: Use the MLP network instead of MPN [default: False]
+- `--mpn`: Message passing network to use, can be gcn or mlp or gat or gin [default: gcn]
 - `--only_augment`: Train using only the augmented data [default: False]
 - `exp_name`: Name of the experiment used for the checkpoint and log files.
 - `epochs`, `lr`, `weight_decay`, `hidden`, `dropout`, `seed`: Specify training hyper-parameters.
