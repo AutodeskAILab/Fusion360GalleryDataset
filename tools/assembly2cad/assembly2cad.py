@@ -12,7 +12,7 @@ if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
 
 # utilities comming from common dir
-from assembly_importer_util import AssemblyImporter
+from assembly_importer import AssemblyImporter
 import exporter
 
 def run(context):
