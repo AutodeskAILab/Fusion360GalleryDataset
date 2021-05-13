@@ -248,7 +248,7 @@ class AssemblyImporter():
                 if new_occ_tree:
                     self.start_tree_reconstruction(
                         derivatives_path_files,
-                        new_comp, new_occ_tree, occurrences, new_occ, occ_branch, components_reconstructed)
+                        new_comp, new_occ_tree, new_occ, occ_branch, components_reconstructed)
                 # When Component/Occurrences is fully reconstructed
                 # We can start applying real transformations
                 if parent_occ is None:
@@ -348,6 +348,10 @@ class AssemblyImporter():
         return as_built_joints.add(asBuiltJointInput)
 
     def create_joint_geometry(self, geo_data, occ=None):
+        """
+            Creates a joint geometry from assembly data
+            Not all joint Geometries are supported
+        """
         entity_one = geo_data["entity_one"]
         entity_type = entity_one["type"]
         joint_key_point_type = deserialize.get_key_point_type(geo_data["key_point_type"])
@@ -382,6 +386,9 @@ class AssemblyImporter():
         limits.restValue = limits_data["rest_value"]
 
     def set_joint_motion_limits(self, joint, joint_motion):
+        """
+            Set joint motion and limits
+        """
         try:
             if "slide_limits" in joint_motion:
                 limits = joint.jointMotion.slideLimits
@@ -515,7 +522,6 @@ class AssemblyImporter():
                 _joint.name = joint["name"]
             except Exception as ex:
                 # This is a workaround for a Fusion bug: 
-                # https://jira.autodesk.com/browse/FUS-76705
                 # that causes the joint to be invalid
                 # We catch the exception and set the design type to direct design
                 self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
