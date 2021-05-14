@@ -1,6 +1,5 @@
 import adsk.core
 import adsk.fusion
-import traceback
 import json
 import glob
 from pathlib import Path

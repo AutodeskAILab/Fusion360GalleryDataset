@@ -15,15 +15,18 @@ if COMMON_DIR not in sys.path:
 from assembly_importer import AssemblyImporter
 import exporter
 
+f3d_file_constructed_name = "constructed.f3d"
+assembly_files_dir = "assembly_data"
+
 def run(context):
     ui = None
     try:
         app = adsk.core.Application.get()
         ui  = app.userInterface
-        assembly_file = Path(os.path.join(os.path.dirname(__file__), "assembly_data/assembly.json")) 
+        assembly_file = Path(os.path.join(os.path.dirname(__file__), f"{assembly_files_dir}/assembly.json")) 
         assembly_importer = AssemblyImporter(assembly_file)
         assembly_importer.reconstruct()
-        reconstructed_file = Path(os.path.join(os.path.dirname(__file__), "reconstructed.f3d"))
+        reconstructed_file = Path(os.path.join(os.path.dirname(__file__), f3d_file_constructed_name))
         exporter.export_f3d(reconstructed_file)
         if ui:
             ui.messageBox('Construction Succeded:\n{}'.format(str(reconstructed_file)))
