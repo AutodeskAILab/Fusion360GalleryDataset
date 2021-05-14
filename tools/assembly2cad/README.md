@@ -1,5 +1,6 @@
 # assembly2cad
 ![assembly2cad](resources/assembly2cad.gif)
+
 assembly2cad construction demostrates how to construct an f3d model using medatada information comming from a json file (`assembly.json`) and also using 3d model files in smt format.Please have in mind that your metadata and your smt files must be located under assembly_data directory.
 
 ## Running
