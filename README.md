@@ -22,21 +22,24 @@ A segmentation of 3D models based on the modeling operation used to create each 
 Please cite the relevant paper below if you use the Fusion 360 Gallery dataset in your research.
 
 #### Reconstruction Dataset
-[Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Reconstruction](https://arxiv.org/abs/2010.02392)
+[Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Construction from Human Design Sequences](https://arxiv.org/abs/2010.02392)
 ```
 @article{willis2020fusion,
-    title={Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Reconstruction},
+    title={Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Construction from Human Design Sequences},
     author={Karl D. D. Willis and Yewen Pu and Jieliang Luo and Hang Chu and Tao Du and Joseph G. Lambourne and Armando Solar-Lezama and Wojciech Matusik},
-    journal={arXiv preprint arXiv:2010.02392},
-    year={2020}
+    journal={ACM Transactions on Graphics (TOG)},
+    volume={40},
+    number={4},
+    year={2021},
+    publisher={ACM New York, NY, USA}
 }
 ```
 
 #### Segmentation Dataset
-[BRepNet: A topological message passing system for solid models](https://arxiv.org/abs/2104.00706)
+[BRepNet: A Topological Message Passing System for Solid Models](https://arxiv.org/abs/2104.00706)
 ```
 @inproceedings{lambourne2021brepnet,
- title = {BRepNet: A topological message passing system for solid models},
+ title = {BRepNet: A Topological Message Passing System for Solid Models},
  author = {Joseph G. Lambourne and Karl D.D. Willis and Pradeep Kumar Jayaraman and Aditya Sanghi and Peter Meltzer and Hooman Shayani},
  eprint = {2104.00706},
  eprinttype = {arXiv},

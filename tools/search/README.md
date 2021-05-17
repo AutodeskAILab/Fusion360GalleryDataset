@@ -7,13 +7,15 @@ A framework for running neurally guided search to recover a construction sequenc
 For further details on the method, please refer to [our paper](https://arxiv.org/abs/2010.02392).
 ```
 @article{willis2020fusion,
-    title={Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Reconstruction},
+    title={Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Construction from Human Design Sequences},
     author={Karl D. D. Willis and Yewen Pu and Jieliang Luo and Hang Chu and Tao Du and Joseph G. Lambourne and Armando Solar-Lezama and Wojciech Matusik},
-    journal={arXiv preprint arXiv:2010.02392},
-    year={2020}
+    journal={ACM Transactions on Graphics (TOG)},
+    volume={40},
+    number={4},
+    year={2021},
+    publisher={ACM New York, NY, USA}
 }
 ```
-
 ## Training
 We provide pretrained checkpoints, so training is not necessary to run search. For those interested in training the network please refer to the [`regraphnet`](../regraphnet) documentation.
 
