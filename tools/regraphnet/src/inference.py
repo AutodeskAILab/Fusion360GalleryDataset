@@ -1,19 +1,33 @@
+import os
 import argparse
 
 if __name__=="__main__":
     # args
     parser=argparse.ArgumentParser()
-    parser.add_argument('--no-cuda',action='store_true',default=True,help='Disables CUDA training.')
+    parser.add_argument('--no_cuda',action='store_true',default=True,help='Disables CUDA training.')
     parser.add_argument('--dataset',type=str,default='data',help='Dataset name.')
     parser.add_argument('--mpn',type=str,default='gcn',choices=['gcn','mlp','gat','gin'],help='Message passing network to use, can be gcn or mlp or gat or gin [default: gcn]')
+    parser.add_argument('--augment',dest='augment',default=False,action='store_true',help='Use the checkpoint trained with additional augmented data')
+    parser.add_argument('--only_augment',dest='only_augment',default=False,action='store_true',help='Use the checkpoint trained on only augmented data')
     args=parser.parse_args()
+
+    checkpoint_name=f'model_{args.mpn}'
+    if args.augment:
+        checkpoint_name+='_aug'
+    elif args.only_augment:
+        checkpoint_name+='_syn' 
+    checkpoint_file=f'../ckpt/{checkpoint_name}.ckpt'
+    if not os.path.isfile(checkpoint_file):
+        print(f'Checkpoint file not found: {checkpoint_file}')
+        exit()
+    else:
+        print(f'Using checkpoint file: {checkpoint_file}')
 
     if args.mpn in ['gcn','mlp']:
         from inference_vanilla import *
         args.cuda=not args.no_cuda and torch.cuda.is_available()
         # load model
         model=NodePointer(nfeat=708,nhid=256,Use_GCN=(args.mpn=='gcn'))
-        checkpoint_file='../ckpt/model_%s.ckpt'%(args.mpn)
         if args.cuda:
             model.load_state_dict(torch.load(checkpoint_file))
             model.cuda()
@@ -56,7 +70,6 @@ if __name__=="__main__":
         model_parameters=filter(lambda p: p.requires_grad, model.parameters())
         params=sum([np.prod(p.size()) for p in model_parameters])
         print('Number params: ',params)
-        checkpoint_file='../ckpt/model_%s.ckpt'%(args.mpn)
         if args.cuda:
             model.load_state_dict(torch.load(checkpoint_file))
             model.cuda()

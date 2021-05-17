@@ -166,6 +166,13 @@ def load_dataset(args):
         aug_seqs=[x[:-14] for x in aug_dir_list if (x.endswith('_sequence.json'))]
         seqs.extend(aug_seqs)
         dir_list.extend(aug_dir_list)
+    # Check if this is a full path to a valid file
+    if os.path.isfile(args.split):
+        split_file=args.split
+    else:
+        split_file='../data/%s.json'%(args.split)
+    with open(split_file) as json_data:
+        train_test_split=json.load(json_data)
     # find number of steps
     seqs_num_step={}
     for seq in seqs:
@@ -300,9 +307,13 @@ def accuracy_overall(acc_all,output0,output1,output2,labels0,labels1,labels2):
 
 def train_test(graph_pairs_formatted,model,optimizer,scheduler,args):
     results=[]
-    exp_name='model_%s'%(args.mpn)
+    exp_name=f'model_{args.mpn}'
+    if args.augment:
+        exp_name+='_aug'
+    elif args.only_augment:
+        exp_name+='_syn'
     if args.exp_name is not None:
-        exp_name = args.exp_name
+        exp_name=args.exp_name
     # Check if this is a full path to a valid file
     if os.path.isfile(args.split):
         split_file=args.split
@@ -321,7 +332,7 @@ def train_test(graph_pairs_formatted,model,optimizer,scheduler,args):
             if graph_pairs_formatted[iter][7] in train_test_split['test']:
                 continue
             optimizer.zero_grad()
-            output_start,output_end,output_op=model(graph_pairs_formatted[iter])
+            output_start,output_end,output_op=model(graph_pairs_formatted[iter],use_gpu=args.cuda)
             output_start=output_start.view(1,-1)
             output_end=output_end.view(1,-1)
             loss0=F.cross_entropy(output_start,graph_pairs_formatted[iter][4],reduction='sum')
@@ -355,7 +366,7 @@ def train_test(graph_pairs_formatted,model,optimizer,scheduler,args):
                 else:
                     if graph_pairs_formatted[iter][8]>shape_ids[graph_pairs_formatted[iter][7]]:
                         shape_ids[graph_pairs_formatted[iter][7]]=graph_pairs_formatted[iter][8]
-                output_start,output_end,output_op=model(graph_pairs_formatted[iter])
+                output_start,output_end,output_op=model(graph_pairs_formatted[iter],use_gpu=args.cuda)
                 output_start=output_start.view(1,-1)
                 output_end=output_end.view(1,-1)
                 loss0=F.cross_entropy(output_start,graph_pairs_formatted[iter][4],reduction='sum')
@@ -399,7 +410,7 @@ def log_results(results,exp_name,train_test,epoch,loss,acc0,acc1,acc2,acc_all):
 if __name__=="__main__":
     # args
     parser=argparse.ArgumentParser()
-    parser.add_argument('--no-cuda',action='store_true',default=False,help='Disables CUDA training.')
+    parser.add_argument('--no_cuda',action='store_true',default=False,help='Disables CUDA training.')
     parser.add_argument('--dataset',type=str,default='RegraphPerFace_05',help='Dataset name.')
     parser.add_argument('--split',type=str,default='train_test',help='Split name.')
     parser.add_argument('--seed',type=int,default=42,help='Random seed.')

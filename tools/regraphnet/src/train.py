@@ -3,7 +3,7 @@ import argparse
 if __name__=="__main__":
     # args
     parser=argparse.ArgumentParser()
-    parser.add_argument('--no-cuda',action='store_true',default=False,help='Disables CUDA training.')
+    parser.add_argument('--no_cuda',action='store_true',default=False,help='Disables CUDA training.')
     parser.add_argument('--dataset',type=str,default='RegraphPerFace_05',help='Dataset name.')
     parser.add_argument('--split',type=str,default='train_test',help='Split name.')
     parser.add_argument('--seed',type=int,default=42,help='Random seed.')
