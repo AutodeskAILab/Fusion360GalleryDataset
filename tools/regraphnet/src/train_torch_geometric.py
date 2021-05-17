@@ -117,7 +117,7 @@ class NodePointer(nn.Module):
                 try:
                     m.bias.data.fill_(0.00)
                 except:
-                    print('default init')
+                    pass
 
     def forward(self,gpf,use_gpu=True):
         x2=torch.cat((gpf[1],gpf[1][gpf[4],:].repeat(gpf[1].size()[0],1)),dim=1)
