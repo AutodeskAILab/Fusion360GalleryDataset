@@ -23,10 +23,11 @@ parser.add_argument("--output", type=str, help="Folder to save the output logs t
 parser.add_argument("--screenshot", dest="screenshot", default=False, action="store_true", help="Save screenshots during reconstruction [default: False]")
 parser.add_argument("--launch_gym", dest="launch_gym", default=False, action="store_true",
                     help="Launch the Fusion 360 Gym automatically, requires the gym to be set to run on startup [default: False]")
-parser.add_argument("--agent", type=str, default="rand", help="Agent to use, can be rand, mpn, or mlp [default: rand]")
-parser.add_argument("--search", type=str, default="rand", help="Search to use, can be rand, beam or best [default: rand]")
+parser.add_argument("--agent", type=str, default="rand", choices=["rand", "gcn", "gat", "gin", "mlp"], help="Agent to use, can be rand, gcn, gat, gin, or mlp [default: rand]")
+parser.add_argument("--search", type=str, default="rand", choices=["rand", "beam", "best"], help="Search to use, can be rand, beam or best [default: rand]")
 parser.add_argument("--budget", type=int, default=100, help="The number of steps to search [default: 100]")
-parser.add_argument("--augment", dest="augment", default=False, action="store_true", help="Use an agent trained on augmented data [default: False]")
+parser.add_argument("--synthetic_data", type=str, choices=["aug", "semisyn", "syn"], help="Type of synthetic data to use, can be aug, semisyn, or syn")
+parser.add_argument("--debug", dest="debug", default=False, action="store_true", help="Debug mode [default: False]")
 args = parser.parse_args()
 
 
@@ -99,10 +100,8 @@ def get_agent():
     """Get the agent based on user input"""
     if args.agent == "rand":
         return AgentRandom()
-    elif args.agent == "mpn":
-        return AgentSupervised(use_gcn=True, use_aug=args.augment)
-    elif args.agent == "mlp":
-        return AgentSupervised(use_gcn=False, use_aug=args.augment)
+    else:
+        return AgentSupervised(agent=args.agent, syn_data=args.synthetic_data)
 
 
 def load_results(output_dir):
@@ -161,7 +160,11 @@ def main():
     env = ReplEnv(host="127.0.0.1", port=8080, launch_gym=args.launch_gym)
     # Initialize these once and reuse them
     search = get_search(env, output_dir)
+    if search is None:
+        print("Error: Search is None!")
     agent = get_agent()
+    if agent is None:
+        print("Error: Agent is None!")
 
     files_to_process = copy.deepcopy(files)
     files_processed = 0
@@ -175,7 +178,7 @@ def main():
             "status": "Success"
         }
         # If we already have processed this file, then skip it
-        if file.stem in results:
+        if not args.debug and file.stem in results:
             print(f"[{files_processed}/{len(files)}] Skipping {file.stem}")
             result["status"] = "Skip"
             files_processed += 1
