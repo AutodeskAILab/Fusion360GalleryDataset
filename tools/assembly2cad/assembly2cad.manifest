@@ -1,0 +1,10 @@
+{
+	"autodeskProduct":	"Fusion360",
+	"type":	"script",
+	"author":	"",
+	"description":	{
+		"":	"Creates f3d files based on metadata and smt files."
+	},
+	"supportedOS":	"windows|mac",
+	"editEnabled":	true
+}

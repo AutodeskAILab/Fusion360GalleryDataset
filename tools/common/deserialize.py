@@ -141,3 +141,31 @@ def view_orientation(name):
     if name_lower in view_orientations:
         return view_orientations[name_lower]
     return None
+
+
+def get_key_point_type(key_point_str):
+    """Return Key Point Type used in a Joint"""
+    if key_point_str == "CenterKeyPoint":
+        return adsk.fusion.JointKeyPointTypes.CenterKeyPoint
+    elif key_point_str == "EndKeyPoint":
+        return adsk.fusion.JointKeyPointTypes.EndKeyPoint
+    elif key_point_str == "MiddleKeyPoint":
+        return adsk.fusion.JointKeyPointTypes.MiddleKeyPoint
+    elif key_point_str == "StartKeyPoint":
+        return adsk.fusion.JointKeyPointTypes.StartKeyPoint
+    else:
+        raise Exception(f"Unknown keyPointType type: {key_point_str}")
+
+
+def get_rotation_axis(rotation_axis):
+    """Receives a string and Return Joint direction type"""
+    if rotation_axis == "XAxisJointDirection":
+        return adsk.fusion.JointDirections.XAxisJointDirection
+    elif rotation_axis == "YAxisJointDirection":
+        return adsk.fusion.JointDirections.YAxisJointDirection
+    elif rotation_axis == "ZAxisJointDirection":
+        return adsk.fusion.JointDirections.ZAxisJointDirection
+    elif rotation_axis == "CustomJointDirection":
+        return adsk.fusion.JointDirections.CustomJointDirection
+    else:
+        raise Exception(f"Unknown JointDirections type: {rotation_axis}")
