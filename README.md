@@ -51,10 +51,10 @@ Please cite the relevant paper below if you use the Fusion 360 Gallery dataset i
 
 ## Download
 
-| Dataset | Designs | Documentation | Download | Paper |
-| - | - | - | - | - |
-| Reconstruction | 8,625 | [Documentation](docs/reconstruction.md) | [r1.0.0 - 2.0 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0.zip) | [Paper](https://arxiv.org/abs/2010.02392) |
-| Segmentation |  35,858 | [Documentation](docs/segmentation.md) | [s1.0.0 - 2.9 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s1.0.0/s1.0.0.zip) | [Paper](https://arxiv.org/abs/2104.00706) |
+| Dataset | Designs | Documentation | Download | Paper | Code |
+| - | - | - | - | - | - |
+| Reconstruction | 8,625 | [Documentation](docs/reconstruction.md) | [r1.0.0 - 2.0 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0.zip) | [Paper](https://arxiv.org/abs/2010.02392) | [Code](tools) |
+| Segmentation |  35,680 | [Documentation](docs/segmentation.md) | [s2.0.0 - 3.2 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s2.0.0/s2.0.0.zip) | [Paper](https://arxiv.org/abs/2104.00706) | [Code](https://github.com/AutodeskAILab/BRepNet)
 
 ### Additional Downloads
 - **Reconstruction Dataset Extrude Volumes** [(r1.0.0 - 162.4 MB)](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0_extrude_tools.zip): The extrude volumes for each extrude operation in the design timeline.
