@@ -106,6 +106,10 @@ For an example of how to visualize the mesh data and ground truth segmentation p
 ### Point Cloud
 The `point_clouds` folder contains point clouds with 2048 samples generated randomly with an even distribution of over the surface of the triangle mesh.  Each row of the `.xyz` files contains the `x`, `y`, `z` of the point and unit normal of the triangle the point was drawn from. The `.seg` text file gives the segment index for each point and the `.fidx` file gives the face index for each point. 
 
+## Scaling 
+All models in the dataset have been translated and scaled based on the axis aligned bounding box of the geometry.  The `smt`, `meshes` and `point_clouds` have been translated so the center of the bounding box is moved to the origin and an isotopic scaling factor applied so that the longest edge of the bounding box fits into the range [-1.0, 1.0].
+
+Due to a unit conversion in the data exchange process, the STEP files are scaled by a factor of 10.  i.e. the longest side of the bounding box for the STEP files is [-10, 10].   See [here](https://github.com/AutodeskAILab/BRepNet/blob/master/pipeline/extract_brepnet_data_from_step.py) for an example of how to scale the STEP data into the range [-1.0, 1.0].
 
 ## Other Notes
 To restrict the dataset to a limited number of segmentation classes we 'suppress' some CAD modeling features, slightly modifying the design from its original state.
