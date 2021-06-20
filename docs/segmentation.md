@@ -122,7 +122,7 @@ To restrict the dataset to a limited number of segmentation classes we 'suppress
 The official train/test split is contained in the file `train_test.json`.  The training set contains 30,459 models with the remaining 5,399 in the test set.
 
 ## Segmentation Extended STEP Dataset
-The extended STEP dataset contains 42,912 STEP files with all the associated segmentation information (`seg` files and `timeline_info`). This includes all the STEP data from the s2.0.0, along with some models which could not be meshed with an edge count close to 2500 and consequently were not used as part of the MeshCNN baseline in the paper [BRepNet: A Topological Message Passing System for Solid Models](https://arxiv.org/abs/2104.00706).  This graph shows how the distribution of faces and modeling operations compares in the two datasets.  While the overall distributions are similar, the additional bodies added to the extended dataset help fatten the long tail of more complex models.
+The extended STEP dataset contains 42,912 STEP files with all the associated segmentation information (`seg` files and `timeline_info`). This includes all the STEP data from s2.0.0, along with some models which could not be meshed with an edge count close to 2500 and consequently were not used as part of the MeshCNN baseline in the paper [BRepNet: A Topological Message Passing System for Solid Models](https://arxiv.org/abs/2104.00706).  This graph shows how the distribution of faces and modeling operations compares in the two datasets.  While the overall distributions are similar, the additional bodies added to the extended dataset help fatten the long tail of more complex models.
 
 ![Extended STEP dataset statistics](images/segmentation_extended_dataset_stats.jpg)
 
