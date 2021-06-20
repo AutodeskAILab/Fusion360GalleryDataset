@@ -59,7 +59,7 @@ Please cite the relevant paper below if you use the Fusion 360 Gallery dataset i
 ### Additional Downloads
 - **Reconstruction Dataset Extrude Volumes** [(r1.0.0 - 162.4 MB)](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0_extrude_tools.zip): The extrude volumes for each extrude operation in the design timeline.
 - **Reconstruction Dataset Face Extrusion Sequences** [(r1.0.0 - 46. 8MB)](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/regraph_05.zip): The pre-processed face extrusion sequences used to train our [reconstruction network](tools/regraphnet).
-
+- **Segmentation Extended STEP Dataset** [(s2.0.0 - 428.1 MB)](https://fusion-360-gallery-dataset.s3.us-west-2.amazonaws.com/segmentation/s2.0.0/s2.0.0_extended_step.zip): An extended collection of 42,912 STEP files with associated segmentation information.  This include all STEP data from s2.0.0 along with additional files for which triangle meshes with close to 2500 edges could not be collected. 
 
 ## Tools
 As part of the dataset we provide various tools for working with the data. These tools leverage the [Fusion 360 API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B5A90C8-E94C-48DA-B16B-430729B734DC) to perform operations such as geometry reconstruction, traversing B-Rep data structures, and conversion to other formats. More information can be found in the [tools directory](tools).

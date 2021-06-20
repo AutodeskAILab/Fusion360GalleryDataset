@@ -121,6 +121,14 @@ To restrict the dataset to a limited number of segmentation classes we 'suppress
 ## Train/Test Split
 The official train/test split is contained in the file `train_test.json`.  The training set contains 30,459 models with the remaining 5,399 in the test set.
 
+## Segmentation Extended STEP Dataset
+The extended STEP dataset contains 42,912 STEP files with all the associated segmentation information (`seg` files and `timeline_info`). This includes all the STEP data from the s2.0.0, along with some models which could not be meshed with an edge count close to 2500 and consequently were not used as part of the MeshCNN baseline in the paper [BRepNet: A Topological Message Passing System for Solid Models](https://arxiv.org/abs/2104.00706).  This graph shows how the distribution of faces and modeling operations compares in the two datasets.  While the overall distributions are similar, the additional bodies added to the extended dataset help fatten the long tail of more complex models.
+
+![Extended STEP dataset statistics](images/segmentation_extended_dataset_stats.jpg)
+
+The extended STEP dataset is provided for the B-Rep representation only.   It is recommended for use cases where comparison with the mesh and point cloud representations are not required.  The layout of the folder is identical to s2.0.0, but the `meshes` and `point_clouds` folder is not included.
+
+The file `additional_breps.json` contains a flat list of files which were not included in the main s2.0.0 dataset.  The file `additional_breps_train_test.json` gives the official train/test split for these additional files.   The file `train_test.json` gives the full train/test split for the entire extended dataset.  The dataset can be used with the scripts in the [BRepNet repository](https://github.com/AutodeskAILab/BRepNet) as a drop-in replacement for s2.0.0.
 
 ## Legacy versions
 
