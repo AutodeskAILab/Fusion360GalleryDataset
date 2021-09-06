@@ -39,13 +39,12 @@ Please cite the relevant paper below if you use the Fusion 360 Gallery dataset i
 [BRepNet: A Topological Message Passing System for Solid Models](https://arxiv.org/abs/2104.00706)
 ```
 @inproceedings{lambourne2021brepnet,
- title = {BRepNet: A Topological Message Passing System for Solid Models},
- author = {Joseph G. Lambourne and Karl D.D. Willis and Pradeep Kumar Jayaraman and Aditya Sanghi and Peter Meltzer and Hooman Shayani},
- eprint = {2104.00706},
- eprinttype = {arXiv},
- eprintclass = {cs.LG},
- booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
- year = {2021}
+    author    = {Lambourne, Joseph G. and Willis, Karl D.D. and Jayaraman, Pradeep Kumar and Sanghi, Aditya and Meltzer, Peter and Shayani, Hooman},
+    title     = {BRepNet: A Topological Message Passing System for Solid Models},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    month     = {June},
+    year      = {2021},
+    pages     = {12773-12782}
 }
 ```
 
