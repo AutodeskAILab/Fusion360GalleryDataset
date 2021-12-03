@@ -22,41 +22,43 @@ A segmentation of 3D models based on the modeling operation used to create each 
 Please cite the relevant paper below if you use the Fusion 360 Gallery dataset in your research.
 
 #### Reconstruction Dataset
-[Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Reconstruction](https://arxiv.org/abs/2010.02392)
+[Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Construction from Human Design Sequences](https://arxiv.org/abs/2010.02392)
 ```
 @article{willis2020fusion,
-    title={Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Reconstruction},
+    title={Fusion 360 Gallery: A Dataset and Environment for Programmatic CAD Construction from Human Design Sequences},
     author={Karl D. D. Willis and Yewen Pu and Jieliang Luo and Hang Chu and Tao Du and Joseph G. Lambourne and Armando Solar-Lezama and Wojciech Matusik},
-    journal={arXiv preprint arXiv:2010.02392},
-    year={2020}
+    journal={ACM Transactions on Graphics (TOG)},
+    volume={40},
+    number={4},
+    year={2021},
+    publisher={ACM New York, NY, USA}
 }
 ```
 
 #### Segmentation Dataset
-[BRepNet: A topological message passing system for solid models](https://arxiv.org/abs/2104.00706)
+[BRepNet: A Topological Message Passing System for Solid Models](https://arxiv.org/abs/2104.00706)
 ```
 @inproceedings{lambourne2021brepnet,
- title = {BRepNet: A topological message passing system for solid models},
- author = {Joseph G. Lambourne and Karl D.D. Willis and Pradeep Kumar Jayaraman and Aditya Sanghi and Peter Meltzer and Hooman Shayani},
- eprint = {2104.00706},
- eprinttype = {arXiv},
- eprintclass = {cs.LG},
- booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
- year = {2021}
+    author    = {Lambourne, Joseph G. and Willis, Karl D.D. and Jayaraman, Pradeep Kumar and Sanghi, Aditya and Meltzer, Peter and Shayani, Hooman},
+    title     = {BRepNet: A Topological Message Passing System for Solid Models},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    month     = {June},
+    year      = {2021},
+    pages     = {12773-12782}
 }
 ```
 
 ## Download
 
-| Dataset | Designs | Documentation | Download | Paper |
-| - | - | - | - | - |
-| Reconstruction | 8,625 | [Documentation](docs/reconstruction.md) | [r1.0.0 - 2.0 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0.zip) | [Paper](https://arxiv.org/abs/2010.02392) |
-| Segmentation |  35,858 | [Documentation](docs/segmentation.md) | [s1.0.0 - 2.9 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s1.0.0/s1.0.0.zip) | [Paper](https://arxiv.org/abs/2104.00706) |
+| Dataset | Designs | Documentation | Download | Paper | Code |
+| - | - | - | - | - | - |
+| Reconstruction | 8,625 | [Documentation](docs/reconstruction.md) | [r1.0.0 - 2.0 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0.zip) | [Paper](https://arxiv.org/abs/2010.02392) | [Code](tools) |
+| Segmentation |  35,680 | [Documentation](docs/segmentation.md) | [s2.0.0 - 3.2 GB](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/segmentation/s2.0.0/s2.0.0.zip) | [Paper](https://arxiv.org/abs/2104.00706) | [Code](https://github.com/AutodeskAILab/BRepNet)
 
 ### Additional Downloads
 - **Reconstruction Dataset Extrude Volumes** [(r1.0.0 - 162.4 MB)](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/r1.0.0_extrude_tools.zip): The extrude volumes for each extrude operation in the design timeline.
 - **Reconstruction Dataset Face Extrusion Sequences** [(r1.0.0 - 46. 8MB)](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/regraph_05.zip): The pre-processed face extrusion sequences used to train our [reconstruction network](tools/regraphnet).
-
+- **Segmentation Extended STEP Dataset** [(s2.0.0 - 428.1 MB)](https://fusion-360-gallery-dataset.s3.us-west-2.amazonaws.com/segmentation/s2.0.0/s2.0.0_extended_step.zip): An extended collection of 42,912 STEP files with associated segmentation information.  This include all STEP data from s2.0.0 along with additional files for which triangle meshes with close to 2500 edges could not be created. 
 
 ## Tools
 As part of the dataset we provide various tools for working with the data. These tools leverage the [Fusion 360 API](http://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B5A90C8-E94C-48DA-B16B-430729B734DC) to perform operations such as geometry reconstruction, traversing B-Rep data structures, and conversion to other formats. More information can be found in the [tools directory](tools).

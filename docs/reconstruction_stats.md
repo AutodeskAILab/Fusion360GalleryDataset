@@ -21,8 +21,12 @@ The most frequent construction sequence combinations are shown below. S indicate
 
 ## Sketch
 ### Curves
-Each sketch is made up on different types of curves, such as lines, arcs, and circles.
-Below we illustrate the distribution of curve count per design, as another measure of design complexity.
+Each sketch is made up on different types of curves, such as lines, arcs, and circles. It is notable that mechanical CAD sketches rely heavily on lines, circles, and arcs rather than spline curves.
+Below we show the overall distribution of different curve types in the reconstruction dataset.
+
+![Curve Type Distribution](https://i.gyazo.com/f27035588f435e18a58a4ae5c1ce0bde.png)
+
+The graph below illustrates the distribution of curve count per design, as another measure of design complexity.
 
 ![Curve Count Per Design](https://i.gyazo.com/437eccd587ef9892c851b3fb62eb40d2.png)
 
@@ -32,8 +36,6 @@ Each curve type is abbreviated as follows:
 - A: `SketchArc`
 - L: `SketchLine`
 - S: `SketchFittedSpline`
-
-It is notable that mechanical CAD sketches rely heavily on lines, circles, and arcs rather than spline curves.
 
 ![Curve Type Combination Frequency](https://i.gyazo.com/893bed76b7e957aaea5f2b8f0f177cd5.png)
 

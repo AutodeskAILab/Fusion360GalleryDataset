@@ -71,7 +71,7 @@ class SegmentationViewer:
             print(f"The data for {file_stem} could not be loaded.  Skipping")
             return   
         output_pathname = output_folder / (file_stem + ".html")
-        mp.offline()
+        mp.website()
         p = mp.plot(v, f, c=facet_colors)
         p.save(str(output_pathname))
 
