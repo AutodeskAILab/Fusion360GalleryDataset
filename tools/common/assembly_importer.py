@@ -492,12 +492,16 @@ class AssemblyImporter():
         as_built_joints = self.assembly_data.get("as_built_joints",{}) 
         self.create_bodyid_bodyproxy_cache()
         for j_origin_key, joint_origin_val in joints_origin.items():
+            if j_origin_key is None:
+                continue
             joint_origin = self.create_joint_origin(joint_origin_val)
             joint_origin.isLightBulbOn = False
             self.joint_origin_id_map[j_origin_key] = joint_origin
             self.set_uuid(joint_origin, j_origin_key)
 
         for joint_k, joint in joints.items():
+            if joint_k is None:
+                continue
             parent_comp = self.get_parent_component(joint)
             current_joints = parent_comp.joints
             geo_one_data = joint["geometry_or_origin_one"]
@@ -536,6 +540,8 @@ class AssemblyImporter():
             self.set_joint_motion_limits(_joint, joint["joint_motion"])
 
         for as_builtj_k, as_builtj in as_built_joints.items():
+            if as_builtj_k is None:
+                continue
             as_built_joint = self.create_as_built_joint(as_builtj)
             as_built_joint.isLightBulbOn = False
             as_built_joint.name = as_builtj["name"]
