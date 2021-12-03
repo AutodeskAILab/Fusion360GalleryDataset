@@ -14,9 +14,9 @@ class AssemblyImporter():
 
     def __init__(self, assembly_file):
         """
-            Assembly Importer Connstructor receives one mandatory parameter
-            Parameters:
-            assembly_file  - Path - path type from pathlib library 
+        Assembly Importer Constructor receives one mandatory parameter
+        Parameters:
+        assembly_file  - Path - path type from pathlib library 
         """
         self.assembly_file = assembly_file
         app = adsk.core.Application.get()
@@ -51,11 +51,10 @@ class AssemblyImporter():
         if uuid_att is None:
             entity.attributes.add("Dataset", "uuid", unique_id)
 
-
     def reconstruct(self):
         """
-            Starts model recostruction using as a reference
-            the path of self.assembly_file
+        Starts model recostruction using as a reference
+        the path of self.assembly_file
         """
         derivatives_folder = self.assembly_file.parent
         derivatives_path_files = [Path(f) for f in glob.glob(str(derivatives_folder) + "**/*.smt")]
@@ -88,8 +87,7 @@ class AssemblyImporter():
 
     def import_single_brep_to_target(self, temp_brep_mgr, breps):
         """
-            this function will put together an array of breps
-            using a boolean operation
+        Union an array of breps using a boolean operation
         """
         new_body = temp_brep_mgr.copy(breps[0])
         for i, body in enumerate(breps):
@@ -100,9 +98,9 @@ class AssemblyImporter():
 
     def import_smt_to_target(self, target, smt_file, body_key, body_value):
         """
-            Import smt first as a temporal brep and then add it to the component
-            createFromFile function may return more than one brep, meaning that 
-            one smt file could contain two or more breps.
+        Import smt first as a temporary brep and then add it to the component
+        The createFromFile function may return more than one brep, meaning that 
+        one smt file could contain two or more breps.
         """
         temp_brep_mgr = adsk.fusion.TemporaryBRepManager.get()
         breps = temp_brep_mgr.createFromFile(str(smt_file))
@@ -119,7 +117,8 @@ class AssemblyImporter():
         self.set_uuid(new_brep, body_key)
 
     def reconstruct_bodies_at_comp_level(self, component, derivatives_path_files, bodies_to_import):
-        """Import all smt bodies that belongs to that component
+        """
+        Import all smt bodies that belongs to that component
         """
         for body_k, body_value in bodies_to_import.items():
             body_smt_file = \
@@ -170,7 +169,7 @@ class AssemblyImporter():
 
     def apply_transformations(self, occ_branch):
         """
-            set tranformation from bottom to top occurrences
+        Apply tranformation from bottom to top of the occurrence tree
         """
         for occ_dict in reversed(occ_branch):
             occ = occ_dict["occurrence"]
@@ -179,8 +178,9 @@ class AssemblyImporter():
 
     def start_tree_reconstruction(self, derivatives_path_files, parent_comp,
               occ_tree, parent_occ, occ_branch, components_reconstructed):
-        """Start reconstruction, this is a recursive function
-            to reconstruct occurrence tree 
+        """
+        Start reconstruction, this is a recursive function
+        to reconstruct occurrence tree 
         """
         for occ_key, occ_value in occ_tree.items():
             occurrence_properties = self.assembly_data["occurrences"][occ_key]
@@ -257,9 +257,9 @@ class AssemblyImporter():
 
     def create_bodyid_bodyproxy_cache(self):
         """
-            creates a bodies hash map for faster retrieval
-            as bodies ids are not unique we create a hash map
-            by combining occurrence/component id + body id
+        Create a bodies hash map for faster retrieval
+        as bodies ids are not unique we create a hash map
+        by combining occurrence/component id + body id
         """
         root_comp = self.design.rootComponent
         root_uuid = self.get_uuid(root_comp)
@@ -348,8 +348,8 @@ class AssemblyImporter():
 
     def create_joint_geometry(self, geo_data, occ=None):
         """
-            Creates a joint geometry from assembly data
-            Not all joint Geometries are supported
+        Creates a joint geometry from assembly data
+        Not all joint Geometries are supported
         """
         entity_one = geo_data["entity_one"]
         entity_type = entity_one["type"]
@@ -386,7 +386,7 @@ class AssemblyImporter():
 
     def set_joint_motion_limits(self, joint, joint_motion):
         """
-            Set joint motion and limits
+        Set joint motion and limits
         """
         try:
             if "slide_limits" in joint_motion:
@@ -545,10 +545,10 @@ class AssemblyImporter():
 
     def verify_occurrences_transformation(self):
         """
-            Occurrence transformation might be affected
-            after setting a joint, for that reason 
-            we re-set occurrence transformation in occurrences
-            that might be affected
+        Occurrence transformation might be affected
+        after setting a joint, for that reason 
+        we re-set occurrence transformation in occurrences
+        that might be affected
         """
         for occ_ in self.occurrences_affected.values():
             occ = occ_["occ"]
