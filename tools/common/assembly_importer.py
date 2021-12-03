@@ -19,10 +19,11 @@ class AssemblyImporter():
         assembly_file  - Path - path type from pathlib library 
         """
         self.assembly_file = assembly_file
-        app = adsk.core.Application.get()
-        product = app.activeProduct
+        self.app = adsk.core.Application.get()
+        product = self.app.activeProduct
         self.design = adsk.fusion.Design.cast(product)
         self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
+        self.app.activeDocument.name = self.assembly_file.parent.stem
         # memoize vars ----------------->
         self.body_proxy_id_map = {}
         self.joint_origin_id_map = {}
@@ -524,8 +525,7 @@ class AssemblyImporter():
             try:
                 _joint.name = joint["name"]
             except Exception as ex:
-                # This is a workaround for a Fusion bug: 
-                # that causes the joint to be invalid
+                # This is a workaround when a joint is invalid
                 # We catch the exception and set the design type to direct design
                 self.design.designType = adsk.fusion.DesignTypes.DirectDesignType
                 _joint = current_joints.add(joint_input)
@@ -547,7 +547,6 @@ class AssemblyImporter():
             as_built_joint.name = as_builtj["name"]
             self.set_uuid(as_built_joint, as_builtj_k)
             self.set_joint_motion_limits(as_built_joint, as_builtj["joint_motion"])
-
 
     def verify_occurrences_transformation(self):
         """

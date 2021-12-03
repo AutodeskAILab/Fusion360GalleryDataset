@@ -1,7 +1,7 @@
 """
 
-Construct a Fusion 360 CAD model from an assembly
-provided with the Fusion 360 Gallery Assembly Dataset
+Construct a Fusion 360 CAD model from a joint set file
+provided with the Fusion 360 Gallery Assembly Dataset joint data
 
 """
 
@@ -17,7 +17,7 @@ COMMON_DIR = os.path.join(os.path.dirname(__file__), "..", "common")
 if COMMON_DIR not in sys.path:
     sys.path.append(COMMON_DIR)
 
-from assembly_importer import AssemblyImporter
+from joint_importer import JointImporter
 import exporter
 
 
@@ -25,19 +25,22 @@ def run(context):
     ui = None
     try:
         app = adsk.core.Application.get()
-        ui  = app.userInterface
+        # Turn on component color cycling first
+        ui = app.userInterface
+        ui.commandDefinitions.itemById("ViewColorCyclingOnCmd").execute()
+        adsk.doEvents()
 
         current_dir = Path(__file__).resolve().parent
-        data_dir = current_dir.parent / "testdata/assembly_examples/belt_clamp"
-        assembly_file = data_dir / "assembly.json"
+        data_dir = current_dir.parent / "testdata/joint_examples"
+        joint_file = data_dir / "joint_set_19149.json"
 
-        assembly_importer = AssemblyImporter(assembly_file)
-        assembly_importer.reconstruct()
-
-        png_file = current_dir / f"{assembly_file.stem}.png"
+        joint_importer = JointImporter(joint_file)
+        joint_importer.reconstruct()
+        
+        png_file = current_dir / f"{joint_file.stem}.png"
         exporter.export_png_from_component(png_file, app.activeProduct.rootComponent)
         
-        f3d_file = current_dir / f"{assembly_file.stem}.f3d"
+        f3d_file = current_dir / f"{joint_file.stem}.f3d"
         exporter.export_f3d(f3d_file)
 
         if ui:
@@ -45,6 +48,8 @@ def run(context):
                 ui.messageBox(f"Exported to: {f3d_file}")
             else:
                 ui.messageBox(f"Failed to export: {f3d_file}")
+
     except:
         if ui:
             ui.messageBox(f"Failed to export: {traceback.format_exc()}")
+
