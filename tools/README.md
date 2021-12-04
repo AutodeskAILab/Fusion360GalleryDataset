@@ -30,4 +30,7 @@ To debug any of tools that use Fusion 360 you need to install [Visual Studio Cod
 - [`Segmentation Viewer`](segmentation_viewer): Viewer for the segmentation dataset to visualize the 3D models with different colors based on the modeling operation.
 - [`Search`](search): A framework for running neurally guided search to recover a construction sequence from B-Rep input. We use this code in [our paper](https://arxiv.org/abs/2010.02392).
 - [`sketch2image`](sketch2image): Convert sketches provided in json format to images using matplotlib.
-
+- [`Assembly Download`](assembly_download): Download and uncompress the Assembly Dataset.
+- [`Assembly Graph`](assembly_graph): Generate a graph representation from an assembly.
+- [`Assembly2CAD`](assembly2cad): Build a Fusion 360 CAD model from an assembly.
+- [`Joint2CAD`](joint2cad): Build a Fusion 360 CAD model from a joint set.
