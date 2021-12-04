@@ -24,7 +24,7 @@ Below are the links to directly download each of the archive files. Each archive
 To extract each archive requires a tool that supports the 7z compression format.
 
 ### Linux
-Distributions of Ubuntu come with `p7zip` installed. However, with older versions (e.g. 16.02) extraction times can be excessively slow. If you experience extraction times of longer than 10 mins, per archive we suggest using the latest version provided on the [7-Zip](https://www.7-zip.org) website. The following commands can be used to download and install:
+Distributions of Ubuntu come with `p7zip` installed. However, with older versions (e.g. 16.02) extraction times can be excessively slow. If you experience extraction times of longer than 10 mins per archive, we suggest using the latest version provided on the [7-Zip](https://www.7-zip.org) website. The following commands can be used to download and install the latest version if not already available in your package manager:
 
 ```
 curl https://www.7-zip.org/a/7z2106-linux-x64.tar.xz -o 7z2106-linux-x64.tar.xz
@@ -46,11 +46,10 @@ Windows users can download and install [7-Zip](https://www.7-zip.org), which off
 We provide the python script [assembly_download.py](assembly_download.py) to download and extract all archive files. 
 
 ### Installation
-The script calls [7-Zip](https://www.7-zip.org) directly so if you encounter problems, ensure the path is set correctly in the `get_7z_path()` function. We use the `tqdm` library to show a progress bar, which can be installed using:
+The script calls [7-Zip](https://www.7-zip.org) directly so if you encounter problems, ensure the path is set correctly in the `get_7z_path()` function or `7z` is present in your linux path. To run the script you will need the following python libraries that can be installed using `pip`:
 
-```
-pip install tqdm
-```
+- `requests`
+- `tqdm`
 
 
 ### Running

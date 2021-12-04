@@ -23,7 +23,7 @@ For further details on the method, please refer to [our paper](https://arxiv.org
     - `torch_geometric` tested with 1.6.1
     - `numpy` tested with 1.18.1
     - `scipy` tested with 1.4.1
-2. Prepare data using [Regraph](../regraph) or [download the pre-processed data](https://fusion-360-gallery-dataset.s3-us-west-2.amazonaws.com/reconstruction/r1.0.0/regraph_05.zip) used for training in the paper.
+2. Prepare data using [Regraph](../regraph) or [download the pre-processed data](https://fusion-360-gallery-dataset.s3.us-west-2.amazonaws.com/reconstruction/r1.0.1/r1.0.1_regraph_05.zip) used for training in the paper.
 
 ## Training
 We provide the pre-trained models used in the paper in the [ckpt directory](ckpt). To train a model run [`train.py`](./src/train.py) from the `src` directory as follows:

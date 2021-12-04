@@ -1,5 +1,5 @@
 # Assembly Dataset - Joint Data
-The Assembly Dataset joint data contains pairs of parts, with one or more joints defined between, extracted from CAD assemblies. We provide the joint data separate from the assembly data as an accessible standalone dataset for joint prediction. 
+The Assembly Dataset joint data contains pairs of parts extracted from CAD assemblies, with one or more joints defined between them. We provide the joint data separate from the assembly data as an accessible standalone dataset for joint prediction. 
 
 ![Assembly Dataset - Joint Data](images/assembly_joint_mosaic.jpg)
 

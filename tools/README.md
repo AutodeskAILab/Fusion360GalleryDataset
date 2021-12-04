@@ -32,5 +32,5 @@ To debug any of tools that use Fusion 360 you need to install [Visual Studio Cod
 - [`sketch2image`](sketch2image): Convert sketches provided in json format to images using matplotlib.
 - [`Assembly Download`](assembly_download): Download and uncompress the Assembly Dataset.
 - [`Assembly Graph`](assembly_graph): Generate a graph representation from an assembly.
-- [`Assembly2CAD`](assembly2cad): Build a Fusion 360 CAD model from an assembly.
-- [`Joint2CAD`](joint2cad): Build a Fusion 360 CAD model from a joint set.
+- [`Assembly2CAD`](assembly2cad): Build a Fusion 360 CAD model from an assembly data sample.
+- [`Joint2CAD`](joint2cad): Build a Fusion 360 CAD model from a joint data sample.
