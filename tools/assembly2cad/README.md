@@ -9,7 +9,7 @@
 [Assembly2CAD](assembly2cad.py) runs in Fusion 360 as a script with the following steps.
 1. Follow the [general instructions here](../) to get setup with Fusion 360.
 2. Optionally change the `assembly_file` in [`assembly2cad.py`](assembly2cad.py) to point towards an `assembly.json` provided with the  [Assembly Dataset](../../docs/assembly.md).
-3. Optionally change the `output_file` in [`assembly2cad.py`](assembly2cad.py) to your preferred name.
+3. Optionally change the `png_file` and `f3d_file` in [`assembly2cad.py`](assembly2cad.py) to your preferred name for each file that is exported.
 4. Run the [`assembly2cad.py`](assembly2cad.py) script from within Fusion 360. When the script has finished running the design will be open in Fusion 360.
 5. Check the contents of `assembly2cad/` directory to find the .f3d that was exported.
 

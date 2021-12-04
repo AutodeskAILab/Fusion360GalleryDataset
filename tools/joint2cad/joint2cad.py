@@ -32,10 +32,10 @@ def run(context):
 
         current_dir = Path(__file__).resolve().parent
         data_dir = current_dir.parent / "testdata/joint_examples"
-        joint_file = data_dir / "joint_set_19149.json"
+        joint_file = data_dir / "joint_set_00119.json"
 
         joint_importer = JointImporter(joint_file)
-        joint_importer.reconstruct()
+        joint_importer.reconstruct(joint_index=0)
         
         png_file = current_dir / f"{joint_file.stem}.png"
         exporter.export_png_from_component(png_file, app.activeProduct.rootComponent)
