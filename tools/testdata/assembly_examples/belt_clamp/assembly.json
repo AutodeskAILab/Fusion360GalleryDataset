@@ -1,0 +1,960 @@
+{
+    "tree": {
+        "root": {
+            "8b4ef3ba-b296-11eb-9d3c-f21898acd3b7": {},
+            "8b50b9de-b296-11eb-9d3c-f21898acd3b7": {},
+            "8b5185b2-b296-11eb-9d3c-f21898acd3b7": {},
+            "8b525bb8-b296-11eb-9d3c-f21898acd3b7": {}
+        }
+    },
+    "root": {
+        "component": "8b4e91fe-b296-11eb-9d3c-f21898acd3b7",
+        "bodies": {
+            "8b4e1828-b296-11eb-9d3c-f21898acd3b7": {
+                "is_visible": true
+            }
+        }
+    },
+    "occurrences": {
+        "8b4ef3ba-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "M2.5*5mm Low Cap v8:1",
+            "type": "Occurrence",
+            "component": "8b4eb9fe-b296-11eb-9d3c-f21898acd3b7",
+            "is_grounded": false,
+            "is_visible": true,
+            "timeline_index": 14,
+            "physical_properties": {
+                "center_of_mass": {
+                    "type": "Point3D",
+                    "x": 0.2500000000000004,
+                    "y": 0.07389432021345788,
+                    "z": 0.22499999998483938
+                },
+                "area": 1.0229168874451642,
+                "volume": 0.04703971979878435,
+                "density": 0.008,
+                "mass": 0.0003763177583902748
+            },
+            "transform": {
+                "origin": {
+                    "type": "Point3D",
+                    "x": 0.2500000000000004,
+                    "y": 0.5000000000000011,
+                    "z": 0.224999999999999
+                },
+                "x_axis": {
+                    "type": "Vector3D",
+                    "x": 7.647438558029966e-32,
+                    "y": -1.0000000000000024,
+                    "z": 4.934324553889601e-16,
+                    "length": 1.0000000000000024
+                },
+                "y_axis": {
+                    "type": "Vector3D",
+                    "x": 1.0000000000000024,
+                    "y": 0.0,
+                    "z": -6.123233995736767e-17,
+                    "length": 1.0000000000000024
+                },
+                "z_axis": {
+                    "type": "Vector3D",
+                    "x": 6.123233995736748e-17,
+                    "y": 4.934324553889589e-16,
+                    "z": 1.0,
+                    "length": 1.0
+                }
+            },
+            "bodies": {
+                "8b4e5752-b296-11eb-9d3c-f21898acd3b7": {
+                    "is_visible": true
+                }
+            }
+        },
+        "8b50b9de-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "M2.5*5mm Low Cap v8:1",
+            "type": "Occurrence",
+            "component": "8b4eb9fe-b296-11eb-9d3c-f21898acd3b7",
+            "is_grounded": false,
+            "is_visible": true,
+            "timeline_index": 24,
+            "physical_properties": {
+                "center_of_mass": {
+                    "type": "Point3D",
+                    "x": 1.0500000000000005,
+                    "y": 0.07389432021345765,
+                    "z": 0.22499999998483952
+                },
+                "area": 1.0229168874451642,
+                "volume": 0.04703971979878435,
+                "density": 0.008,
+                "mass": 0.0003763177583902748
+            },
+            "transform": {
+                "origin": {
+                    "type": "Point3D",
+                    "x": 1.0500000000000005,
+                    "y": 0.5000000000000009,
+                    "z": 0.22499999999999917
+                },
+                "x_axis": {
+                    "type": "Vector3D",
+                    "x": 7.647438558029966e-32,
+                    "y": -1.0000000000000024,
+                    "z": 4.934324553889601e-16,
+                    "length": 1.0000000000000024
+                },
+                "y_axis": {
+                    "type": "Vector3D",
+                    "x": 1.0000000000000024,
+                    "y": 0.0,
+                    "z": -6.123233995736767e-17,
+                    "length": 1.0000000000000024
+                },
+                "z_axis": {
+                    "type": "Vector3D",
+                    "x": 6.123233995736748e-17,
+                    "y": 4.934324553889589e-16,
+                    "z": 1.0,
+                    "length": 1.0
+                }
+            },
+            "bodies": {
+                "8b4e5752-b296-11eb-9d3c-f21898acd3b7": {
+                    "is_visible": true
+                }
+            }
+        },
+        "8b5185b2-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "M2.5*5mm Low Cap v8:2",
+            "type": "Occurrence",
+            "component": "8b4eb9fe-b296-11eb-9d3c-f21898acd3b7",
+            "is_grounded": false,
+            "is_visible": true,
+            "timeline_index": 25,
+            "physical_properties": {
+                "center_of_mass": {
+                    "type": "Point3D",
+                    "x": 1.0499999999999998,
+                    "y": 0.07389432021345832,
+                    "z": 1.7749999999848394
+                },
+                "area": 1.0229168874451642,
+                "volume": 0.04703971979878435,
+                "density": 0.008,
+                "mass": 0.0003763177583902748
+            },
+            "transform": {
+                "origin": {
+                    "type": "Point3D",
+                    "x": 1.0499999999999998,
+                    "y": 0.5000000000000016,
+                    "z": 1.774999999999999
+                },
+                "x_axis": {
+                    "type": "Vector3D",
+                    "x": 7.647438558029966e-32,
+                    "y": -1.0000000000000024,
+                    "z": 4.934324553889601e-16,
+                    "length": 1.0000000000000024
+                },
+                "y_axis": {
+                    "type": "Vector3D",
+                    "x": 1.0000000000000024,
+                    "y": 0.0,
+                    "z": -6.123233995736767e-17,
+                    "length": 1.0000000000000024
+                },
+                "z_axis": {
+                    "type": "Vector3D",
+                    "x": 6.123233995736748e-17,
+                    "y": 4.934324553889589e-16,
+                    "z": 1.0,
+                    "length": 1.0
+                }
+            },
+            "bodies": {
+                "8b4e5752-b296-11eb-9d3c-f21898acd3b7": {
+                    "is_visible": true
+                }
+            }
+        },
+        "8b525bb8-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "M2.5*5mm Low Cap v8:3",
+            "type": "Occurrence",
+            "component": "8b4eb9fe-b296-11eb-9d3c-f21898acd3b7",
+            "is_grounded": false,
+            "is_visible": true,
+            "timeline_index": 26,
+            "physical_properties": {
+                "center_of_mass": {
+                    "type": "Point3D",
+                    "x": 0.24999999999999997,
+                    "y": 0.0738943202134581,
+                    "z": 1.7749999999848394
+                },
+                "area": 1.0229168874451642,
+                "volume": 0.04703971979878435,
+                "density": 0.008,
+                "mass": 0.0003763177583902748
+            },
+            "transform": {
+                "origin": {
+                    "type": "Point3D",
+                    "x": 0.25,
+                    "y": 0.5000000000000013,
+                    "z": 1.774999999999999
+                },
+                "x_axis": {
+                    "type": "Vector3D",
+                    "x": 7.647438558029966e-32,
+                    "y": -1.0000000000000024,
+                    "z": 4.934324553889601e-16,
+                    "length": 1.0000000000000024
+                },
+                "y_axis": {
+                    "type": "Vector3D",
+                    "x": 1.0000000000000024,
+                    "y": 0.0,
+                    "z": -6.123233995736767e-17,
+                    "length": 1.0000000000000024
+                },
+                "z_axis": {
+                    "type": "Vector3D",
+                    "x": 6.123233995736748e-17,
+                    "y": 4.934324553889589e-16,
+                    "z": 1.0,
+                    "length": 1.0
+                }
+            },
+            "bodies": {
+                "8b4e5752-b296-11eb-9d3c-f21898acd3b7": {
+                    "is_visible": true
+                }
+            }
+        }
+    },
+    "components": {
+        "8b4e91fe-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "root",
+            "type": "Component",
+            "number": "Untitled",
+            "bodies": [
+                "8b4e1828-b296-11eb-9d3c-f21898acd3b7"
+            ]
+        },
+        "8b4eb9fe-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "M2.5*5mm Low Cap v8",
+            "type": "Component",
+            "number": "A1458002503",
+            "bodies": [
+                "8b4e5752-b296-11eb-9d3c-f21898acd3b7"
+            ]
+        }
+    },
+    "bodies": {
+        "8b4e1828-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "Body1",
+            "type": "BRepBody",
+            "png": "8b4e1828-b296-11eb-9d3c-f21898acd3b7.png",
+            "smt": "8b4e1828-b296-11eb-9d3c-f21898acd3b7.smt",
+            "step": "8b4e1828-b296-11eb-9d3c-f21898acd3b7.step",
+            "obj": "8b4e1828-b296-11eb-9d3c-f21898acd3b7.obj",
+            "appearance": {
+                "id": "189E8BF6-2815-403F-A4CD-8BFF91B45758_physmat_aspects:Prism-073",
+                "name": "Stainless Steel - Satin"
+            },
+            "material": {
+                "appearance": {
+                    "id": "PrismMaterial-018_physmat_aspects:Prism-256",
+                    "name": "Steel - Satin"
+                },
+                "id": "PrismMaterial-018",
+                "name": "Steel"
+            }
+        },
+        "8b4e5752-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "Body1",
+            "type": "BRepBody",
+            "png": "8b4e5752-b296-11eb-9d3c-f21898acd3b7.png",
+            "smt": "8b4e5752-b296-11eb-9d3c-f21898acd3b7.smt",
+            "step": "8b4e5752-b296-11eb-9d3c-f21898acd3b7.step",
+            "obj": "8b4e5752-b296-11eb-9d3c-f21898acd3b7.obj",
+            "appearance": {
+                "id": "189E8BF6-2815-403F-A4CD-8BFF91B45758_physmat_aspects:Prism-073",
+                "name": "Stainless Steel - Satin"
+            },
+            "material": {
+                "appearance": {
+                    "id": "189E8BF6-2815-403F-A4CD-8BFF91B45758_physmat_aspects:Prism-073",
+                    "name": "Stainless Steel - Satin"
+                },
+                "id": "189E8BF6-2815-403F-A4CD-8BFF91B45758",
+                "name": "Stainless Steel"
+            }
+        }
+    },
+    "joints": {
+        "8b5377aa-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "Rigid16",
+            "type": "Joint",
+            "parent_component": "8b4e91fe-b296-11eb-9d3c-f21898acd3b7",
+            "occurrence_one": "8b4ef3ba-b296-11eb-9d3c-f21898acd3b7",
+            "timeline_index": 30,
+            "joint_motion": {
+                "joint_type": "RigidJointType"
+            },
+            "geometry_or_origin_one": {
+                "type": "JointGeometry",
+                "geometry_type": "JointBRepEdgeGeometry",
+                "key_point_type": "CenterKeyPoint",
+                "origin": {
+                    "type": "Point3D",
+                    "x": 0.2500000000000004,
+                    "y": 0.0,
+                    "z": 0.22499999999999987
+                },
+                "primary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": -1.0,
+                    "y": 5.473822126268817e-48,
+                    "z": 4.9343245538896e-16,
+                    "length": 1.0
+                },
+                "secondary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 1.0,
+                    "length": 1.0
+                },
+                "tertiary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "entity_one": {
+                    "type": "BRepEdge",
+                    "occurrence": "8b4ef3ba-b296-11eb-9d3c-f21898acd3b7",
+                    "body": "8b4e5752-b296-11eb-9d3c-f21898acd3b7",
+                    "point_on_entity": {
+                        "type": "Point3D",
+                        "x": 0.2500000000000004,
+                        "y": 0.0,
+                        "z": -1.6653345369377348e-16
+                    },
+                    "index": 17,
+                    "bounding_box": {
+                        "type": "BoundingBox3D",
+                        "max_point": {
+                            "type": "Point3D",
+                            "x": 0.475000000000001,
+                            "y": 0.0,
+                            "z": 0.44999999999999984
+                        },
+                        "min_point": {
+                            "type": "Point3D",
+                            "x": 0.024999999999999828,
+                            "y": -2.220446049250313e-16,
+                            "z": -1.942890293094024e-16
+                        }
+                    }
+                }
+            },
+            "geometry_or_origin_two": {
+                "type": "JointGeometry",
+                "geometry_type": "JointBRepEdgeGeometry",
+                "key_point_type": "CenterKeyPoint",
+                "origin": {
+                    "type": "Point3D",
+                    "x": 0.2500000000000004,
+                    "y": 0.0,
+                    "z": 0.22499999999999984
+                },
+                "primary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "secondary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 1.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "tertiary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": -1.0,
+                    "length": 1.0
+                },
+                "entity_one": {
+                    "type": "BRepEdge",
+                    "root_component": "8b4e91fe-b296-11eb-9d3c-f21898acd3b7",
+                    "body": "8b4e1828-b296-11eb-9d3c-f21898acd3b7",
+                    "point_on_entity": {
+                        "type": "Point3D",
+                        "x": 0.40000000000000036,
+                        "y": 0.0,
+                        "z": 0.22499999999999984
+                    },
+                    "index": 46,
+                    "bounding_box": {
+                        "type": "BoundingBox3D",
+                        "max_point": {
+                            "type": "Point3D",
+                            "x": 0.40000000000000036,
+                            "y": 0.0,
+                            "z": 0.3749999999999998
+                        },
+                        "min_point": {
+                            "type": "Point3D",
+                            "x": 0.10000000000000042,
+                            "y": 0.0,
+                            "z": 0.07499999999999987
+                        }
+                    }
+                }
+            },
+            "offset": {
+                "type": "ModelParameter",
+                "value": 0.0,
+                "name": "d241",
+                "role": "alignOffset"
+            },
+            "angle": {
+                "type": "ModelParameter",
+                "value": -1.5707963267948966,
+                "name": "d240",
+                "role": "alignAngle"
+            },
+            "is_flipped": false
+        },
+        "8b570492-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "Rigid17",
+            "type": "Joint",
+            "parent_component": "8b4e91fe-b296-11eb-9d3c-f21898acd3b7",
+            "occurrence_one": "8b50b9de-b296-11eb-9d3c-f21898acd3b7",
+            "timeline_index": 31,
+            "joint_motion": {
+                "joint_type": "RigidJointType"
+            },
+            "geometry_or_origin_one": {
+                "type": "JointGeometry",
+                "geometry_type": "JointBRepEdgeGeometry",
+                "key_point_type": "CenterKeyPoint",
+                "origin": {
+                    "type": "Point3D",
+                    "x": 1.0500000000000003,
+                    "y": -2.220446049250313e-16,
+                    "z": 0.225
+                },
+                "primary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": -1.0,
+                    "y": 5.473822126268817e-48,
+                    "z": 4.9343245538896e-16,
+                    "length": 1.0
+                },
+                "secondary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 1.0,
+                    "length": 1.0
+                },
+                "tertiary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "entity_one": {
+                    "type": "BRepEdge",
+                    "occurrence": "8b50b9de-b296-11eb-9d3c-f21898acd3b7",
+                    "body": "8b4e5752-b296-11eb-9d3c-f21898acd3b7",
+                    "point_on_entity": {
+                        "type": "Point3D",
+                        "x": 1.0500000000000005,
+                        "y": -2.220446049250313e-16,
+                        "z": 0.0
+                    },
+                    "index": 17,
+                    "bounding_box": {
+                        "type": "BoundingBox3D",
+                        "max_point": {
+                            "type": "Point3D",
+                            "x": 1.275000000000001,
+                            "y": -2.220446049250313e-16,
+                            "z": 0.45000000000000007
+                        },
+                        "min_point": {
+                            "type": "Point3D",
+                            "x": 0.825,
+                            "y": -4.440892098500626e-16,
+                            "z": -2.7755575615628914e-17
+                        }
+                    }
+                }
+            },
+            "geometry_or_origin_two": {
+                "type": "JointGeometry",
+                "geometry_type": "JointBRepEdgeGeometry",
+                "key_point_type": "CenterKeyPoint",
+                "origin": {
+                    "type": "Point3D",
+                    "x": 1.0500000000000005,
+                    "y": 0.0,
+                    "z": 0.225
+                },
+                "primary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "secondary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 1.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "tertiary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": -1.0,
+                    "length": 1.0
+                },
+                "entity_one": {
+                    "type": "BRepEdge",
+                    "root_component": "8b4e91fe-b296-11eb-9d3c-f21898acd3b7",
+                    "body": "8b4e1828-b296-11eb-9d3c-f21898acd3b7",
+                    "point_on_entity": {
+                        "type": "Point3D",
+                        "x": 1.2000000000000006,
+                        "y": 0.0,
+                        "z": 0.225
+                    },
+                    "index": 44,
+                    "bounding_box": {
+                        "type": "BoundingBox3D",
+                        "max_point": {
+                            "type": "Point3D",
+                            "x": 1.2000000000000006,
+                            "y": 0.0,
+                            "z": 0.3750000000000001
+                        },
+                        "min_point": {
+                            "type": "Point3D",
+                            "x": 0.9000000000000004,
+                            "y": 0.0,
+                            "z": 0.07499999999999987
+                        }
+                    }
+                }
+            },
+            "offset": {
+                "type": "ModelParameter",
+                "value": 0.0,
+                "name": "d251",
+                "role": "alignOffset"
+            },
+            "angle": {
+                "type": "ModelParameter",
+                "value": -1.5707963267948966,
+                "name": "d250",
+                "role": "alignAngle"
+            },
+            "is_flipped": false
+        },
+        "8b5ad2ca-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "Rigid18",
+            "type": "Joint",
+            "parent_component": "8b4e91fe-b296-11eb-9d3c-f21898acd3b7",
+            "occurrence_one": "8b5185b2-b296-11eb-9d3c-f21898acd3b7",
+            "timeline_index": 32,
+            "joint_motion": {
+                "joint_type": "RigidJointType"
+            },
+            "geometry_or_origin_one": {
+                "type": "JointGeometry",
+                "geometry_type": "JointBRepEdgeGeometry",
+                "key_point_type": "CenterKeyPoint",
+                "origin": {
+                    "type": "Point3D",
+                    "x": 1.0499999999999996,
+                    "y": 4.440892098500626e-16,
+                    "z": 1.775
+                },
+                "primary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": -1.0,
+                    "y": 5.473822126268817e-48,
+                    "z": 4.9343245538896e-16,
+                    "length": 1.0
+                },
+                "secondary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 1.0,
+                    "length": 1.0
+                },
+                "tertiary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "entity_one": {
+                    "type": "BRepEdge",
+                    "occurrence": "8b5185b2-b296-11eb-9d3c-f21898acd3b7",
+                    "body": "8b4e5752-b296-11eb-9d3c-f21898acd3b7",
+                    "point_on_entity": {
+                        "type": "Point3D",
+                        "x": 1.0499999999999998,
+                        "y": 4.440892098500626e-16,
+                        "z": 1.5499999999999998
+                    },
+                    "index": 17,
+                    "bounding_box": {
+                        "type": "BoundingBox3D",
+                        "max_point": {
+                            "type": "Point3D",
+                            "x": 1.2750000000000004,
+                            "y": 4.440892098500626e-16,
+                            "z": 1.9999999999999998
+                        },
+                        "min_point": {
+                            "type": "Point3D",
+                            "x": 0.8249999999999993,
+                            "y": 2.220446049250313e-16,
+                            "z": 1.5499999999999998
+                        }
+                    }
+                }
+            },
+            "geometry_or_origin_two": {
+                "type": "JointGeometry",
+                "geometry_type": "JointBRepEdgeGeometry",
+                "key_point_type": "CenterKeyPoint",
+                "origin": {
+                    "type": "Point3D",
+                    "x": 1.0499999999999998,
+                    "y": 0.0,
+                    "z": 1.775
+                },
+                "primary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "secondary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 1.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "tertiary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": -1.0,
+                    "length": 1.0
+                },
+                "entity_one": {
+                    "type": "BRepEdge",
+                    "root_component": "8b4e91fe-b296-11eb-9d3c-f21898acd3b7",
+                    "body": "8b4e1828-b296-11eb-9d3c-f21898acd3b7",
+                    "point_on_entity": {
+                        "type": "Point3D",
+                        "x": 1.1999999999999997,
+                        "y": 0.0,
+                        "z": 1.775
+                    },
+                    "index": 43,
+                    "bounding_box": {
+                        "type": "BoundingBox3D",
+                        "max_point": {
+                            "type": "Point3D",
+                            "x": 1.1999999999999997,
+                            "y": 0.0,
+                            "z": 1.9249999999999998
+                        },
+                        "min_point": {
+                            "type": "Point3D",
+                            "x": 0.8999999999999999,
+                            "y": 0.0,
+                            "z": 1.625
+                        }
+                    }
+                }
+            },
+            "offset": {
+                "type": "ModelParameter",
+                "value": 0.0,
+                "name": "d261",
+                "role": "alignOffset"
+            },
+            "angle": {
+                "type": "ModelParameter",
+                "value": -1.5707963267948966,
+                "name": "d260",
+                "role": "alignAngle"
+            },
+            "is_flipped": false
+        },
+        "8b5e62e6-b296-11eb-9d3c-f21898acd3b7": {
+            "name": "Rigid19",
+            "type": "Joint",
+            "parent_component": "8b4e91fe-b296-11eb-9d3c-f21898acd3b7",
+            "occurrence_one": "8b525bb8-b296-11eb-9d3c-f21898acd3b7",
+            "timeline_index": 33,
+            "joint_motion": {
+                "joint_type": "RigidJointType"
+            },
+            "geometry_or_origin_one": {
+                "type": "JointGeometry",
+                "geometry_type": "JointBRepEdgeGeometry",
+                "key_point_type": "CenterKeyPoint",
+                "origin": {
+                    "type": "Point3D",
+                    "x": 0.25,
+                    "y": 2.220446049250313e-16,
+                    "z": 1.775
+                },
+                "primary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": -1.0,
+                    "y": 5.473822126268817e-48,
+                    "z": 4.9343245538896e-16,
+                    "length": 1.0
+                },
+                "secondary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 1.0,
+                    "length": 1.0
+                },
+                "tertiary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "entity_one": {
+                    "type": "BRepEdge",
+                    "occurrence": "8b525bb8-b296-11eb-9d3c-f21898acd3b7",
+                    "body": "8b4e5752-b296-11eb-9d3c-f21898acd3b7",
+                    "point_on_entity": {
+                        "type": "Point3D",
+                        "x": 0.25,
+                        "y": 2.220446049250313e-16,
+                        "z": 1.5499999999999998
+                    },
+                    "index": 17,
+                    "bounding_box": {
+                        "type": "BoundingBox3D",
+                        "max_point": {
+                            "type": "Point3D",
+                            "x": 0.47500000000000053,
+                            "y": 2.220446049250313e-16,
+                            "z": 1.9999999999999998
+                        },
+                        "min_point": {
+                            "type": "Point3D",
+                            "x": 0.02499999999999944,
+                            "y": 0.0,
+                            "z": 1.5499999999999998
+                        }
+                    }
+                }
+            },
+            "geometry_or_origin_two": {
+                "type": "JointGeometry",
+                "geometry_type": "JointBRepEdgeGeometry",
+                "key_point_type": "CenterKeyPoint",
+                "origin": {
+                    "type": "Point3D",
+                    "x": 0.2500000000000001,
+                    "y": 0.0,
+                    "z": 1.775
+                },
+                "primary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 1.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "secondary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 1.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "length": 1.0
+                },
+                "tertiary_axis_vector": {
+                    "type": "Vector3D",
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": -1.0,
+                    "length": 1.0
+                },
+                "entity_one": {
+                    "type": "BRepEdge",
+                    "root_component": "8b4e91fe-b296-11eb-9d3c-f21898acd3b7",
+                    "body": "8b4e1828-b296-11eb-9d3c-f21898acd3b7",
+                    "point_on_entity": {
+                        "type": "Point3D",
+                        "x": 0.40000000000000013,
+                        "y": 0.0,
+                        "z": 1.775
+                    },
+                    "index": 45,
+                    "bounding_box": {
+                        "type": "BoundingBox3D",
+                        "max_point": {
+                            "type": "Point3D",
+                            "x": 0.40000000000000013,
+                            "y": 0.0,
+                            "z": 1.9249999999999998
+                        },
+                        "min_point": {
+                            "type": "Point3D",
+                            "x": 0.10000000000000009,
+                            "y": 0.0,
+                            "z": 1.625
+                        }
+                    }
+                }
+            },
+            "offset": {
+                "type": "ModelParameter",
+                "value": 0.0,
+                "name": "d271",
+                "role": "alignOffset"
+            },
+            "angle": {
+                "type": "ModelParameter",
+                "value": -1.5707963267948966,
+                "name": "d270",
+                "role": "alignAngle"
+            },
+            "is_flipped": false
+        }
+    },
+    "properties": {
+        "name": "Untitled",
+        "bounding_box": {
+            "type": "BoundingBox3D",
+            "max_point": {
+                "type": "Point3D",
+                "x": 1.3,
+                "y": 0.5000000000000017,
+                "z": 1.9999999999999998
+            },
+            "min_point": {
+                "type": "Point3D",
+                "x": 0.0,
+                "y": -0.18500000000000094,
+                "z": -5.828670879282072e-16
+            }
+        },
+        "vertex_count": 296,
+        "edge_count": 464,
+        "face_count": 194,
+        "loop_count": 230,
+        "shell_count": 5,
+        "body_count": 5,
+        "area": 10.44152803399436,
+        "volume": 0.38114351129863444,
+        "density": 0.007924050406323607,
+        "mass": 0.0030202003955735507,
+        "center_of_mass": {
+            "type": "Point3D",
+            "x": 0.6500000000051873,
+            "y": 0.050113542698881096,
+            "z": 0.9999999999924443
+        },
+        "principal_axes": {
+            "x_axis": {
+                "type": "Vector3D",
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0,
+                "length": 1.0
+            },
+            "y_axis": {
+                "type": "Vector3D",
+                "x": 0.0,
+                "y": 1.0,
+                "z": 0.0,
+                "length": 1.0
+            },
+            "z_axis": {
+                "type": "Vector3D",
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0,
+                "length": 1.0
+            }
+        },
+        "xyz_moments_of_inertia": {
+            "xx": 0.004559115659598037,
+            "yy": 0.006233444857157175,
+            "zz": 0.0018177474715286655,
+            "xy": -9.83794119640347e-05,
+            "yz": -0.00015135294148348478,
+            "xz": -0.001963130257123641
+        },
+        "surface_types": [
+            {
+                "surface_type": "CylinderSurfaceType",
+                "face_count": 68
+            },
+            {
+                "surface_type": "PlaneSurfaceType",
+                "face_count": 70
+            },
+            {
+                "surface_type": "ConeSurfaceType",
+                "face_count": 52
+            },
+            {
+                "surface_type": "NurbsSurfaceType",
+                "face_count": 4
+            }
+        ],
+        "vertex_valence": [
+            {
+                "valence": 3,
+                "count": 192
+            },
+            {
+                "valence": 1,
+                "count": 32
+            },
+            {
+                "valence": 4,
+                "count": 72
+            }
+        ],
+        "design_type": "ParametricDesignType"
+    }
+}
