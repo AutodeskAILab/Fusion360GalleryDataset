@@ -102,7 +102,7 @@ Designer-selected B-Rep faces and edges, form the geometric entites used to defi
 ![Assembly Dataset - Joint Labels](images/assembly_joint_labels.jpg)
 
 
-In addition to the B-Rep entities, the `axis_line`, shown in yellow above, contains the `origin` point and `direction` vector on the joint axis when in an assembled state. The `transform` represents the rigid body transform that moves the each body from their local coordinates into an assembled state. The `transform` is given as a coordinate system.
+In addition to the B-Rep entities, the `axis_line`, shown in yellow above, contains the `origin` point and `direction` vector on the joint axis when in an assembled state. The `transform` represents the rigid body transform that moves each body from their local coordinates into an assembled state. The `transform` is given as a coordinate system.
 
 An example entry for `geometry_or_origin_one` is shown below:
 
