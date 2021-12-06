@@ -103,9 +103,7 @@ The flag `is_grounded` indicates whether the user locked the position of the occ
 
 Each occurrence also has information about the physical properties (aggregating the center of mass, area, volume, density, and mass of all included components and bodies), as well as the `transform` necessary to orient the occurrence within the coordinate system of it's parent occurrence. The `transform` is provided as a coordinate system and code to traverse the nestled transforms, can be found in the [`Assembly2CAD`](../tools/assembly2cad) and [`AssemblyGraph`](../tools/assembly_graph) examples.
 
-Further information on occurrences can be found in the Fusion 360 API documentation for the [`Occurrence`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Occurrence.htm) class.
-
-An example JSON entry for an occurrence:
+Further information on occurrences can be found in the Fusion 360 API documentation for the [`Occurrence`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Occurrence.htm) class. An example JSON entry for an occurrence:
 
 ```js
 {
