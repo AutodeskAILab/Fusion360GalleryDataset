@@ -1,4 +1,4 @@
-# Assembly Graph
+# AssemblyGraph
 Generate a graph representation from an assembly.
 
 ## Setup

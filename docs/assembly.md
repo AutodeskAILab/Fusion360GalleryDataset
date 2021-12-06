@@ -101,9 +101,9 @@ Occurrences are instances of components that can have independent parameters app
 
 The flag `is_grounded` indicates whether the user locked the position of the occurrence, preventing further movements from happening via mouse-dragging in the Fusion 360 UI. The flag `is_visible` indicates whether the occurrence was displayed or not in the UI.
 
-Each occurrence also has information about the physical properties (aggregating the center of mass, area, volume, density, and mass of all included components and bodies), as well as the transformation matrix necessary to orient the occurrence within the global space. 
+Each occurrence also has information about the physical properties (aggregating the center of mass, area, volume, density, and mass of all included components and bodies), as well as the `transform` necessary to orient the occurrence within the coordinate system of it's parent occurrence. The `transform` is provided as a coordinate system and code to traverse the nestled transforms, can be found in the [`Assembly2CAD`](../tools/assembly2cad) and [`AssemblyGraph`](../tools/assembly_graph) examples.
 
-Further information on occurrences can be found in the Fusion 360 API documentation for the [`Occurrence`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Occurrences.htm) class.
+Further information on occurrences can be found in the Fusion 360 API documentation for the [`Occurrence`](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/Occurrence.htm) class.
 
 An example JSON entry for an occurrence:
 
@@ -150,7 +150,7 @@ An example JSON entry for a component:
 ```
 
 ### Bodies
-Bodies are the geometric elements, represented as B-Reps, that make up components. The geometric data of each body is included in the dataset as described in [Assembly Data Geometry Format](#assembly-data-geometry-format). 
+Bodies are the geometric elements, represented as B-Reps, that make up components. The geometric data of each body is included in the dataset as described in [Data Formats](#data-formats). 
 
 Each body is assigned a UUID, and contains a name, physical properties, appearance, material, as well as the file names of the corresponding B-Rep, mesh, and image files. The physical properties of the body include the center of mass, area, volume, density, and mass. The appearance of the body refers to the material used for visual appearance, such as rendering, and contains the UUID and name of the user-assigned appearance. The material of the body, on the other hand, refers to the physical material from which the physical properties of the body are derived, such as the weight and density, and contains the UUID and name of the  material. 
 
@@ -418,7 +418,9 @@ An example JSON entry for the properties:
 
 
 ### Holes
-In CAD models, holes are common design features that often serve a specific purpose. Parts are commonly held together with bolts and screws, which either pass through or end in holes in the parts. As holes are an important design feature, we use the Autodesk Shape Manager feature recognition tool to identify and label holes in each part. Each hole lists information about the body it is in, diameter, length, direction, and faces and edges that belong to the hole. Holes are also labeled with a hole type denoting the shape at the hole entrance and at the end of the hole:
+In CAD models, holes are common design features that often serve a specific purpose. Parts are commonly held together with bolts and screws, which either pass through or end in holes in the parts. As holes are an important design feature, we use the Autodesk Shape Manager feature recognition tool to identify and label holes in each part. Each hole lists the hole `type`, `body` UUID, `diameter`, `length`, `origin`, `direction`, and `faces` and `edges` that belong to the hole.
+
+The `diameter` value describes the widest diameter of any hole section including any counterbore or countersink.  The `length` value describes the length of the hole from it's entrance into the material to the bottom of the last cylindrical section.  For holes with a tapered bottom the final conical or spherical section is not included in the length. The `origin` point indicates the hole center as it enters the material, in the coordinate system of the body, and the `direction` vector denotes its direction through the material. The hole `type` denotes the shape at the hole entrance and at the end of the hole:
 
 - `RoundHoleWithBlindBottom`
 - `RoundBlindHoleWithConicalBottom`

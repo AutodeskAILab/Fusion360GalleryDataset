@@ -102,7 +102,7 @@ Designer-selected B-Rep faces and edges, form the geometric entites used to defi
 ![Assembly Dataset - Joint Labels](images/assembly_joint_labels.jpg)
 
 
-In addition to the B-Rep entities, the `axis_line`, shown in yellow above, contains the `origin` point and `direction` vector on the joint axis when in an assembled state. The `transform` represents the rigid body transform that mates `body_one` to `body_two` into an assembled state. The `transform` is given as a coordinate system.
+In addition to the B-Rep entities, the `axis_line`, shown in yellow above, contains the `origin` point and `direction` vector on the joint axis when in an assembled state. The `transform` represents the rigid body transform that moves the each body from their local coordinates into an assembled state. The `transform` is given as a coordinate system.
 
 An example entry for `geometry_or_origin_one` is shown below:
 
@@ -181,7 +181,9 @@ An example entry in the `contacts` list is shown below:
 
 
 ## Holes
-In CAD models, holes are common design features that often serve a specific purpose. Parts are commonly held together with bolts and screws, which either pass through or end in holes in the parts. As holes are an important design feature, we use the Autodesk Shape Manager feature recognition tool to identify and label holes in each part. Each hole lists information about the body it is in, diameter, length, direction, and faces and edges that belong to the hole. Holes are also labeled with a hole type denoting the shape at the hole entrance and at the end of the hole:
+In CAD models, holes are common design features that often serve a specific purpose. Parts are commonly held together with bolts and screws, which either pass through or end in holes in the parts. As holes are an important design feature, we use the Autodesk Shape Manager feature recognition tool to identify and label holes in each part. Each hole lists the hole `type`, `body` UUID, `diameter`, `length`, `origin`, `direction`, and `faces` and `edges` that belong to the hole.
+
+The `diameter` value describes the widest diameter of any hole section including any counterbore or countersink.  The `length` value describes the length of the hole from it's entrance into the material to the bottom of the last cylindrical section.  For holes with a tapered bottom the final conical or spherical section is not included in the length. The `origin` point indicates the hole center as it enters the material, in the coordinate system of the body, and the `direction` vector denotes its direction through the material. The hole `type` denotes the shape at the hole entrance and at the end of the hole:
 
 - `RoundHoleWithBlindBottom`
 - `RoundBlindHoleWithConicalBottom`
@@ -215,7 +217,7 @@ An example entry in the `holes` list is shown below:
     "holes": [
         {
             "type": "RoundHoleWithThroughBottom",
-            "body": "51a00400-0573-11ec-9601-06368d9f66a5",
+            "body": "25370_adbde9bf_0025_1",
             "diameter": 0.6000000000000001,
             "length": 0.3999999999999999,
             "origin": {...},
