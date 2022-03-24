@@ -27,7 +27,7 @@ A segmentation of 3D models based on the modeling operation used to create each 
 ## Publications
 Please cite the relevant paper below if you use the Fusion 360 Gallery dataset in your research.
 
-### Asembly Dataset
+### Assembly Dataset
 [JoinABLe: Learning Bottom-up Assembly of Parametric CAD Joints](https://arxiv.org/abs/2111.12772)
 
 ```
