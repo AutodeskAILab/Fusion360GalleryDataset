@@ -71,7 +71,7 @@ Please cite the relevant paper below if you use the Fusion 360 Gallery dataset i
 | Dataset | Designs | Documentation | Download | Paper | Code |
 | - | - | - | - | - | - |
 | Assembly | 8,251 assemblies / 154,468 parts  | [Documentation](docs/assembly.md) | [Instructions](tools/assembly_download) | [Paper](https://arxiv.org/abs/2111.12772) | [Code](tools) |
-| Assembly - Joint | 32,148 joints / 23,029 parts | [Documentation](docs/assembly_joint.md) | [j1.0.0 - 2.8 GB](https://fusion-360-gallery-dataset.s3.us-west-2.amazonaws.com/assembly/j1.0.0/j1.0.0.7z) | [Paper](https://arxiv.org/abs/2111.12772) | [Code](tools) |
+| Assembly - Joint | 32,148 joints / 23,029 parts | [Documentation](docs/assembly_joint.md) | [j1.0.0 - 2.8 GB](https://fusion-360-gallery-dataset.s3.us-west-2.amazonaws.com/assembly/j1.0.0/j1.0.0.7z) | [Paper](https://arxiv.org/abs/2111.12772) | [Code](https://github.com/AutodeskAILab/JoinABLe) |
 | Reconstruction | 8,625 sequences | [Documentation](docs/reconstruction.md) | [r1.0.1 - 2.0 GB](https://fusion-360-gallery-dataset.s3.us-west-2.amazonaws.com/reconstruction/r1.0.1/r1.0.1.zip) | [Paper](https://arxiv.org/abs/2010.02392) | [Code](tools) |
 | Segmentation |  35,680 parts | [Documentation](docs/segmentation.md) | [s2.0.1 - 3.1 GB](https://fusion-360-gallery-dataset.s3.us-west-2.amazonaws.com/segmentation/s2.0.1/s2.0.1.zip) | [Paper](https://arxiv.org/abs/2104.00706) | [Code](https://github.com/AutodeskAILab/BRepNet)
 
